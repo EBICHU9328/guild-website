@@ -173,6 +173,7 @@
             <button id="sheetSyncBtn" class="btn-common btn-excel admin-only"><span>📤 구글시트 동기화</span></button>
             <button id="guildAddBtn" class="btn-common btn-guild-add admin-only"><span>🏰 길드 추가</span></button>
             <button id="userManageBtn" class="btn-common btn-manage admin-only">👥 유저 관리</button>
+            <button id="bulkDeleteBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 일괄 등록 해제</button>
             <button id="lockManageBtn" class="btn-common btn-lock admin-only">🔒 잠금 설정</button>
             <button id="logViewBtn" class="btn-common btn-log admin-only">📝 로그 확인</button>
             <button id="deletedUsersBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 삭제된 사용자</button>
@@ -2003,6 +2004,235 @@
                     const name = row.cells[0].textContent.toLowerCase();
                     row.style.display = name.includes(searchText) ? '' : 'none';
                 });
+            });
+        });
+
+        // 일괄 등록 해제
+        document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
+            if(!isAdmin) return;
+            openLargeModal('일괄 등록 해제', '여러 사용자를 한 번에 등록 해제');
+            
+            const snap = await getDocs(collection(db, "users"));
+            let users = [];
+            snap.forEach(d => users.push(d.data()));
+            
+            // 가나다순 정렬
+            users.sort((a,b) => a.name.localeCompare(b.name));
+            
+            let html = `
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0;">
+                            <input type="text" id="bulkDeleteSearch" class="form-input" placeholder="닉네임 검색...">
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <select id="bulkDeleteGuildFilter" class="form-input">
+                                <option value="">전체 길드</option>
+                                ${[...new Set(users.map(u=>u.guild))].sort().map(g=>`<option value="${g}">${g}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                        <button id="selectAllBtn" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">
+                            ✅ 전체 선택
+                        </button>
+                        <button id="deselectAllBtn" class="btn btn-cancel" style="padding: 8px 16px; font-size: 13px;">
+                            ❌ 전체 해제
+                        </button>
+                        <span id="selectedCount" style="margin-left: auto; font-size: 14px; color: #6b7280;">
+                            선택: <strong style="color: #ef4444;">0</strong>명
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="table-scroll-container" style="max-height: 350px;">
+                    <table class="common-table" id="bulkDeleteTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">선택</th>
+                                <th style="min-width: 120px;">닉네임</th>
+                                <th style="min-width: 80px;">길드</th>
+                                <th style="min-width: 100px;">전투력</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkDeleteTableBody"></tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label">등록 해제 사유 (공통)</label>
+                        <select id="bulkDeleteReason" class="form-input">
+                            <option value="자진 탈퇴">자진 탈퇴</option>
+                            <option value="장기 미접속">장기 미접속</option>
+                            <option value="길드 이동">길드 이동</option>
+                            <option value="규정 위반">규정 위반</option>
+                            <option value="일괄 정리">일괄 정리</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label class="form-label">상세 메모 (공통, 선택사항)</label>
+                        <textarea id="bulkDeleteMemo" class="form-input" rows="2" placeholder="추가 메모..."></textarea>
+                    </div>
+                    <button id="executeBulkDelete" class="btn btn-danger" style="width: 100%;">
+                        🗑️ 선택한 사용자 일괄 등록 해제
+                    </button>
+                </div>
+            `;
+            
+            setModalBody(html);
+            
+            // 테이블 렌더링
+            function renderTable() {
+                const tbody = document.getElementById('bulkDeleteTableBody');
+                const searchText = document.getElementById('bulkDeleteSearch').value.toLowerCase();
+                const guildFilter = document.getElementById('bulkDeleteGuildFilter').value;
+                
+                const filtered = users.filter(u => {
+                    const matchSearch = u.name.toLowerCase().includes(searchText);
+                    const matchGuild = !guildFilter || u.guild === guildFilter;
+                    return matchSearch && matchGuild;
+                });
+                
+                tbody.innerHTML = '';
+                filtered.forEach(u => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="user-checkbox" data-username="${u.name}" 
+                                   style="width: 18px; height: 18px; cursor: pointer;">
+                        </td>
+                        <td><strong>${u.name}</strong></td>
+                        <td>${u.guild}</td>
+                        <td style="color: #3b82f6; font-weight: 600;">${u.power.toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                updateSelectedCount();
+            }
+            
+            // 선택된 개수 업데이트
+            function updateSelectedCount() {
+                const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+                const count = checkboxes.length;
+                document.getElementById('selectedCount').innerHTML = 
+                    `선택: <strong style="color: #ef4444;">${count}</strong>명`;
+            }
+            
+            renderTable();
+            
+            // 검색 및 필터 이벤트
+            document.getElementById('bulkDeleteSearch').addEventListener('input', renderTable);
+            document.getElementById('bulkDeleteGuildFilter').addEventListener('change', renderTable);
+            
+            // 체크박스 변경 이벤트 (이벤트 위임)
+            document.getElementById('bulkDeleteTableBody').addEventListener('change', updateSelectedCount);
+            
+            // 전체 선택
+            document.getElementById('selectAllBtn').addEventListener('click', () => {
+                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = true);
+                updateSelectedCount();
+            });
+            
+            // 전체 해제
+            document.getElementById('deselectAllBtn').addEventListener('click', () => {
+                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+                updateSelectedCount();
+            });
+            
+            // 일괄 삭제 실행
+            document.getElementById('executeBulkDelete').addEventListener('click', async () => {
+                const selected = Array.from(document.querySelectorAll('.user-checkbox:checked'))
+                    .map(cb => cb.dataset.username);
+                
+                if (selected.length === 0) {
+                    showAlert('삭제할 사용자를 선택해주세요', 'error');
+                    return;
+                }
+                
+                const reason = document.getElementById('bulkDeleteReason').value;
+                const memo = document.getElementById('bulkDeleteMemo').value.trim();
+                
+                // 확인
+                const confirmed = await showConfirm(
+                    '일괄 등록 해제 확인',
+                    `<span style="color:#ef4444; font-weight:600;">${selected.length}명의 사용자를 등록 해제하시겠습니까?</span><br><br>
+                    • 사용자 정보는 영구 보관됩니다<br>
+                    • 삭제된 사용자 목록에서 확인 가능<br>
+                    • 복구는 불가능합니다<br><br>
+                    <strong>선택된 사용자:</strong><br>
+                    ${selected.slice(0, 10).join(', ')}${selected.length > 10 ? '...' : ''}`
+                );
+                
+                if (!confirmed) return;
+                
+                // 진행 상황 표시
+                const progressDiv = document.createElement('div');
+                progressDiv.style.cssText = 'margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 8px; text-align: center;';
+                progressDiv.innerHTML = '<strong>처리 중...</strong> <span id="progressText">0/${selected.length}</span>';
+                document.getElementById('executeBulkDelete').after(progressDiv);
+                document.getElementById('executeBulkDelete').disabled = true;
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (let i = 0; i < selected.length; i++) {
+                    const name = selected[i];
+                    try {
+                        // 1. 사용자 정보 가져오기
+                        const userDoc = await getDoc(doc(db, "users", name));
+                        if (!userDoc.exists()) {
+                            failCount++;
+                            continue;
+                        }
+                        
+                        const userData = userDoc.data();
+                        
+                        // 2. deletedUsers에 백업
+                        await setDoc(doc(collection(db, "deletedUsers")), {
+                            ...userData,
+                            deletedAt: Date.now(),
+                            deletedBy: 'admin',
+                            deleteReason: reason,
+                            deleteMemo: memo || '',
+                            originalName: name,
+                            deletedIp: await getIp(),
+                            deletedDevice: navigator.userAgent
+                        });
+                        
+                        // 3. users에서 삭제
+                        await deleteDoc(doc(db, "users", name));
+                        
+                        // 4. 로그 기록
+                        await setDoc(doc(collection(db, "logs")), {
+                            who: name,
+                            type: 'user_deleted',
+                            old_value: '사용자 존재',
+                            new_value: `일괄 등록 해제 (사유: ${reason})`,
+                            createdAt: Date.now(),
+                            ip: await getIp(),
+                            device: navigator.userAgent
+                        });
+                        
+                        successCount++;
+                    } catch (e) {
+                        console.error(`Failed to delete ${name}:`, e);
+                        failCount++;
+                    }
+                    
+                    // 진행 상황 업데이트
+                    document.getElementById('progressText').textContent = `${i + 1}/${selected.length}`;
+                }
+                
+                // 완료
+                closeModal();
+                showAlert(
+                    `등록 해제 완료: 성공 ${successCount}명, 실패 ${failCount}명`,
+                    failCount === 0 ? 'success' : 'error'
+                );
+                setTimeout(() => location.reload(), 1500);
             });
         });
 
