@@ -2143,64 +2143,94 @@
             });
             
             // 일괄 삭제 실행
-            document.getElementById('executeBulkDelete').addEventListener('click', async () => {
-                const selected = Array.from(document.querySelectorAll('.user-checkbox:checked'))
-                    .map(cb => cb.dataset.username);
+            document.getElementById('executeBulkDelete').addEventListener('click', async (e) => {
+                // 버튼 비활성화 (중복 클릭 방지)
+                const btn = e.target;
+                if (btn.disabled) return;
                 
-                if (selected.length === 0) {
-                    showAlert('삭제할 사용자를 선택해주세요', 'error');
-                    return;
-                }
-                
-                const reason = document.getElementById('bulkDeleteReason').value;
-                const memo = document.getElementById('bulkDeleteMemo').value.trim();
-                
-                // 확인
-                const confirmed = await showConfirm(
-                    '일괄 등록 해제 확인',
-                    `<span style="color:#ef4444; font-weight:600;">${selected.length}명의 사용자를 등록 해제하시겠습니까?</span><br><br>
-                    • 사용자 정보는 영구 보관됩니다<br>
-                    • 삭제된 사용자 목록에서 확인 가능<br>
-                    • 복구는 불가능합니다<br><br>
-                    <strong>선택된 사용자:</strong><br>
-                    ${selected.slice(0, 10).join(', ')}${selected.length > 10 ? '...' : ''}`
-                );
-                
-                if (!confirmed) return;
-                
-                // 모달 하단에 진행 상황 표시 영역 추가
-                const progressContainer = document.createElement('div');
-                progressContainer.id = 'progressContainer';
-                progressContainer.style.cssText = 'margin-top: 20px; padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;';
-                progressContainer.innerHTML = `
-                    <div style="text-align: center; margin-bottom: 12px;">
-                        <strong style="font-size: 16px; color: #111827;">처리 중...</strong>
-                    </div>
-                    <div style="margin-bottom: 8px;">
-                        <div style="background: #e5e7eb; height: 24px; border-radius: 12px; overflow: hidden; position: relative;">
-                            <div id="progressBar" style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center;">
-                                <span id="progressPercent" style="color: white; font-weight: 600; font-size: 12px; position: absolute; left: 50%; transform: translateX(-50%);">0%</span>
+                try {
+                    const selected = Array.from(document.querySelectorAll('.user-checkbox:checked'))
+                        .map(cb => cb.dataset.username);
+                    
+                    if (selected.length === 0) {
+                        showAlert('삭제할 사용자를 선택해주세요', 'error');
+                        return;
+                    }
+                    
+                    const reason = document.getElementById('bulkDeleteReason').value;
+                    const memo = document.getElementById('bulkDeleteMemo').value.trim();
+                    
+                    // 확인 (모달 유지)
+                    const confirmed = await showConfirm(
+                        '일괄 등록 해제 확인',
+                        `<span style="color:#ef4444; font-weight:600;">${selected.length}명의 사용자를 등록 해제하시겠습니까?</span><br><br>
+                        • 사용자 정보는 영구 보관됩니다<br>
+                        • 삭제된 사용자 목록에서 확인 가능<br>
+                        • 복구는 불가능합니다<br><br>
+                        <strong>선택된 사용자:</strong><br>
+                        ${selected.slice(0, 10).join(', ')}${selected.length > 10 ? '...' : ''}`,
+                        true  // 모달 유지
+                    );
+                    
+                    if (!confirmed) return;
+                    
+                    // 모달 제목 변경
+                    document.getElementById('modalTitle').textContent = '일괄 등록 해제 진행 중';
+                    document.getElementById('modalSubtitle').textContent = '잠시만 기다려주세요...';
+                    
+                    // 모달 내용을 프로그레스 바로 교체
+                    document.getElementById('modalBody').innerHTML = `
+                        <div style="padding: 40px 20px;">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <strong style="font-size: 18px; color: #111827;">처리 중...</strong>
+                                <p style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+                                    창을 닫지 마시고 기다려주세요
+                                </p>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <div style="background: #e5e7eb; height: 32px; border-radius: 16px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                                    <div id="progressBar" style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); height: 100%; width: 0%; transition: width 0.5s ease; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);">
+                                        <span id="progressPercent" style="color: white; font-weight: 700; font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center;">
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">진행</div>
+                                        <div id="progressText" style="font-size: 20px; font-weight: 700; color: #111827;">0 / ${selected.length}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">성공</div>
+                                        <div id="successCount" style="font-size: 20px; font-weight: 700; color: #10b981;">0</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">실패</div>
+                                        <div id="failCount" style="font-size: 20px; font-weight: 700; color: #ef4444;">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="currentUser" style="margin-top: 16px; text-align: center; font-size: 13px; color: #6b7280; min-height: 20px;">
+                                준비 중...
                             </div>
                         </div>
-                    </div>
-                    <div style="text-align: center;">
-                        <span id="progressText" style="font-size: 14px; color: #6b7280;">0 / ${selected.length}</span>
-                        <span style="margin: 0 8px; color: #d1d5db;">|</span>
-                        <span style="font-size: 14px; color: #10b981;">성공: <strong id="successCount">0</strong></span>
-                        <span style="margin: 0 8px; color: #d1d5db;">|</span>
-                        <span style="font-size: 14px; color: #ef4444;">실패: <strong id="failCount">0</strong></span>
-                    </div>
-                `;
+                    `;
                 
-                document.getElementById('executeBulkDelete').after(progressContainer);
-                document.getElementById('executeBulkDelete').disabled = true;
-                document.getElementById('executeBulkDelete').style.opacity = '0.5';
+                
+                btn.disabled = true;
                 
                 let successCount = 0;
                 let failCount = 0;
                 
                 for (let i = 0; i < selected.length; i++) {
                     const name = selected[i];
+                    
+                    // 현재 처리 중인 사용자 표시
+                    document.getElementById('currentUser').textContent = `처리 중: ${name}`;
+                    
                     try {
                         // 1. 사용자 정보 가져오기
                         const userDoc = await getDoc(doc(db, "users", name));
@@ -2253,17 +2283,44 @@
                     document.getElementById('progressBar').style.width = `${percent}%`;
                     document.getElementById('progressPercent').textContent = `${percent}%`;
                     
-                    // UI 업데이트를 위한 짧은 대기
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                    // UI 업데이트를 위한 대기 (100ms로 증가)
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
                 
-                // 완료
-                closeModal();
-                showAlert(
-                    `등록 해제 완료: 성공 ${successCount}명, 실패 ${failCount}명`,
-                    failCount === 0 ? 'success' : 'error'
-                );
-                setTimeout(() => location.reload(), 1500);
+                // 완료 표시
+                document.getElementById('modalTitle').textContent = '등록 해제 완료';
+                document.getElementById('modalSubtitle').textContent = '';
+                document.getElementById('currentUser').innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">${failCount === 0 ? '✅' : '⚠️'}</div>
+                        <div style="font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 8px;">
+                            처리가 완료되었습니다
+                        </div>
+                        <div style="font-size: 14px; color: #6b7280;">
+                            성공: <strong style="color: #10b981;">${successCount}명</strong> / 
+                            실패: <strong style="color: #ef4444;">${failCount}명</strong>
+                        </div>
+                        <div style="margin-top: 16px; font-size: 13px; color: #9ca3af;">
+                            잠시 후 페이지가 새로고침됩니다...
+                        </div>
+                    </div>
+                `;
+                
+                // 2초 후 모달 닫기 및 페이지 새로고침
+                setTimeout(() => {
+                    closeModal();
+                    showAlert(
+                        `등록 해제 완료: 성공 ${successCount}명, 실패 ${failCount}명`,
+                        failCount === 0 ? 'success' : 'error'
+                    );
+                    setTimeout(() => location.reload(), 1000);
+                }, 2000);
+                } catch (error) {
+                    console.error('일괄 삭제 에러:', error);
+                    closeModal();
+                    btn.disabled = false;
+                    showAlert('처리 중 오류가 발생했습니다: ' + error.message, 'error');
+                }
             });
         });
 
@@ -2435,7 +2492,7 @@
         // });
 
         // 커스텀 Confirm 모달
-        window.showConfirm = (title, message) => {
+        window.showConfirm = (title, message, keepOpen = false) => {
             return new Promise((resolve) => {
                 openSmallModal(title, '', `<p style="text-align:center; padding:20px 0; font-size:15px; line-height:1.6; color:#374151;">${message}</p>`);
                 document.getElementById('modalFooter').innerHTML = `
@@ -2443,7 +2500,9 @@
                     <button class="btn btn-primary" onclick="window.confirmResolve(true)">확인</button>
                 `;
                 window.confirmResolve = (result) => {
-                    closeModal();
+                    if (!keepOpen || !result) {
+                        closeModal();
+                    }
                     resolve(result);
                     delete window.confirmResolve;
                 };
