@@ -2168,12 +2168,33 @@
                 
                 if (!confirmed) return;
                 
-                // 진행 상황 표시
-                const progressDiv = document.createElement('div');
-                progressDiv.style.cssText = 'margin-top: 16px; padding: 12px; background: #f3f4f6; border-radius: 8px; text-align: center;';
-                progressDiv.innerHTML = '<strong>처리 중...</strong> <span id="progressText">0/${selected.length}</span>';
-                document.getElementById('executeBulkDelete').after(progressDiv);
+                // 모달 하단에 진행 상황 표시 영역 추가
+                const progressContainer = document.createElement('div');
+                progressContainer.id = 'progressContainer';
+                progressContainer.style.cssText = 'margin-top: 20px; padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;';
+                progressContainer.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <strong style="font-size: 16px; color: #111827;">처리 중...</strong>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <div style="background: #e5e7eb; height: 24px; border-radius: 12px; overflow: hidden; position: relative;">
+                            <div id="progressBar" style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center;">
+                                <span id="progressPercent" style="color: white; font-weight: 600; font-size: 12px; position: absolute; left: 50%; transform: translateX(-50%);">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <span id="progressText" style="font-size: 14px; color: #6b7280;">0 / ${selected.length}</span>
+                        <span style="margin: 0 8px; color: #d1d5db;">|</span>
+                        <span style="font-size: 14px; color: #10b981;">성공: <strong id="successCount">0</strong></span>
+                        <span style="margin: 0 8px; color: #d1d5db;">|</span>
+                        <span style="font-size: 14px; color: #ef4444;">실패: <strong id="failCount">0</strong></span>
+                    </div>
+                `;
+                
+                document.getElementById('executeBulkDelete').after(progressContainer);
                 document.getElementById('executeBulkDelete').disabled = true;
+                document.getElementById('executeBulkDelete').style.opacity = '0.5';
                 
                 let successCount = 0;
                 let failCount = 0;
@@ -2185,6 +2206,7 @@
                         const userDoc = await getDoc(doc(db, "users", name));
                         if (!userDoc.exists()) {
                             failCount++;
+                            document.getElementById('failCount').textContent = failCount;
                             continue;
                         }
                         
@@ -2217,13 +2239,22 @@
                         });
                         
                         successCount++;
+                        document.getElementById('successCount').textContent = successCount;
                     } catch (e) {
                         console.error(`Failed to delete ${name}:`, e);
                         failCount++;
+                        document.getElementById('failCount').textContent = failCount;
                     }
                     
-                    // 진행 상황 업데이트
-                    document.getElementById('progressText').textContent = `${i + 1}/${selected.length}`;
+                    // 진행 상황 업데이트 (실시간)
+                    const current = i + 1;
+                    const percent = Math.round((current / selected.length) * 100);
+                    document.getElementById('progressText').textContent = `${current} / ${selected.length}`;
+                    document.getElementById('progressBar').style.width = `${percent}%`;
+                    document.getElementById('progressPercent').textContent = `${percent}%`;
+                    
+                    // UI 업데이트를 위한 짧은 대기
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
                 
                 // 완료
