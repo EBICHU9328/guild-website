@@ -72,6 +72,17 @@
         .power-value { font-weight: 600; color: #3b82f6; cursor: pointer; transition: all 0.15s ease; padding: 6px 12px; border-radius: 6px; display: inline-block; }
         .power-value:hover { background: #eff6ff; color: #2563eb; }
         
+        /* 전투력 블러 처리 */
+        .power-value.blurred { 
+            filter: blur(8px); 
+            user-select: none; 
+            pointer-events: none;
+            color: #9ca3af;
+        }
+        .power-value.blurred:hover {
+            background: transparent;
+        }
+        
         /* 스펙 아이콘 스타일 */
         .spec-icons { font-size: 12px; margin-left: 6px; color: #666; display: inline-block; }
         
@@ -164,6 +175,7 @@
             <button id="userManageBtn" class="btn-common btn-manage admin-only">👥 유저 관리</button>
             <button id="lockManageBtn" class="btn-common btn-lock admin-only">🔒 잠금 설정</button>
             <button id="logViewBtn" class="btn-common btn-log admin-only">📝 로그 확인</button>
+            <button id="deletedUsersBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 삭제된 사용자</button>
             <button id="adminLoginBtn" class="btn-common btn-admin">관리자</button>
         </div>
     </div>
@@ -207,6 +219,7 @@
         let allGuildData = [];
         let guildList = []; 
         let isAdmin = false;
+        let loggedInUser = null; // 현재 로그인한 사용자 닉네임
         let lockStartTime = 0;
         let lockEndTime = 0;
         let spreadsheetConfig = null; // 스프레드시트 설정
@@ -251,9 +264,42 @@
                 updateAdminUI(); 
                 await checkPendingUsers(); // 승인 대기 유저 확인
             }
+            
+            // 자동 로그인 체크
+            await checkAutoLogin();
+            
             await checkLockStatus();
             await loadSpreadsheetConfig(); // 스프레드시트 설정 로드
             await loadData();
+        }
+        
+        // 자동 로그인 체크
+        async function checkAutoLogin() {
+            const autoLogin = localStorage.getItem('autoLogin');
+            if (autoLogin) {
+                try {
+                    const data = JSON.parse(autoLogin);
+                    const userDoc = await getDoc(doc(db, "users", data.username));
+                    
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        // 비밀번호가 일치하면 자동 로그인
+                        if (userData.password === data.password) {
+                            loggedInUser = data.username;
+                            console.log('자동 로그인:', loggedInUser);
+                        } else {
+                            // 비밀번호가 변경되었으면 자동 로그인 해제
+                            localStorage.removeItem('autoLogin');
+                        }
+                    } else {
+                        // 사용자가 삭제되었으면 자동 로그인 해제
+                        localStorage.removeItem('autoLogin');
+                    }
+                } catch (e) {
+                    console.error('자동 로그인 에러:', e);
+                    localStorage.removeItem('autoLogin');
+                }
+            }
         }
 
         async function loadSpreadsheetConfig() {
@@ -386,8 +432,12 @@
                         if(user.mount_legend > 0) icons += "🐴";
                         if(user.mount_myth > 0) icons += "🦄";
                         
+                        // 블러 처리: 관리자가 아니고, 본인이 아니면 블러
+                        const shouldBlur = !isAdmin && (loggedInUser !== user.name);
+                        const blurClass = shouldBlur ? ' blurred' : '';
+                        
                         tr.innerHTML = `<td><span class="rank-number">${index + 1}</span><span class="player-name" title="${user.name}">${user.name}</span> <span class="spec-icons">${icons}</span></td>
-                            <td><span class="power-value">${user.power.toLocaleString()}</span></td>`;
+                            <td><span class="power-value${blurClass}">${user.power.toLocaleString()}</span></td>`;
                         
                         tr.querySelector('.player-name').addEventListener('click', () => showUserInfo(user.name));
                         tr.querySelector('.power-value').addEventListener('click', () => handlePowerClick(user.name));
@@ -1028,12 +1078,17 @@
             // 길드별 시트 매핑 입력 필드 생성
             let sheetMappingHtml = '<div class="form-group"><label class="form-label">시트 탭 매핑 (길드명: 시트탭명)</label>';
             guildList.forEach(guild => {
-                const mappedSheet = (currentConfig.sheetMappings && currentConfig.sheetMappings[guild]) || `전투력 점수제(${guild})`;
+                // 사신만 개별 시트, 나머지는 비워둠 (전체 시트에만 포함)
+                let defaultSheet = '';
+                if (guild === '사신') {
+                    defaultSheet = '전투력 점수제(사신)';
+                }
+                const mappedSheet = (currentConfig.sheetMappings && currentConfig.sheetMappings[guild]) || defaultSheet;
                 sheetMappingHtml += `
                     <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
                         <input type="text" class="form-input" value="${guild}" readonly style="flex:1; background:#f3f4f6;">
                         <span style="color:#6b7280;">→</span>
-                        <input type="text" class="form-input sheet-mapping" data-guild="${guild}" value="${mappedSheet}" placeholder="전투력 점수제(${guild})" style="flex:2;">
+                        <input type="text" class="form-input sheet-mapping" data-guild="${guild}" value="${mappedSheet}" placeholder="${guild === '사신' ? '전투력 점수제(사신)' : '(전체 시트에만 포함)'}" style="flex:2;">
                     </div>
                 `;
             });
@@ -1593,10 +1648,11 @@
                     <table class="common-table" id="userManageTable">
                         <thead>
                             <tr>
-                                <th style="width:30%;">닉네임</th>
-                                <th style="width:20%;">길드</th>
-                                <th style="width:20%;">비밀번호</th>
-                                <th style="width:30%;">관리</th>
+                                <th style="width:25%;">닉네임</th>
+                                <th style="width:15%;">길드</th>
+                                <th style="width:15%;">비밀번호</th>
+                                <th style="width:25%;">비밀번호 관리</th>
+                                <th style="width:20%;">등록 해제</th>
                             </tr>
                         </thead>
                         <tbody id="userManageTableBody"></tbody>
@@ -1620,12 +1676,15 @@
                         ? `<button class="btn-reset-pw" onclick="window.resetUserPw('${u.name}')">초기화</button>` 
                         : '-';
                     
+                    const deleteBtn = `<button class="btn-delete" onclick="window.deleteUser('${u.name}')" style="background:#ef4444; color:white; padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s;">🗑️ 등록 해제</button>`;
+                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td><strong>${u.name}</strong></td>
                         <td>${u.guild}</td>
                         <td>${pwStatus}</td>
                         <td>${resetBtn}</td>
+                        <td>${deleteBtn}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -1682,6 +1741,80 @@
             setTimeout(() => location.reload(), 1000); 
         };
 
+        // 사용자 등록 해제 (정보 영구 보관)
+        window.deleteUser = async function(name) {
+            // 삭제 확인
+            if(!await showConfirm('사용자 등록 해제', `<span style="color:#ef4444; font-weight:600;">[${name}]님을 등록 해제하시겠습니까?</span><br><br>• 사용자 정보는 영구 보관됩니다<br>• 삭제된 사용자 목록에서 확인 가능<br>• 복구는 불가능합니다`)) return;
+            
+            // 삭제 사유 입력
+            openSmallModal('등록 해제 사유', '선택사항 - 나중에 참고용', `
+                <div class="form-group">
+                    <label class="form-label">사유 (선택사항)</label>
+                    <select id="deleteReason" class="form-input">
+                        <option value="자진 탈퇴">자진 탈퇴</option>
+                        <option value="장기 미접속">장기 미접속</option>
+                        <option value="길드 이동">길드 이동</option>
+                        <option value="규정 위반">규정 위반</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">상세 메모 (선택사항)</label>
+                    <textarea id="deleteMemo" class="form-input" rows="3" placeholder="추가 메모..."></textarea>
+                </div>
+            `);
+            
+            document.getElementById('modalSubmit').onclick = async () => {
+                const reason = document.getElementById('deleteReason').value;
+                const memo = document.getElementById('deleteMemo').value.trim();
+                
+                try {
+                    // 1. 삭제 전에 사용자 정보 가져오기
+                    const userDoc = await getDoc(doc(db, "users", name));
+                    if (!userDoc.exists()) {
+                        showAlert('사용자를 찾을 수 없습니다', 'error');
+                        return;
+                    }
+                    
+                    const userData = userDoc.data();
+                    
+                    // 2. deletedUsers 컬렉션에 백업 저장
+                    await setDoc(doc(collection(db, "deletedUsers")), {
+                        ...userData,  // 모든 사용자 정보
+                        deletedAt: Date.now(),
+                        deletedBy: 'admin',
+                        deleteReason: reason,
+                        deleteMemo: memo || '',
+                        originalName: name,
+                        deletedIp: await getIp(),
+                        deletedDevice: navigator.userAgent
+                    });
+                    
+                    // 3. users 컬렉션에서 삭제
+                    await deleteDoc(doc(db, "users", name));
+                    
+                    // 4. 로그 기록
+                    await setDoc(doc(collection(db, "logs")), {
+                        who: name,
+                        type: 'user_deleted',
+                        old_value: '사용자 존재',
+                        new_value: `등록 해제 (사유: ${reason})`,
+                        createdAt: Date.now(),
+                        ip: await getIp(),
+                        device: navigator.userAgent
+                    });
+                    
+                    showAlert('등록 해제 완료 (정보는 영구 보관됨)', 'success');
+                    closeModal();
+                    setTimeout(() => location.reload(), 1000);
+                } catch (e) {
+                    console.error('Delete error:', e);
+                    showAlert('등록 해제 중 오류가 발생했습니다', 'error');
+                }
+            };
+        };
+
+
         document.getElementById('logViewBtn').addEventListener('click', async () => {
             if(!isAdmin) return; 
             openLargeModal('로그', '전체 로그 (검색 가능)');
@@ -1711,6 +1844,7 @@
                     'nickname_change': '🔄 닉네임 변경',
                     'user_approved': '✅ 사용자 승인',
                     'user_rejected': '❌ 사용자 거부',
+                    'user_deleted': '🗑️ 사용자 삭제',
                     'user_request': '📝 등록 요청',
                     'bulk_update': '📋 일괄 처리',
                     'spreadsheet_sync': '📊 스프레드시트 동기화',
@@ -1742,6 +1876,9 @@
                     
                     case 'user_rejected':
                         return '등록 거부';
+                    
+                    case 'user_deleted':
+                        return newVal;
                     
                     case 'user_request':
                         return newVal;
@@ -1801,6 +1938,70 @@
                 document.querySelectorAll('#logTable tbody tr').forEach(row => {
                     const who = row.cells[1].textContent.toLowerCase();
                     row.style.display = who.includes(searchText) ? '' : 'none';
+                });
+            });
+        });
+
+        // 삭제된 사용자 보기
+        document.getElementById('deletedUsersBtn').addEventListener('click', async () => {
+            if(!isAdmin) return;
+            openLargeModal('삭제된 사용자', '등록 해제된 사용자 목록 (영구 보관)');
+            
+            const snap = await getDocs(query(collection(db, "deletedUsers"), orderBy("deletedAt", "desc")));
+            
+            const deletedUsers = [];
+            snap.forEach(d => {
+                const u = d.data();
+                deletedUsers.push({
+                    name: u.originalName || u.name,
+                    guild: u.guild || '-',
+                    power: u.power || 0,
+                    deletedAt: formatDateTime(u.deletedAt),
+                    reason: u.deleteReason || '-',
+                    memo: u.deleteMemo || '-',
+                    deletedBy: u.deletedBy || 'admin'
+                });
+            });
+            
+            let html = `
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <input type="text" id="deletedSearchInput" class="form-input" placeholder="닉네임 검색..." style="margin-bottom: 0;">
+                    <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">총 ${deletedUsers.length}명</p>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="common-table" id="deletedUsersTable">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 100px;">닉네임</th>
+                                <th style="min-width: 80px;">길드</th>
+                                <th style="min-width: 100px;">전투력</th>
+                                <th style="min-width: 130px;">삭제일시</th>
+                                <th style="min-width: 100px;">사유</th>
+                                <th style="min-width: 150px;">메모</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            deletedUsers.forEach(u => {
+                html += `<tr>
+                    <td><strong>${u.name}</strong></td>
+                    <td>${u.guild}</td>
+                    <td style="color:#3b82f6; font-weight:600;">${u.power.toLocaleString()}</td>
+                    <td style="font-size:12px;">${u.deletedAt}</td>
+                    <td><span style="padding:4px 8px; background:#fef2f2; color:#991b1b; border-radius:4px; font-size:12px;">${u.reason}</span></td>
+                    <td style="font-size:12px; color:#6b7280;">${u.memo || '-'}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            setModalBody(html);
+            
+            // 검색 기능
+            document.getElementById('deletedSearchInput').addEventListener('input', (e) => {
+                const searchText = e.target.value.toLowerCase();
+                document.querySelectorAll('#deletedUsersTable tbody tr').forEach(row => {
+                    const name = row.cells[0].textContent.toLowerCase();
+                    row.style.display = name.includes(searchText) ? '' : 'none';
                 });
             });
         });
@@ -1873,14 +2074,38 @@
                     <input type="password" class="form-input" id="passwordInput" maxlength="4" inputmode="numeric">
                     <p id="attemptInfo" style="font-size: 12px; color: #6b7280; margin-top: 8px; text-align: center;">남은 시도 횟수: ${maxAttempts}회</p>
                 </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #374151;">
+                        <input type="checkbox" id="rememberPassword" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>비밀번호 저장 (자동 로그인)</span>
+                    </label>
+                    <p style="font-size: 11px; color: #9ca3af; margin-top: 4px; margin-left: 26px;">※ 브라우저 변경 시 자동 로그인이 해제됩니다</p>
+                </div>
             `);
             
             setTimeout(() => document.getElementById('passwordInput').focus(), 100);
             
             document.getElementById('modalSubmit').onclick = () => { 
-                if (document.getElementById('passwordInput').value === u.password || isAdmin) { 
+                if (document.getElementById('passwordInput').value === u.password || isAdmin) {
+                    const rememberChecked = document.getElementById('rememberPassword').checked;
+                    
+                    // 로그인 성공
+                    loggedInUser = name;
+                    
+                    // 자동 로그인 저장 (체크된 경우)
+                    if (rememberChecked && !isAdmin) {
+                        localStorage.setItem('autoLogin', JSON.stringify({
+                            username: name,
+                            password: u.password,
+                            timestamp: Date.now()
+                        }));
+                    }
+                    
                     closeModal(); 
-                    setTimeout(() => cb(u), 200); 
+                    setTimeout(() => {
+                        loadData(); // 블러 해제를 위해 리로드
+                        cb(u);
+                    }, 200); 
                 } else {
                     failCount++;
                     const remaining = maxAttempts - failCount;
