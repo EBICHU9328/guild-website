@@ -592,6 +592,9 @@
             if(!snap.exists()) return;
             const u = snap.data();
 
+            // 블러 처리 여부 결정
+            const isBlurred = !isAdmin && (loggedInUser !== name);
+
             const showCount = (count) => {
                 if (count > 0) {
                     return `<span class="spec-count">${count}개</span>`;
