@@ -22,6 +22,7 @@
         .btn-user-add:hover { background: #2563eb; transform: translateY(-1px); }
         .btn-user-add.disabled { background: #9ca3af; cursor: not-allowed; transform: none; box-shadow: none; }
         .admin-only { display: none; }
+        .super-admin-only { display: none; }
         .btn-excel { background: #10b981; color: white; }
         .btn-admin { background: #1f2937; color: white; position: relative; }
         .btn-admin.logged-in { background: #4b5563; cursor: default; }
@@ -300,6 +301,7 @@
             <button id="lockManageBtn" class="btn-common btn-lock admin-only">🔒 잠금 설정</button>
             <button id="logViewBtn" class="btn-common btn-log admin-only">📝 로그 확인</button>
             <button id="deletedUsersBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 삭제된 사용자</button>
+            <button id="adminManageBtn" class="btn-common super-admin-only" style="background:#7c3aed; color:white; display:none;">👑 관리자 관리</button>
             <button id="adminLoginBtn" class="btn-common btn-admin">관리자</button>
         </div>
     </div>
@@ -343,11 +345,12 @@
         let allGuildData = [];
         let guildList = []; 
         let isAdmin = false;
+        let isSuperAdmin = false; // 최종 관리자 여부
         let loggedInUser = null; // 현재 로그인한 사용자 닉네임
         let lockStartTime = 0;
         let lockEndTime = 0;
         let spreadsheetConfig = null; // 스프레드시트 설정
-        const ADMIN_HASH = { id: "dGpkYWxzOTMyOA==", pw: "dG5hbHM5MzI4QEA=" };
+        const SUPER_ADMIN_HASH = { id: "dGpkYWxzOTMyOA==", pw: "dG5hbHM5MzI4QEA=" }; // 최종 관리자
 
         // --- KST 변환 함수 ---
         function toKST(timestamp) {
@@ -384,7 +387,10 @@
         // --- 초기화 ---
         async function init() {
             if (sessionStorage.getItem('isAdmin') === 'true') { 
-                isAdmin = true; 
+                isAdmin = true;
+                if (sessionStorage.getItem('isSuperAdmin') === 'true') {
+                    isSuperAdmin = true;
+                }
                 updateAdminUI(); 
                 await checkPendingUsers(); // 승인 대기 유저 확인
             }
@@ -490,9 +496,13 @@
         function updateAdminUI() {
             if(isAdmin) {
                 const btn = document.getElementById('adminLoginBtn');
-                btn.textContent = '관리자님'; 
+                btn.textContent = isSuperAdmin ? '최종관리자님' : '관리자님'; 
                 btn.classList.add('logged-in');
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-flex');
+                // 슈퍼 관리자 전용 UI
+                if(isSuperAdmin) {
+                    document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'inline-flex');
+                }
                 updateLockUI();
             }
         }
@@ -1155,7 +1165,8 @@
                 btn.innerText = "로그아웃"; 
                 btn.style.backgroundColor = "#ef4444";
                 btn.onclick = () => { 
-                    sessionStorage.removeItem('isAdmin'); 
+                    sessionStorage.removeItem('isAdmin');
+                    sessionStorage.removeItem('isSuperAdmin');
                     showAlert('로그아웃 되었습니다.', 'success'); 
                     closeModal(); 
                     setTimeout(() => location.reload(), 500); 
@@ -1167,16 +1178,41 @@
             btn.innerText = "확인"; 
             btn.style.backgroundColor = "";
             btn.onclick = async () => {
-                if (btoa(document.getElementById('aid').value) === ADMIN_HASH.id && btoa(document.getElementById('apw').value) === ADMIN_HASH.pw) {
-                    isAdmin = true; 
-                    sessionStorage.setItem('isAdmin', 'true'); 
+                const inputId = document.getElementById('aid').value;
+                const inputPw = document.getElementById('apw').value;
+                
+                // 1. 최종 관리자(슈퍼 관리자) 체크
+                if (btoa(inputId) === SUPER_ADMIN_HASH.id && btoa(inputPw) === SUPER_ADMIN_HASH.pw) {
+                    isAdmin = true;
+                    isSuperAdmin = true;
+                    sessionStorage.setItem('isAdmin', 'true');
+                    sessionStorage.setItem('isSuperAdmin', 'true');
                     updateAdminUI(); 
                     closeModal(); 
-                    showAlert('로그인 성공', 'success');
-                    await checkPendingUsers(); // 로그인시 승인 대기 확인
-                } else {
-                    showAlert('정보 불일치', 'error');
+                    showAlert('최종 관리자로 로그인되었습니다', 'success');
+                    await checkPendingUsers();
+                    return;
                 }
+                
+                // 2. 일반 관리자 체크 (Firebase admins 컬렉션)
+                try {
+                    const adminDoc = await getDoc(doc(db, "admins", inputId));
+                    if (adminDoc.exists() && adminDoc.data().password === inputPw) {
+                        isAdmin = true;
+                        isSuperAdmin = false;
+                        sessionStorage.setItem('isAdmin', 'true');
+                        sessionStorage.removeItem('isSuperAdmin');
+                        updateAdminUI();
+                        closeModal();
+                        showAlert('관리자로 로그인되었습니다', 'success');
+                        await checkPendingUsers();
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Admin check error:', e);
+                }
+                
+                showAlert('정보 불일치', 'error');
             };
         });
 
@@ -2683,6 +2719,174 @@
             showAlert("초기 데이터 생성 완료", "success"); 
             setTimeout(() => location.reload(), 1500); 
         }
+
+        // --- 관리자 관리 기능 (최종 관리자 전용) ---
+        document.getElementById('adminManageBtn').addEventListener('click', async () => {
+            if (!isSuperAdmin) {
+                showAlert('최종 관리자만 접근할 수 있습니다', 'error');
+                return;
+            }
+
+            openLargeModal('관리자 관리', '일반 관리자 계정을 추가하거나 삭제합니다');
+            
+            // 관리자 목록 불러오기
+            const adminSnapshot = await getDocs(collection(db, "admins"));
+            
+            let adminListHtml = '';
+            if (adminSnapshot.empty) {
+                adminListHtml = '<p style="text-align:center; color:#9ca3af; padding:20px;">등록된 일반 관리자가 없습니다</p>';
+            } else {
+                adminListHtml = '<div class="table-scroll-container"><table class="common-table"><thead><tr><th>아이디</th><th>생성일</th><th>관리</th></tr></thead><tbody>';
+                adminSnapshot.forEach(docSnap => {
+                    const admin = docSnap.data();
+                    const createdAt = admin.createdAt ? formatDateTime(admin.createdAt) : '-';
+                    adminListHtml += `<tr>
+                        <td><strong>${docSnap.id}</strong></td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <button class="btn btn-reset-pw" onclick="window.resetAdminPw('${docSnap.id}')" style="margin-right:4px;">비밀번호 초기화</button>
+                            <button class="btn btn-danger" onclick="window.deleteAdmin('${docSnap.id}')" style="padding:4px 8px; font-size:12px;">삭제</button>
+                        </td>
+                    </tr>`;
+                });
+                adminListHtml += '</tbody></table></div>';
+            }
+
+            const html = `
+                <div style="margin-bottom:20px; padding:15px; background:#f0fdf4; border-radius:8px; border-left:4px solid #22c55e;">
+                    <p style="font-size:13px; color:#166534;"><strong>👑 최종 관리자:</strong> tjdals9328 (변경 불가)</p>
+                </div>
+                
+                <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; color:#374151;">📋 일반 관리자 목록</h4>
+                ${adminListHtml}
+                
+                <div style="margin-top:20px; padding-top:20px; border-top:1px solid #e5e7eb;">
+                    <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; color:#374151;">➕ 새 관리자 추가</h4>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <input type="text" id="newAdminId" class="form-input" placeholder="아이디" style="flex:1; min-width:120px;">
+                        <input type="password" id="newAdminPw" class="form-input" placeholder="비밀번호" style="flex:1; min-width:120px;">
+                        <button class="btn btn-primary" onclick="window.addNewAdmin()" style="white-space:nowrap;">추가</button>
+                    </div>
+                    <p style="font-size:11px; color:#9ca3af; margin-top:8px;">※ 일반 관리자는 관리자 관리 기능을 사용할 수 없습니다</p>
+                </div>
+            `;
+
+            document.getElementById('modalBody').innerHTML = html + `<div style="text-align:right;margin-top:20px"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>`;
+        });
+
+        // 새 관리자 추가
+        window.addNewAdmin = async function() {
+            const adminId = document.getElementById('newAdminId').value.trim();
+            const adminPw = document.getElementById('newAdminPw').value;
+
+            if (!adminId || !adminPw) {
+                showAlert('아이디와 비밀번호를 입력하세요', 'error');
+                return;
+            }
+
+            if (adminPw.length < 4) {
+                showAlert('비밀번호는 4자 이상이어야 합니다', 'error');
+                return;
+            }
+
+            // 중복 체크
+            const existingAdmin = await getDoc(doc(db, "admins", adminId));
+            if (existingAdmin.exists()) {
+                showAlert('이미 존재하는 아이디입니다', 'error');
+                return;
+            }
+
+            try {
+                await setDoc(doc(db, "admins", adminId), {
+                    password: adminPw,
+                    createdAt: Date.now(),
+                    createdBy: 'superadmin'
+                });
+
+                await setDoc(doc(collection(db, "logs")), {
+                    who: 'SuperAdmin',
+                    type: 'admin_add',
+                    old_value: '-',
+                    new_value: `관리자 추가: ${adminId}`,
+                    createdAt: Date.now(),
+                    ip: await getIp()
+                });
+
+                showAlert(`관리자 [${adminId}]가 추가되었습니다`, 'success');
+                closeModal();
+                // 다시 열기
+                setTimeout(() => document.getElementById('adminManageBtn').click(), 300);
+            } catch (e) {
+                console.error(e);
+                showAlert('추가 중 오류가 발생했습니다', 'error');
+            }
+        };
+
+        // 관리자 삭제
+        window.deleteAdmin = async function(adminId) {
+            if (!await showConfirm('관리자 삭제', `[${adminId}] 관리자를 삭제하시겠습니까?`)) return;
+
+            try {
+                await deleteDoc(doc(db, "admins", adminId));
+
+                await setDoc(doc(collection(db, "logs")), {
+                    who: 'SuperAdmin',
+                    type: 'admin_delete',
+                    old_value: adminId,
+                    new_value: '삭제됨',
+                    createdAt: Date.now(),
+                    ip: await getIp()
+                });
+
+                showAlert(`관리자 [${adminId}]가 삭제되었습니다`, 'success');
+                closeModal();
+                setTimeout(() => document.getElementById('adminManageBtn').click(), 300);
+            } catch (e) {
+                console.error(e);
+                showAlert('삭제 중 오류가 발생했습니다', 'error');
+            }
+        };
+
+        // 관리자 비밀번호 초기화
+        window.resetAdminPw = async function(adminId) {
+            openSmallModal('비밀번호 초기화', `[${adminId}] 관리자`, `
+                <div class="form-group">
+                    <label class="form-label">새 비밀번호</label>
+                    <input type="password" id="resetPwInput" class="form-input" placeholder="새 비밀번호 입력">
+                </div>
+            `);
+
+            document.getElementById('modalSubmit').onclick = async () => {
+                const newPw = document.getElementById('resetPwInput').value;
+                
+                if (!newPw || newPw.length < 4) {
+                    showAlert('비밀번호는 4자 이상이어야 합니다', 'error');
+                    return;
+                }
+
+                try {
+                    await updateDoc(doc(db, "admins", adminId), {
+                        password: newPw,
+                        updatedAt: Date.now()
+                    });
+
+                    await setDoc(doc(collection(db, "logs")), {
+                        who: 'SuperAdmin',
+                        type: 'admin_pw_reset',
+                        old_value: adminId,
+                        new_value: '비밀번호 초기화',
+                        createdAt: Date.now(),
+                        ip: await getIp()
+                    });
+
+                    showAlert(`[${adminId}] 비밀번호가 초기화되었습니다`, 'success');
+                    closeModal();
+                } catch (e) {
+                    console.error(e);
+                    showAlert('오류가 발생했습니다', 'error');
+                }
+            };
+        };
 
         init();
     </script>
