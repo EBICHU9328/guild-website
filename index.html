@@ -58,17 +58,43 @@
         th:last-child { text-align: right; }
         td { padding: 14px 24px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #374151; height: 60px; }
         td:last-child { text-align: right; }
-        tbody tr { height: 60px; }
-        tbody tr:hover { background: #f9fafb; }
+        tbody tr { height: 60px; cursor: pointer; -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1); }
+        tbody tr:hover { background: #f0f9ff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        tbody tr:active { background: #dbeafe; }
         tbody tr:last-child td { border-bottom: none; }
         tbody tr { border-bottom: 2px solid #e5e7eb; }
-        .rank-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; font-size: 14px; font-weight: 700; margin-right: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .rank-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; font-size: 14px; font-weight: 700; margin-right: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; cursor: pointer; transition: transform 0.2s; }
+        .rank-number:hover { transform: scale(1.05); }
         tbody tr:nth-child(1) .rank-number { background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #92400e; box-shadow: 0 4px 6px rgba(255,215,0,0.4); }
         tbody tr:nth-child(2) .rank-number { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); color: #57534e; box-shadow: 0 4px 6px rgba(192,192,192,0.4); }
         tbody tr:nth-child(3) .rank-number { background: linear-gradient(135deg, #cd7f32 0%, #daa06d 100%); color: #78350f; box-shadow: 0 4px 6px rgba(205,127,50,0.4); }
         tbody tr:nth-child(n+4) .rank-number { background: #f3f4f6; color: #374151; font-weight: 600; }
-        .player-name { font-weight: 500; color: #111827; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s; display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
-        .player-name:hover { background: #f3f4f6; color: #2563eb; text-decoration: underline; }
+        .player-name { 
+            font-weight: 500; 
+            color: #111827; 
+            cursor: pointer; 
+            padding: 6px 10px; 
+            border-radius: 6px; 
+            transition: all 0.2s; 
+            display: inline-block; 
+            max-width: 150px; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+            vertical-align: middle;
+            user-select: none;
+            -webkit-tap-highlight-color: rgba(37, 99, 235, 0.1);
+        }
+        .player-name:hover { 
+            background: #e0e7ff; 
+            color: #2563eb; 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .player-name:active {
+            transform: translateY(0);
+            background: #c7d2fe;
+        }
         .power-value { font-weight: 600; color: #3b82f6; cursor: pointer; transition: all 0.15s ease; padding: 6px 12px; border-radius: 6px; display: inline-block; }
         .power-value:hover { background: #eff6ff; color: #2563eb; }
         
@@ -84,7 +110,7 @@
         }
         
         /* 스펙 아이콘 스타일 */
-        .spec-icons { font-size: 12px; margin-left: 6px; color: #666; display: inline-block; }
+        .spec-icons { font-size: 12px; margin-left: 6px; color: #666; display: inline-block; cursor: pointer; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; animation: fadeIn 0.2s ease; padding: 20px; overflow-y: auto; }
         .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
@@ -511,8 +537,32 @@
                         tr.innerHTML = `<td><span class="rank-number">${index + 1}</span><span class="player-name" title="${user.name}">${user.name}</span> <span class="spec-icons">${icons}</span></td>
                             <td><span class="power-value${blurClass}">${user.power.toLocaleString()}</span></td>`;
                         
-                        tr.querySelector('.player-name').addEventListener('click', () => showUserInfo(user.name));
-                        tr.querySelector('.power-value').addEventListener('click', () => handlePowerClick(user.name));
+                        // 닉네임 클릭 이벤트 - 다중 방식으로 추가
+                        const playerNameSpan = tr.querySelector('.player-name');
+                        const powerValueSpan = tr.querySelector('.power-value');
+                        
+                        // 1. 닉네임 span에 직접 이벤트
+                        playerNameSpan.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            showUserInfo(user.name);
+                        });
+                        
+                        // 2. 닉네임 td에도 이벤트 (클릭 영역 확장)
+                        tr.querySelector('td:first-child').addEventListener('click', (e) => {
+                            if (e.target.classList.contains('player-name') || 
+                                e.target.classList.contains('rank-number') ||
+                                e.target.classList.contains('spec-icons') ||
+                                e.target.tagName === 'TD') {
+                                showUserInfo(user.name);
+                            }
+                        });
+                        
+                        // 3. 전투력 클릭 이벤트
+                        powerValueSpan.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            handlePowerClick(user.name);
+                        });
+                        
                         tbody.appendChild(tr);
                     });
                 }
