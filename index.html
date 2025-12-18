@@ -42,7 +42,35 @@
         /* 승인 대기 뱃지 */
         .pending-badge { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; border-radius: 10px; padding: 2px 6px; font-size: 11px; font-weight: 700; min-width: 18px; text-align: center; }
 
-        .container { max-width: 1280px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; }
+        /* 길드 선택 화면 */
+        .guild-select-container { max-width: 1200px; margin: 0 auto; padding: 60px 24px; }
+        .guild-select-title { text-align: center; font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 40px; }
+        .guild-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .guild-btn { background: #ffffff; border: 2px solid #e5e7eb; border-radius: 16px; padding: 30px 24px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 16px; }
+        .guild-btn:hover { border-color: #3b82f6; transform: translateY(-4px); box-shadow: 0 12px 24px rgba(59, 130, 246, 0.15); }
+        .guild-btn:active { transform: translateY(-2px); }
+        .guild-btn-badge { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+        .guild-btn:nth-child(4n+1) .guild-btn-badge { background: #3b82f6; }
+        .guild-btn:nth-child(4n+2) .guild-btn-badge { background: #10b981; }
+        .guild-btn:nth-child(4n+3) .guild-btn-badge { background: #f59e0b; }
+        .guild-btn:nth-child(4n+4) .guild-btn-badge { background: #ef4444; }
+        .guild-btn-info { flex: 1; }
+        .guild-btn-name { font-size: 20px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+        .guild-btn-count { font-size: 14px; color: #6b7280; }
+        .guild-btn-arrow { font-size: 24px; color: #9ca3af; transition: transform 0.3s; }
+        .guild-btn:hover .guild-btn-arrow { transform: translateX(4px); color: #3b82f6; }
+
+        /* 길드 상세 화면 */
+        .guild-detail-container { max-width: 900px; margin: 0 auto; padding: 40px 24px; display: none; }
+        .guild-detail-container.active { display: block; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
+        .back-btn:hover { background: #e5e7eb; }
+        .guild-detail-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb; }
+        .guild-detail-badge { width: 12px; height: 12px; border-radius: 50%; }
+        .guild-detail-title { font-size: 24px; font-weight: 700; color: #111827; }
+        .guild-detail-count { font-size: 14px; color: #6b7280; margin-left: auto; }
+
+        .container { max-width: 1600px; margin: 0 auto; padding: 40px 24px; display: none; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 24px; }
         .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .card:hover { border-color: #d1d5db; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .card-header { padding: 20px 24px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 12px; }
@@ -53,15 +81,15 @@
         .card:nth-child(4n+4) .guild-badge { background: #ef4444; }
         .card-header h2 { font-size: 16px; font-weight: 600; color: #111827; letter-spacing: -0.3px; }
         .card-body { padding: 0; }
-        .card-body table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .card-body table { width: 100%; border-collapse: collapse; }
         .card-body thead { background: #f9fafb; border-bottom: 1px solid #f3f4f6; }
         .card-body th { padding: 12px 16px; font-weight: 500; color: #6b7280; font-size: 13px; text-align: left; letter-spacing: 0.3px; }
-        .card-body th:first-child { width: 65%; }
-        .card-body th:last-child { width: 35%; text-align: right; padding-right: 20px; }
+        .card-body th:first-child { width: 60%; }
+        .card-body th:last-child { width: 40%; text-align: right; padding-right: 20px; }
         .card-body td { padding: 14px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #374151; height: 60px; }
-        .card-body td:first-child { overflow: hidden; }
-        .card-body td:last-child { text-align: right; width: 35%; padding-right: 20px; }
-        .player-cell { display: flex; align-items: center; gap: 0; }
+        .card-body td:first-child { overflow: visible; }
+        .card-body td:last-child { text-align: right; width: 40%; padding-right: 20px; }
+        .player-cell { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
         .card-body tbody tr { height: 60px; cursor: pointer; -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1); }
         .card-body tbody tr:hover { background: #f0f9ff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .card-body tbody tr:active { background: #dbeafe; }
@@ -77,18 +105,13 @@
             font-weight: 500; 
             color: #111827; 
             cursor: pointer; 
-            padding: 6px 8px; 
+            padding: 6px 10px; 
             border-radius: 6px; 
             transition: all 0.2s; 
             display: inline-block; 
-            max-width: 100px;
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap; 
             vertical-align: middle;
             user-select: none;
             -webkit-tap-highlight-color: rgba(37, 99, 235, 0.1);
-            flex-shrink: 1;
         }
         .player-name:hover { 
             background: #e0e7ff; 
@@ -238,11 +261,7 @@
             td { 
                 padding: 10px 12px; /* 좌우 패딩 축소 */
             }
-            td:first-child { 
-                max-width: 150px; /* 모바일에서 더 축소 */
-            }
             .player-name { 
-                max-width: 80px; /* 모바일에서 더 축소 */
                 font-size: 13px;
             }
             .rank-number {
@@ -258,6 +277,19 @@
                 font-size: 13px;
                 padding: 4px 8px;
             }
+            
+            /* 길드 선택 화면 모바일 */
+            .guild-select-container { padding: 30px 16px; }
+            .guild-select-title { font-size: 22px; margin-bottom: 24px; }
+            .guild-buttons { gap: 12px; }
+            .guild-btn { padding: 20px 16px; }
+            .guild-btn-name { font-size: 16px; }
+            .guild-btn-count { font-size: 12px; }
+            
+            /* 길드 상세 화면 모바일 */
+            .guild-detail-container { padding: 20px 16px; }
+            .guild-detail-title { font-size: 20px; }
+            .back-btn { padding: 8px 14px; font-size: 13px; }
             
             /* 테이블 스크롤 높이 조정 */
             .table-scroll-container { 
@@ -326,6 +358,30 @@
     </div>
     
     <div class="container" id="mainContainer"></div>
+    
+    <!-- 길드 선택 화면 -->
+    <div class="guild-select-container" id="guildSelectContainer">
+        <h1 class="guild-select-title">⚔️ 길드를 선택하세요</h1>
+        <div class="guild-buttons" id="guildButtons"></div>
+    </div>
+    
+    <!-- 길드 상세 화면 -->
+    <div class="guild-detail-container" id="guildDetailContainer">
+        <button class="back-btn" onclick="showGuildSelect()">← 길드 목록으로</button>
+        <div class="guild-detail-header">
+            <div class="guild-detail-badge" id="detailBadge"></div>
+            <h2 class="guild-detail-title" id="detailTitle"></h2>
+            <span class="guild-detail-count" id="detailCount"></span>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <table>
+                    <thead><tr><th>플레이어</th><th>전투력</th></tr></thead>
+                    <tbody id="detailList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -526,22 +582,16 @@
             else { guildList = ['사신', '축복', '놀자', '루비']; await setDoc(docRef, { names: guildList }); }
         }
 
+        // 길드별 데이터 저장용
+        let guildDataMap = {};
+        let currentGuild = null;
+
         async function loadData() {
             await fetchGuildList();
-            const container = document.getElementById('mainContainer'); 
-            container.innerHTML = '';
             
-            guildList.forEach(guildName => {
-                const card = document.createElement('div'); 
-                card.className = 'card';
-                card.innerHTML = `<div class="card-header"><div class="guild-badge"></div><h2>${guildName}</h2></div>
-                    <div class="card-body"><table><thead><tr><th>플레이어</th><th>전투력</th></tr></thead><tbody id="list-${guildName}"></tbody></table></div>`;
-                container.appendChild(card);
-            });
-
             const querySnapshot = await getDocs(collection(db, "users"));
-            const guildData = {}; 
-            guildList.forEach(g => guildData[g] = []); 
+            guildDataMap = {}; 
+            guildList.forEach(g => guildDataMap[g] = []); 
             allGuildData = [];
 
             if (querySnapshot.empty) { await initializeDatabase(); return; }
@@ -553,49 +603,101 @@
                 user.mount_legend = typeof user.mount_legend === 'number' ? user.mount_legend : (user.mount_legend ? 1 : 0);
                 user.mount_myth = typeof user.mount_myth === 'number' ? user.mount_myth : (user.mount_myth ? 1 : 0);
 
-                if (guildData[user.guild] !== undefined) guildData[user.guild].push(user);
-                else if (guildList.includes(user.guild)) guildData[user.guild] = [user];
+                if (guildDataMap[user.guild] !== undefined) guildDataMap[user.guild].push(user);
+                else if (guildList.includes(user.guild)) guildDataMap[user.guild] = [user];
             });
 
-            Object.keys(guildData).forEach(guildName => {
-                const users = guildData[guildName].sort((a, b) => b.power - a.power);
-                allGuildData.push(...users);
-                const tbody = document.getElementById(`list-${guildName}`);
-                if(tbody) {
-                    users.forEach((user, index) => {
-                        const tr = document.createElement('tr');
-                        let icons = "";
-                        if(user.shape_legend > 0) icons += "🛡️";
-                        if(user.shape_myth > 0) icons += "👑";
-                        if(user.mount_legend > 0) icons += "🐴";
-                        if(user.mount_myth > 0) icons += "🦄";
-                        
-                        // 블러 처리: 관리자가 아니고, 본인이 아니면 블러
-                        const shouldBlur = !isAdmin && (loggedInUser !== user.name);
-                        const blurClass = shouldBlur ? ' blurred' : '';
-                        
-                        tr.innerHTML = `<td><div class="player-cell"><span class="rank-number">${index + 1}</span><span class="player-name" title="${user.name}">${user.name}</span><span class="spec-icons">${icons}</span></div></td>
-                            <td><span class="power-value${blurClass}">${user.power.toLocaleString()}</span></td>`;
-                        
-                        // Row 전체에 클릭 이벤트 (닉네임 클릭용)
-                        tr.style.cursor = 'pointer';
-                        tr.addEventListener('click', (e) => {
-                            // 전투력을 클릭한 경우가 아니면 상세 정보 표시
-                            if (!e.target.classList.contains('power-value')) {
-                                showUserInfo(user.name);
-                            }
-                        });
-                        
-                        // 전투력만 별도 이벤트 (전투력 수정용)
-                        const powerValueSpan = tr.querySelector('.power-value');
-                        powerValueSpan.addEventListener('click', (e) => {
-                            e.stopPropagation(); // row 클릭 이벤트 중단
-                            handlePowerClick(user.name);
-                        });
-                        
-                        tbody.appendChild(tr);
-                    });
-                }
+            // 각 길드 정렬
+            Object.keys(guildDataMap).forEach(guildName => {
+                guildDataMap[guildName].sort((a, b) => b.power - a.power);
+                allGuildData.push(...guildDataMap[guildName]);
+            });
+
+            // 길드 선택 버튼 렌더링
+            renderGuildButtons();
+            
+            // 현재 보고 있던 길드가 있으면 다시 표시
+            if (currentGuild && guildList.includes(currentGuild)) {
+                showGuildDetail(currentGuild);
+            } else {
+                showGuildSelect();
+            }
+        }
+
+        function renderGuildButtons() {
+            const container = document.getElementById('guildButtons');
+            container.innerHTML = '';
+            
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+            
+            guildList.forEach((guildName, index) => {
+                const count = guildDataMap[guildName]?.length || 0;
+                const btn = document.createElement('div');
+                btn.className = 'guild-btn';
+                btn.innerHTML = `
+                    <div class="guild-btn-badge" style="background: ${colors[index % 4]}"></div>
+                    <div class="guild-btn-info">
+                        <div class="guild-btn-name">${guildName}</div>
+                        <div class="guild-btn-count">${count}명의 길드원</div>
+                    </div>
+                    <div class="guild-btn-arrow">→</div>
+                `;
+                btn.onclick = () => showGuildDetail(guildName);
+                container.appendChild(btn);
+            });
+        }
+
+        window.showGuildSelect = function() {
+            currentGuild = null;
+            document.getElementById('guildSelectContainer').style.display = 'block';
+            document.getElementById('guildDetailContainer').classList.remove('active');
+        }
+
+        window.showGuildDetail = function(guildName) {
+            currentGuild = guildName;
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+            const colorIndex = guildList.indexOf(guildName);
+            
+            document.getElementById('guildSelectContainer').style.display = 'none';
+            document.getElementById('guildDetailContainer').classList.add('active');
+            
+            document.getElementById('detailBadge').style.background = colors[colorIndex % 4];
+            document.getElementById('detailTitle').textContent = guildName;
+            
+            const users = guildDataMap[guildName] || [];
+            document.getElementById('detailCount').textContent = `${users.length}명`;
+            
+            const tbody = document.getElementById('detailList');
+            tbody.innerHTML = '';
+            
+            users.forEach((user, index) => {
+                const tr = document.createElement('tr');
+                let icons = "";
+                if(user.shape_legend > 0) icons += "🛡️";
+                if(user.shape_myth > 0) icons += "👑";
+                if(user.mount_legend > 0) icons += "🐴";
+                if(user.mount_myth > 0) icons += "🦄";
+                
+                const shouldBlur = !isAdmin && (loggedInUser !== user.name);
+                const blurClass = shouldBlur ? ' blurred' : '';
+                
+                tr.innerHTML = `<td><div class="player-cell"><span class="rank-number">${index + 1}</span><span class="player-name" title="${user.name}">${user.name}</span><span class="spec-icons">${icons}</span></div></td>
+                    <td><span class="power-value${blurClass}">${user.power.toLocaleString()}</span></td>`;
+                
+                tr.style.cursor = 'pointer';
+                tr.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('power-value')) {
+                        showUserInfo(user.name);
+                    }
+                });
+                
+                const powerValueSpan = tr.querySelector('.power-value');
+                powerValueSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handlePowerClick(user.name);
+                });
+                
+                tbody.appendChild(tr);
             });
         }
 
