@@ -1556,9 +1556,9 @@
             // 기존 설정 불러오기
             const configRef = doc(db, "config", "googleSheet");
             const configSnap = await getDoc(configRef);
-            let config = { scriptUrl: '', sheetId: '', enabled: false };
+            let config = { scriptUrl: '', sheetId: '', sheetName: '전투력 점수제', enabled: false };
             if (configSnap.exists()) {
-                config = configSnap.data();
+                config = { ...config, ...configSnap.data() };
             }
 
             const html = `
@@ -1569,8 +1569,13 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">스프레드시트 ID</label>
-                    <input type="text" id="sheetId" class="form-input" value="${config.sheetId || '1ySgXwqwDGSW3c9gh8LVYPDBmdkh27q9JmVKId8gQ6uI'}" placeholder="1ySgXwqwDGSW3c9gh8LVYPDBmdkh27q9JmVKId8gQ6uI">
-                    <p style="font-size:12px; color:#6b7280; margin-top:4px;">※ 스프레드시트 URL에서 /d/ 뒤의 ID를 입력하세요</p>
+                    <input type="text" id="sheetId" class="form-input" value="${config.sheetId || ''}" placeholder="스프레드시트 URL에서 /d/ 뒤의 ID">
+                    <p style="font-size:12px; color:#6b7280; margin-top:4px;">※ 예: https://docs.google.com/spreadsheets/d/<strong>여기ID</strong>/edit</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">시트(탭) 이름</label>
+                    <input type="text" id="sheetName" class="form-input" value="${config.sheetName || '전투력 점수제'}" placeholder="전투력 점수제">
+                    <p style="font-size:12px; color:#6b7280; margin-top:4px;">※ 데이터가 입력될 시트 탭 이름 (예: 전투력 점수제, 전투력 점수제(전체) 등)</p>
                 </div>
                 <div class="form-group">
                     <label class="form-label">자동 동기화</label>
@@ -1603,9 +1608,10 @@
             document.getElementById('saveSheetConfig').onclick = async () => {
                 const scriptUrl = document.getElementById('scriptUrl').value.trim();
                 const sheetId = document.getElementById('sheetId').value.trim();
+                const sheetName = document.getElementById('sheetName').value.trim();
                 const enabled = document.getElementById('autoSync').value === 'true';
 
-                if (!scriptUrl || !sheetId) {
+                if (!scriptUrl || !sheetId || !sheetName) {
                     showAlert('모든 항목을 입력하세요', 'error');
                     return;
                 }
@@ -1614,6 +1620,7 @@
                     await setDoc(configRef, {
                         scriptUrl: scriptUrl,
                         sheetId: sheetId,
+                        sheetName: sheetName,
                         enabled: enabled,
                         updatedAt: Date.now()
                     });
@@ -1628,19 +1635,20 @@
             document.getElementById('testSync').onclick = async () => {
                 const scriptUrl = document.getElementById('scriptUrl').value.trim();
                 const sheetId = document.getElementById('sheetId').value.trim();
+                const sheetName = document.getElementById('sheetName').value.trim();
 
-                if (!scriptUrl || !sheetId) {
+                if (!scriptUrl || !sheetId || !sheetName) {
                     showAlert('설정을 먼저 저장하세요', 'error');
                     return;
                 }
 
-                await syncToGoogleSheet(scriptUrl, sheetId);
+                await syncToGoogleSheet(scriptUrl, sheetId, sheetName);
             };
         }
 
         // 구글 시트로 데이터 전송
-        async function syncToGoogleSheet(scriptUrl, sheetId) {
-            if (!scriptUrl || !sheetId) {
+        async function syncToGoogleSheet(scriptUrl, sheetId, sheetName) {
+            if (!scriptUrl || !sheetId || !sheetName) {
                 showAlert('구글 시트 설정이 필요합니다', 'error');
                 return;
             }
@@ -1648,23 +1656,27 @@
             // 진행상황 팝업 표시
             openSmallModal('구글 시트 동기화', '진행 중...', `
                 <div style="text-align:center; padding:30px;">
-                    <div style="font-size:40px; margin-bottom:15px;">⏳</div>
+                    <div id="syncIcon" style="font-size:40px; margin-bottom:15px;">⏳</div>
                     <p id="syncStatus" style="font-size:16px; color:#374151; margin-bottom:10px;">데이터 준비 중...</p>
                     <p id="syncDetail" style="font-size:13px; color:#6b7280;"></p>
                     <div style="margin-top:20px; background:#e5e7eb; border-radius:10px; height:10px; overflow:hidden;">
-                        <div id="syncProgress" style="background:#3b82f6; height:100%; width:0%; transition:width 0.3s;"></div>
+                        <div id="syncProgress" style="background:#3b82f6; height:100%; width:0%; transition:width 0.5s;"></div>
                     </div>
                 </div>
             `);
             document.getElementById('modalFooter').style.display = 'none';
 
             try {
+                await new Promise(r => setTimeout(r, 300));
+                
                 // 전투력 순으로 정렬
                 const sortedData = [...allGuildData].sort((a, b) => b.power - a.power);
                 
                 document.getElementById('syncStatus').textContent = '데이터 정렬 완료';
-                document.getElementById('syncDetail').textContent = `총 ${sortedData.length}명`;
+                document.getElementById('syncDetail').textContent = `총 ${sortedData.length}명 → [${sheetName}] 시트`;
                 document.getElementById('syncProgress').style.width = '20%';
+                
+                await new Promise(r => setTimeout(r, 500));
 
                 // 길드별 배경색 정의
                 const guildColors = {
@@ -1673,31 +1685,25 @@
                     '놀자': '#d9ead3',
                     '루비': '#f4cccc'
                 };
-
-                // 각 길드별로 색상 순환
-                let colorIndex = 0;
-                const defaultColors = ['#fff2cc', '#cfe2f3', '#d9ead3', '#f4cccc', '#e4d7f5', '#fce5cd'];
-                const guildGroups = {};
+                const defaultColors = ['#e4d7f5', '#fce5cd', '#d0e0e3', '#ead1dc'];
+                let colorIdx = 0;
                 sortedData.forEach(user => {
-                    if (!guildGroups[user.guild]) {
-                        guildGroups[user.guild] = [];
-                    }
-                    guildGroups[user.guild].push(user);
-                });
-                Object.keys(guildGroups).forEach(guildName => {
-                    if (!guildColors[guildName]) {
-                        guildColors[guildName] = defaultColors[colorIndex % defaultColors.length];
-                        colorIndex++;
+                    if (!guildColors[user.guild]) {
+                        guildColors[user.guild] = defaultColors[colorIdx % defaultColors.length];
+                        colorIdx++;
                     }
                 });
 
-                document.getElementById('syncStatus').textContent = '서버로 전송 중...';
-                document.getElementById('syncProgress').style.width = '50%';
+                document.getElementById('syncStatus').textContent = '구글 시트로 전송 중...';
+                document.getElementById('syncProgress').style.width = '40%';
+                
+                await new Promise(r => setTimeout(r, 300));
 
                 // 전체 데이터 준비
                 const payload = {
                     sheetId: sheetId,
-                    data: sortedData.map(user => ({
+                    sheetName: sheetName,
+                    users: sortedData.map(user => ({
                         guild: user.guild,
                         name: user.name,
                         power: user.power,
@@ -1705,46 +1711,70 @@
                         shape_myth: user.shape_myth || 0,
                         mount_legend: user.mount_legend || 0,
                         mount_myth: user.mount_myth || 0,
-                        backgroundColor: guildColors[user.guild] || '#ffffff'
+                        bgColor: guildColors[user.guild] || '#ffffff'
                     }))
                 };
 
-                // Google Apps Script로 전송 (URL 파라미터 방식)
-                const encodedPayload = encodeURIComponent(JSON.stringify(payload));
+                // iframe + form 방식으로 전송 (CORS 우회)
+                const iframeName = 'syncFrame_' + Date.now();
+                const iframe = document.createElement('iframe');
+                iframe.name = iframeName;
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = scriptUrl;
+                form.target = iframeName;
+                form.style.display = 'none';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'data';
+                input.value = JSON.stringify(payload);
+                form.appendChild(input);
+
+                document.body.appendChild(form);
                 
-                await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'payload=' + encodedPayload,
-                    mode: 'no-cors'
-                });
+                document.getElementById('syncStatus').textContent = '서버에서 처리 중...';
+                document.getElementById('syncProgress').style.width = '60%';
+                
+                // 폼 제출
+                form.submit();
 
-                document.getElementById('syncStatus').textContent = '시트 업데이트 중...';
+                // 처리 대기
+                await new Promise(r => setTimeout(r, 2000));
+                
                 document.getElementById('syncProgress').style.width = '80%';
-
-                // 잠시 대기 (시트 처리 시간)
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
+                document.getElementById('syncStatus').textContent = '시트 업데이트 중...';
+                
+                await new Promise(r => setTimeout(r, 2000));
+                
                 document.getElementById('syncProgress').style.width = '100%';
+
+                // 정리
+                setTimeout(() => {
+                    if (form.parentNode) document.body.removeChild(form);
+                    if (iframe.parentNode) document.body.removeChild(iframe);
+                }, 1000);
                 
                 // 성공 표시
                 document.getElementById('modalBody').innerHTML = `
                     <div style="text-align:center; padding:30px;">
                         <div style="font-size:50px; margin-bottom:15px;">✅</div>
                         <p style="font-size:18px; font-weight:600; color:#059669; margin-bottom:10px;">동기화 완료!</p>
-                        <p style="font-size:14px; color:#6b7280;">${sortedData.length}명의 데이터가 구글 시트에 전송되었습니다.</p>
+                        <p style="font-size:14px; color:#6b7280;">${sortedData.length}명의 데이터가 전송되었습니다.</p>
+                        <p style="font-size:12px; color:#9ca3af; margin-top:8px;">시트: ${sheetName}</p>
                         <button class="btn btn-primary" onclick="closeModal()" style="margin-top:20px;">확인</button>
                     </div>
                 `;
                 
                 // 로그 기록
                 await setDoc(doc(collection(db, "logs")), {
-                    who: 'Admin',
+                    who: isSuperAdmin ? 'SuperAdmin' : 'Admin',
                     type: 'google_sheet_sync',
                     old_value: '-',
-                    new_value: `${sortedData.length}명 동기화`,
+                    new_value: `${sortedData.length}명 → ${sheetName}`,
                     createdAt: Date.now(),
                     ip: await getIp()
                 });
@@ -1756,7 +1786,7 @@
                         <div style="font-size:50px; margin-bottom:15px;">❌</div>
                         <p style="font-size:18px; font-weight:600; color:#dc2626; margin-bottom:10px;">동기화 실패</p>
                         <p style="font-size:14px; color:#6b7280;">Apps Script 설정을 확인하세요.</p>
-                        <p style="font-size:12px; color:#9ca3af; margin-top:10px;">${e.message || ''}</p>
+                        <p style="font-size:12px; color:#9ca3af; margin-top:10px;">${e.message || e}</p>
                         <button class="btn btn-primary" onclick="closeModal()" style="margin-top:20px;">확인</button>
                     </div>
                 `;
