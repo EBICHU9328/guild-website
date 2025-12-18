@@ -57,7 +57,8 @@
         th { padding: 12px 24px; font-weight: 500; color: #6b7280; font-size: 13px; text-align: left; letter-spacing: 0.3px; }
         th:last-child { text-align: right; }
         td { padding: 14px 24px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #374151; height: 60px; }
-        td:last-child { text-align: right; }
+        td:first-child { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        td:last-child { text-align: right; min-width: 120px; }
         tbody tr { height: 60px; cursor: pointer; -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1); }
         tbody tr:hover { background: #f0f9ff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         tbody tr:active { background: #dbeafe; }
@@ -77,7 +78,7 @@
             border-radius: 6px; 
             transition: all 0.2s; 
             display: inline-block; 
-            max-width: 150px; 
+            max-width: 120px;  /* 150px → 120px 축소 */
             overflow: hidden; 
             text-overflow: ellipsis; 
             white-space: nowrap; 
@@ -226,6 +227,31 @@
             .form-input {
                 padding: 10px 14px;
                 font-size: 14px;
+            }
+            
+            /* 모바일 테이블 최적화 */
+            td { 
+                padding: 10px 12px; /* 좌우 패딩 축소 */
+            }
+            td:first-child { 
+                max-width: 150px; /* 모바일에서 더 축소 */
+            }
+            .player-name { 
+                max-width: 80px; /* 모바일에서 더 축소 */
+                font-size: 13px;
+            }
+            .rank-number {
+                width: 24px;
+                height: 24px;
+                font-size: 12px;
+                margin-right: 8px;
+            }
+            .spec-icons {
+                font-size: 11px;
+            }
+            .power-value {
+                font-size: 13px;
+                padding: 4px 8px;
             }
             
             /* 테이블 스크롤 높이 조정 */
@@ -537,29 +563,19 @@
                         tr.innerHTML = `<td><span class="rank-number">${index + 1}</span><span class="player-name" title="${user.name}">${user.name}</span> <span class="spec-icons">${icons}</span></td>
                             <td><span class="power-value${blurClass}">${user.power.toLocaleString()}</span></td>`;
                         
-                        // 닉네임 클릭 이벤트 - 다중 방식으로 추가
-                        const playerNameSpan = tr.querySelector('.player-name');
-                        const powerValueSpan = tr.querySelector('.power-value');
-                        
-                        // 1. 닉네임 span에 직접 이벤트
-                        playerNameSpan.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            showUserInfo(user.name);
-                        });
-                        
-                        // 2. 닉네임 td에도 이벤트 (클릭 영역 확장)
-                        tr.querySelector('td:first-child').addEventListener('click', (e) => {
-                            if (e.target.classList.contains('player-name') || 
-                                e.target.classList.contains('rank-number') ||
-                                e.target.classList.contains('spec-icons') ||
-                                e.target.tagName === 'TD') {
+                        // Row 전체에 클릭 이벤트 (닉네임 클릭용)
+                        tr.style.cursor = 'pointer';
+                        tr.addEventListener('click', (e) => {
+                            // 전투력을 클릭한 경우가 아니면 상세 정보 표시
+                            if (!e.target.classList.contains('power-value')) {
                                 showUserInfo(user.name);
                             }
                         });
                         
-                        // 3. 전투력 클릭 이벤트
+                        // 전투력만 별도 이벤트 (전투력 수정용)
+                        const powerValueSpan = tr.querySelector('.power-value');
                         powerValueSpan.addEventListener('click', (e) => {
-                            e.stopPropagation();
+                            e.stopPropagation(); // row 클릭 이벤트 중단
                             handlePowerClick(user.name);
                         });
                         
