@@ -324,7 +324,10 @@
         <h1>길드 전투력 현황판</h1>
         <div class="top-actions">
             <button id="addUserBtn" class="btn-common btn-user-add">➕ 사용자 등록</button>
-            <input type="text" id="searchInput" class="search-input" placeholder="닉네임 검색...">
+            <div style="display: flex; gap: 4px;">
+                <input type="text" id="searchInput" class="search-input" placeholder="닉네임 검색...">
+                <button id="searchBtn" class="btn-common" style="padding: 8px 12px; background: #3b82f6; color: white;">🔍</button>
+            </div>
             
             <button id="approveBtn" class="btn-common btn-approve admin-only">✅ 승인 관리 <span id="pendingBadge" class="pending-badge" style="display:none;">0</span></button>
             <button id="bulkAddBtn" class="btn-common btn-bulk admin-only">📝 일괄 등록/이동</button>
@@ -2936,9 +2939,73 @@
             });
         };
 
+        // 검색 함수
+        function performSearch() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!searchText) {
+                showAlert('검색어를 입력하세요', 'error');
+                return;
+            }
+            
+            // 전체 데이터에서 검색
+            let foundUser = null;
+            for (let i = 0; i < allGuildData.length; i++) {
+                if (allGuildData[i].name.toLowerCase().includes(searchText)) {
+                    foundUser = allGuildData[i];
+                    break;
+                }
+            }
+            
+            if (foundUser) {
+                // 해당 길드로 이동
+                showGuildDetail(foundUser.guild);
+                
+                // 잠시 후 해당 유저 하이라이트
+                setTimeout(() => {
+                    const rows = document.querySelectorAll('#detailList tr');
+                    rows.forEach(r => {
+                        const playerName = r.querySelector('.player-name');
+                        if (playerName && playerName.textContent.toLowerCase().includes(searchText)) {
+                            r.style.background = '#fef3c7';
+                            r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            // 3초 후 하이라이트 제거
+                            setTimeout(() => {
+                                r.style.background = '';
+                            }, 3000);
+                        }
+                    });
+                }, 200);
+            } else {
+                showAlert('해당 닉네임을 찾을 수 없습니다', 'error');
+            }
+        }
+
         document.getElementById('searchInput').addEventListener('input', (e) => { 
-            const t = e.target.value.toLowerCase(); 
-            document.querySelectorAll('tbody tr').forEach(r => r.style.display = r.querySelector('.player-name').textContent.toLowerCase().includes(t)?'':'none'); 
+            const searchText = e.target.value.toLowerCase().trim();
+            
+            // 길드 상세 화면에서만 필터링 적용
+            if (currentGuild) {
+                document.querySelectorAll('#detailList tr').forEach(r => {
+                    const playerName = r.querySelector('.player-name');
+                    if (playerName) {
+                        r.style.display = playerName.textContent.toLowerCase().includes(searchText) ? '' : 'none';
+                    }
+                });
+            }
+        });
+        
+        // 엔터키로 검색
+        document.getElementById('searchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+        
+        // 검색 버튼 클릭
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            performSearch();
         });
 
         function showAlert(m, t='success') { 
