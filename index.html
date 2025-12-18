@@ -548,7 +548,12 @@
             const content = `
                 <div class="info-grid">
                     <div class="info-item"><span class="info-label">길드</span><span class="info-val">${u.guild}</span></div>
-                    <div class="info-item"><span class="info-label">전투력</span><span class="info-val">${u.power.toLocaleString()}</span></div>
+                    <div class="info-item">
+                        <span class="info-label">전투력</span>
+                        <span class="info-val ${isBlurred ? 'power-value blurred' : ''}" ${isBlurred ? 'title="로그인 후 확인 가능"' : ''}>
+                            ${isBlurred ? '••••••' : u.power.toLocaleString()}
+                        </span>
+                    </div>
                 </div>
                 ${updatedInfo}
                 <div class="info-grid" style="margin-top:10px; padding-top:10px; border-top:1px dashed #ddd;">
