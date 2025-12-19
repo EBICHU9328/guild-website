@@ -152,10 +152,10 @@
         .modal-header h3 { font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 4px; }
         .modal-header p { font-size: 14px; color: #6b7280; margin: 0; }
         .modal-body { padding: 24px; overflow-y: auto; flex: 1; min-height: 0; }
-        .table-scroll-container { max-height: 500px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; }
-        .common-table { width: 100%; font-size: 13px; table-layout: auto; border-collapse: collapse; }
-        .common-table th { position: sticky; top: 0; background: #f3f4f6; text-align: center; padding: 12px 10px; font-weight: 600; white-space: nowrap; border-bottom: 2px solid #e5e7eb; }
-        .common-table td { text-align: center; padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; white-space: nowrap; }
+        .table-scroll-container { max-height: 500px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .common-table { width: 100%; font-size: 13px; table-layout: fixed; border-collapse: collapse; }
+        .common-table th { position: sticky; top: 0; background: #f3f4f6; text-align: center; padding: 12px 8px; font-weight: 600; border-bottom: 2px solid #e5e7eb; word-wrap: break-word; }
+        .common-table td { text-align: center; padding: 10px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; word-wrap: break-word; }
         .common-table tbody tr:hover { background: #f9fafb; }
         .form-group { margin-bottom: 20px; }
         .form-label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px; }
@@ -321,7 +321,7 @@
     <div id="lockBanner" class="lock-banner">⛔ 현재 정보 수정이 잠겨있습니다</div>
 
     <div class="top-bar">
-        <h1>길드 전투력 현황판</h1>
+        <h1 id="mainTitle" style="cursor: pointer;" onclick="showGuildSelect()">길드 전투력 현황판</h1>
         <div class="top-actions">
             <button id="addUserBtn" class="btn-common btn-user-add">➕ 사용자 등록</button>
             <div style="display: flex; gap: 4px;">
@@ -333,7 +333,6 @@
             <button id="bulkAddBtn" class="btn-common btn-bulk admin-only">📝 일괄 등록/이동</button>
             <button id="spreadsheetBtn" class="btn-common admin-only" style="background:#0f9d58; color:white;">📊 스프레드시트 연동</button>
             <button id="excelBtn" class="btn-common btn-excel admin-only"><span>📊 엑셀 다운로드</span></button>
-            <button id="sheetSyncBtn" class="btn-common btn-excel admin-only"><span>📤 구글시트 동기화</span></button>
             <button id="guildAddBtn" class="btn-common btn-guild-add admin-only"><span>🏰 길드 추가</span></button>
             <button id="userManageBtn" class="btn-common btn-manage admin-only">👥 유저 관리</button>
             <button id="bulkDeleteBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 일괄 등록 해제</button>
@@ -414,6 +413,80 @@
         let lockEndTime = 0;
         let spreadsheetConfig = null; // 스프레드시트 설정
         const SUPER_ADMIN_HASH = { id: "dGpkYWxzOTMyOA==", pw: "dG5hbHM5MzI4QEA=" }; // 최종 관리자
+        
+        // 관리자 세션 관리 (2시간 = 7200000ms)
+        const ADMIN_SESSION_TIMEOUT = 2 * 60 * 60 * 1000;
+        let adminSessionTimer = null;
+        
+        // 관리자 활동 감지 및 세션 갱신
+        function resetAdminSessionTimer() {
+            if (!isAdmin) return;
+            
+            // 마지막 활동 시간 저장
+            sessionStorage.setItem('adminLastActivity', Date.now().toString());
+            
+            // 기존 타이머 취소
+            if (adminSessionTimer) {
+                clearTimeout(adminSessionTimer);
+            }
+            
+            // 새 타이머 설정 (2시간)
+            adminSessionTimer = setTimeout(() => {
+                if (isAdmin) {
+                    adminLogout(true); // 자동 로그아웃
+                }
+            }, ADMIN_SESSION_TIMEOUT);
+        }
+        
+        // 관리자 로그아웃 함수
+        async function adminLogout(isAuto = false) {
+            isAdmin = false;
+            isSuperAdmin = false;
+            sessionStorage.removeItem('isAdmin');
+            sessionStorage.removeItem('isSuperAdmin');
+            sessionStorage.removeItem('adminLastActivity');
+            
+            if (adminSessionTimer) {
+                clearTimeout(adminSessionTimer);
+                adminSessionTimer = null;
+            }
+            
+            if (isAuto) {
+                showAlert('2시간 동안 활동이 없어 자동 로그아웃되었습니다', 'error');
+            } else {
+                showAlert('로그아웃 되었습니다', 'success');
+            }
+            
+            // UI 업데이트 및 블러 다시 적용
+            updateAdminUI();
+            await loadData();
+        }
+        
+        // 관리자 세션 체크 (페이지 로드 시)
+        function checkAdminSession() {
+            const lastActivity = sessionStorage.getItem('adminLastActivity');
+            if (lastActivity && isAdmin) {
+                const elapsed = Date.now() - parseInt(lastActivity);
+                if (elapsed >= ADMIN_SESSION_TIMEOUT) {
+                    // 2시간 초과 - 로그아웃
+                    adminLogout(true);
+                    return false;
+                } else {
+                    // 세션 유효 - 타이머 재설정
+                    resetAdminSessionTimer();
+                }
+            }
+            return true;
+        }
+        
+        // 활동 이벤트 감지
+        ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(eventType => {
+            document.addEventListener(eventType, () => {
+                if (isAdmin) {
+                    resetAdminSessionTimer();
+                }
+            }, { passive: true });
+        });
 
         // --- KST 변환 함수 ---
         function toKST(timestamp) {
@@ -454,6 +527,12 @@
                 if (sessionStorage.getItem('isSuperAdmin') === 'true') {
                     isSuperAdmin = true;
                 }
+                
+                // 관리자 세션 만료 체크
+                if (!checkAdminSession()) {
+                    return; // 세션 만료로 로그아웃됨
+                }
+                
                 updateAdminUI(); 
                 await checkPendingUsers(); // 승인 대기 유저 확인
             }
@@ -557,16 +636,24 @@
         }
 
         function updateAdminUI() {
+            const btn = document.getElementById('adminLoginBtn');
             if(isAdmin) {
-                const btn = document.getElementById('adminLoginBtn');
                 btn.textContent = isSuperAdmin ? '최종관리자님' : '관리자님'; 
                 btn.classList.add('logged-in');
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-flex');
                 // 슈퍼 관리자 전용 UI
                 if(isSuperAdmin) {
                     document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'inline-flex');
+                } else {
+                    document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'none');
                 }
                 updateLockUI();
+            } else {
+                // 로그아웃 상태
+                btn.textContent = '관리자';
+                btn.classList.remove('logged-in');
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'none');
             }
         }
 
@@ -1079,12 +1166,33 @@
                 `;
             }
             
+            // 관리자용 삭제 버튼
+            const deleteBtn = isAdmin ? `
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                    <button type="button" id="deleteUserBtn" class="btn" style="width:100%; background:#ef4444; color:white;">🗑️ 이 사용자 등록 해제</button>
+                </div>
+            ` : '';
+            
             const html = `
                 <div class="form-group"><label class="form-label">길드</label><select id="editGuild" class="form-input">${guildOptions}</select></div>
                 <div class="form-group"><label class="form-label">전투력</label><input type="text" id="editPower" class="form-input" value="${u.power}" inputmode="numeric"><p style="font-size:12px; color:#6b7280; margin-top:4px;">※ 숫자만 입력 가능합니다</p></div>
                 ${specSection}
+                ${deleteBtn}
             `;
             openSmallModal('정보 수정', u.name, html);
+
+            // 삭제 버튼 이벤트 연결
+            if (isAdmin) {
+                setTimeout(() => {
+                    const deleteBtnEl = document.getElementById('deleteUserBtn');
+                    if (deleteBtnEl) {
+                        deleteBtnEl.onclick = () => {
+                            closeModal();
+                            setTimeout(() => deleteUser(u.name), 300);
+                        };
+                    }
+                }, 100);
+            }
 
             document.getElementById('modalSubmit').innerText = "수정 완료";
             document.getElementById('modalSubmit').onclick = async () => {
@@ -1340,12 +1448,9 @@
                 const btn = document.getElementById('modalSubmit');
                 btn.innerText = "로그아웃"; 
                 btn.style.backgroundColor = "#ef4444";
-                btn.onclick = () => { 
-                    sessionStorage.removeItem('isAdmin');
-                    sessionStorage.removeItem('isSuperAdmin');
-                    showAlert('로그아웃 되었습니다.', 'success'); 
-                    closeModal(); 
-                    setTimeout(() => location.reload(), 500); 
+                btn.onclick = async () => { 
+                    closeModal();
+                    await adminLogout(false);
                 };
                 return; 
             }
@@ -1363,10 +1468,13 @@
                     isSuperAdmin = true;
                     sessionStorage.setItem('isAdmin', 'true');
                     sessionStorage.setItem('isSuperAdmin', 'true');
+                    resetAdminSessionTimer(); // 세션 타이머 시작
                     updateAdminUI(); 
                     closeModal(); 
                     showAlert('최종 관리자로 로그인되었습니다', 'success');
                     await checkPendingUsers();
+                    // 블러 해제를 위해 화면 다시 렌더링
+                    await loadData();
                     return;
                 }
                 
@@ -1378,10 +1486,13 @@
                         isSuperAdmin = false;
                         sessionStorage.setItem('isAdmin', 'true');
                         sessionStorage.removeItem('isSuperAdmin');
+                        resetAdminSessionTimer(); // 세션 타이머 시작
                         updateAdminUI();
                         closeModal();
                         showAlert('관리자로 로그인되었습니다', 'success');
                         await checkPendingUsers();
+                        // 블러 해제를 위해 화면 다시 렌더링
+                        await loadData();
                         return;
                     }
                 } catch (e) {
@@ -1597,52 +1708,92 @@
                 return;
             }
 
+            // 진행률 바 모달 표시
+            openSmallModal('스프레드시트 동기화', '동기화 진행 중...', `
+                <div style="text-align:center; padding:20px;">
+                    <div id="syncIcon" style="font-size:48px; margin-bottom:15px;">📊</div>
+                    <p id="syncStatus" style="font-size:16px; color:#374151; margin-bottom:8px; font-weight:600;">준비 중...</p>
+                    <p id="syncDetail" style="font-size:13px; color:#6b7280; margin-bottom:20px;"></p>
+                    <div style="background:#e5e7eb; border-radius:12px; height:20px; overflow:hidden; box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);">
+                        <div id="syncProgress" style="background:linear-gradient(90deg, #10b981, #34d399); height:100%; width:0%; transition:width 0.4s ease; border-radius:12px;"></div>
+                    </div>
+                    <p id="syncPercent" style="font-size:14px; color:#374151; margin-top:10px; font-weight:600;">0%</p>
+                </div>
+            `);
+            document.getElementById('modalFooter').style.display = 'none';
+
             try {
-                showAlert('동기화 중...', 'success');
                 let successCount = 0;
                 let failCount = 0;
+                
+                // 동기화할 시트 목록 계산
+                const sheetsToSync = [];
+                guildList.forEach(guild => {
+                    const sheetName = spreadsheetConfig.sheetMappings && spreadsheetConfig.sheetMappings[guild];
+                    if (sheetName) {
+                        sheetsToSync.push({ guild, sheetName, isAll: false });
+                    }
+                });
+                // 전체 탭 추가
+                const allSheetName = (spreadsheetConfig.sheetMappings && spreadsheetConfig.sheetMappings['전체']) || '전투력 점수제(전체)';
+                sheetsToSync.push({ guild: '전체', sheetName: allSheetName, isAll: true });
+                
+                const totalSheets = sheetsToSync.length;
+                let currentSheet = 0;
 
-                // 각 길드별로 동기화
-                for (const guild of guildList) {
-                    const guildUsers = allGuildData.filter(u => u.guild === guild);
-                    const sheetName = spreadsheetConfig.sheetMappings[guild] || `전투력 점수제(${guild})`;
+                for (const sheet of sheetsToSync) {
+                    currentSheet++;
+                    const progress = Math.round((currentSheet / totalSheets) * 100);
+                    
+                    // UI 업데이트
+                    document.getElementById('syncStatus').textContent = `${sheet.guild} 동기화 중...`;
+                    document.getElementById('syncDetail').textContent = `시트: ${sheet.sheetName} (${currentSheet}/${totalSheets})`;
+                    document.getElementById('syncProgress').style.width = `${progress - 10}%`;
+                    document.getElementById('syncPercent').textContent = `${progress - 10}%`;
+                    
+                    const users = sheet.isAll ? allGuildData : allGuildData.filter(u => u.guild === sheet.guild);
                     
                     try {
-                        const result = await syncToSpreadsheet(guildUsers, sheetName);
+                        const result = await syncToSpreadsheet(users, sheet.sheetName);
                         if (result.success) {
                             successCount++;
                         } else {
                             failCount++;
-                            console.error(`Failed to sync ${guild}:`, result.error);
+                            console.error(`Failed to sync ${sheet.guild}:`, result.error);
                         }
                     } catch (e) {
                         failCount++;
-                        console.error(`Error syncing ${guild}:`, e);
+                        console.error(`Error syncing ${sheet.guild}:`, e);
                     }
+                    
+                    // 진행률 업데이트
+                    document.getElementById('syncProgress').style.width = `${progress}%`;
+                    document.getElementById('syncPercent').textContent = `${progress}%`;
                     
                     // API 요청 간격 (과부하 방지)
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
 
-                // 전체 탭 동기화
-                const allSheetName = spreadsheetConfig.sheetMappings['전체'] || '전투력 점수제(전체)';
-                try {
-                    const result = await syncToSpreadsheet(allGuildData, allSheetName);
-                    if (result.success) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (e) {
-                    failCount++;
-                    console.error('Error syncing all:', e);
+                // 완료 표시
+                if (failCount === 0) {
+                    document.getElementById('syncIcon').textContent = '✅';
+                    document.getElementById('syncStatus').textContent = '동기화 완료!';
+                    document.getElementById('syncDetail').textContent = `${successCount}개 시트 동기화 성공`;
+                    document.getElementById('syncProgress').style.width = '100%';
+                    document.getElementById('syncProgress').style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                    document.getElementById('syncPercent').textContent = '100%';
+                } else {
+                    document.getElementById('syncIcon').textContent = '⚠️';
+                    document.getElementById('syncStatus').textContent = '동기화 완료 (일부 실패)';
+                    document.getElementById('syncDetail').textContent = `성공: ${successCount}개, 실패: ${failCount}개`;
+                    document.getElementById('syncProgress').style.width = '100%';
+                    document.getElementById('syncProgress').style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+                    document.getElementById('syncPercent').textContent = '완료';
                 }
 
-                if (failCount === 0) {
-                    showAlert(`✅ 전체 동기화 완료! (${successCount}개 시트)`, 'success');
-                } else {
-                    showAlert(`⚠️ 동기화 완료 (성공: ${successCount}, 실패: ${failCount})`, 'error');
-                }
+                // 닫기 버튼 표시
+                document.getElementById('modalFooter').style.display = 'flex';
+                document.getElementById('modalFooter').innerHTML = '<button class="btn btn-primary" onclick="closeModal()">확인</button>';
 
                 await setDoc(doc(collection(db, "logs")), {
                     who: 'Admin',
@@ -1655,7 +1806,12 @@
 
             } catch (e) {
                 console.error(e);
-                showAlert('동기화 중 오류 발생', 'error');
+                document.getElementById('syncIcon').textContent = '❌';
+                document.getElementById('syncStatus').textContent = '동기화 실패';
+                document.getElementById('syncDetail').textContent = e.message || '오류가 발생했습니다';
+                document.getElementById('syncProgress').style.background = '#ef4444';
+                document.getElementById('modalFooter').style.display = 'flex';
+                document.getElementById('modalFooter').innerHTML = '<button class="btn btn-cancel" onclick="closeModal()">닫기</button>';
             }
         };
 
@@ -1717,255 +1873,6 @@
                 
             } catch (e) {
                 console.error('Auto sync error:', e);
-            }
-        }
-
-        // 구글 시트 동기화 설정
-        document.getElementById('sheetSyncBtn').addEventListener('click', () => {
-            if (!isAdmin) return;
-            openGoogleSheetSettings();
-        });
-
-        async function openGoogleSheetSettings() {
-            openLargeModal('구글 시트 동기화 설정', '스프레드시트 연동 설정');
-            
-            // 기존 설정 불러오기
-            const configRef = doc(db, "config", "googleSheet");
-            const configSnap = await getDoc(configRef);
-            let config = { scriptUrl: '', sheetId: '', sheetName: '전투력 점수제', enabled: false };
-            if (configSnap.exists()) {
-                config = { ...config, ...configSnap.data() };
-            }
-
-            const html = `
-                <div class="form-group">
-                    <label class="form-label">Google Apps Script 웹앱 URL</label>
-                    <input type="text" id="scriptUrl" class="form-input" value="${config.scriptUrl || ''}" placeholder="https://script.google.com/...">
-                    <p style="font-size:12px; color:#6b7280; margin-top:4px;">※ Apps Script 배포 URL을 입력하세요</p>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">스프레드시트 ID</label>
-                    <input type="text" id="sheetId" class="form-input" value="${config.sheetId || ''}" placeholder="스프레드시트 URL에서 /d/ 뒤의 ID">
-                    <p style="font-size:12px; color:#6b7280; margin-top:4px;">※ 예: https://docs.google.com/spreadsheets/d/<strong>여기ID</strong>/edit</p>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">시트(탭) 이름</label>
-                    <input type="text" id="sheetName" class="form-input" value="${config.sheetName || '전투력 점수제'}" placeholder="전투력 점수제">
-                    <p style="font-size:12px; color:#6b7280; margin-top:4px;">※ 데이터가 입력될 시트 탭 이름 (예: 전투력 점수제, 전투력 점수제(전체) 등)</p>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">자동 동기화</label>
-                    <select id="autoSync" class="form-input">
-                        <option value="true" ${config.enabled ? 'selected' : ''}>활성화 (데이터 변경 시 자동 전송)</option>
-                        <option value="false" ${!config.enabled ? 'selected' : ''}>비활성화 (수동만 가능)</option>
-                    </select>
-                </div>
-                <div style="margin-top:20px; padding:15px; background:#eff6ff; border-radius:8px; border-left:4px solid #3b82f6;">
-                    <p style="font-size:13px; color:#1e40af; margin-bottom:8px;"><strong>📝 설정 방법:</strong></p>
-                    <ol style="font-size:12px; color:#1e40af; margin-left:20px; line-height:1.8;">
-                        <li>구글 스프레드시트를 엽니다</li>
-                        <li>상단 메뉴에서 "확장 프로그램" → "Apps Script" 클릭</li>
-                        <li>제공된 Apps Script 코드를 붙여넣습니다</li>
-                        <li>"배포" → "새 배포" → "웹 앱" 선택</li>
-                        <li>"액세스 권한: 모든 사용자" 선택 후 배포</li>
-                        <li>생성된 웹앱 URL을 위에 입력합니다</li>
-                    </ol>
-                </div>
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="btn btn-primary" id="saveSheetConfig" style="flex:1">💾 설정 저장</button>
-                    <button class="btn btn-success" id="testSync" style="flex:1">🔄 지금 동기화</button>
-                    <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
-                </div>
-            `;
-
-            document.getElementById('modalBody').innerHTML = html;
-
-            // 설정 저장
-            document.getElementById('saveSheetConfig').onclick = async () => {
-                const scriptUrl = document.getElementById('scriptUrl').value.trim();
-                const sheetId = document.getElementById('sheetId').value.trim();
-                const sheetName = document.getElementById('sheetName').value.trim();
-                const enabled = document.getElementById('autoSync').value === 'true';
-
-                if (!scriptUrl || !sheetId || !sheetName) {
-                    showAlert('모든 항목을 입력하세요', 'error');
-                    return;
-                }
-
-                try {
-                    await setDoc(configRef, {
-                        scriptUrl: scriptUrl,
-                        sheetId: sheetId,
-                        sheetName: sheetName,
-                        enabled: enabled,
-                        updatedAt: Date.now()
-                    });
-                    showAlert('설정이 저장되었습니다', 'success');
-                } catch (e) {
-                    console.error(e);
-                    showAlert('저장 실패', 'error');
-                }
-            };
-
-            // 즉시 동기화
-            document.getElementById('testSync').onclick = async () => {
-                const scriptUrl = document.getElementById('scriptUrl').value.trim();
-                const sheetId = document.getElementById('sheetId').value.trim();
-                const sheetName = document.getElementById('sheetName').value.trim();
-
-                if (!scriptUrl || !sheetId || !sheetName) {
-                    showAlert('설정을 먼저 저장하세요', 'error');
-                    return;
-                }
-
-                await syncToGoogleSheet(scriptUrl, sheetId, sheetName);
-            };
-        }
-
-        // 구글 시트로 데이터 전송
-        async function syncToGoogleSheet(scriptUrl, sheetId, sheetName) {
-            if (!scriptUrl || !sheetId || !sheetName) {
-                showAlert('구글 시트 설정이 필요합니다', 'error');
-                return;
-            }
-
-            // 진행상황 팝업 표시
-            openSmallModal('구글 시트 동기화', '진행 중...', `
-                <div style="text-align:center; padding:30px;">
-                    <div id="syncIcon" style="font-size:40px; margin-bottom:15px;">⏳</div>
-                    <p id="syncStatus" style="font-size:16px; color:#374151; margin-bottom:10px;">데이터 준비 중...</p>
-                    <p id="syncDetail" style="font-size:13px; color:#6b7280;"></p>
-                    <div style="margin-top:20px; background:#e5e7eb; border-radius:10px; height:10px; overflow:hidden;">
-                        <div id="syncProgress" style="background:#3b82f6; height:100%; width:0%; transition:width 0.5s;"></div>
-                    </div>
-                </div>
-            `);
-            document.getElementById('modalFooter').style.display = 'none';
-
-            try {
-                await new Promise(r => setTimeout(r, 300));
-                
-                // 전투력 순으로 정렬
-                const sortedData = [...allGuildData].sort((a, b) => b.power - a.power);
-                
-                document.getElementById('syncStatus').textContent = '데이터 정렬 완료';
-                document.getElementById('syncDetail').textContent = `총 ${sortedData.length}명 → [${sheetName}] 시트`;
-                document.getElementById('syncProgress').style.width = '20%';
-                
-                await new Promise(r => setTimeout(r, 500));
-
-                // 길드별 배경색 정의
-                const guildColors = {
-                    '사신': '#fff2cc',
-                    '축복': '#cfe2f3',
-                    '놀자': '#d9ead3',
-                    '루비': '#f4cccc'
-                };
-                const defaultColors = ['#e4d7f5', '#fce5cd', '#d0e0e3', '#ead1dc'];
-                let colorIdx = 0;
-                sortedData.forEach(user => {
-                    if (!guildColors[user.guild]) {
-                        guildColors[user.guild] = defaultColors[colorIdx % defaultColors.length];
-                        colorIdx++;
-                    }
-                });
-
-                document.getElementById('syncStatus').textContent = '구글 시트로 전송 중...';
-                document.getElementById('syncProgress').style.width = '40%';
-                
-                await new Promise(r => setTimeout(r, 300));
-
-                // 전체 데이터 준비
-                const payload = {
-                    sheetId: sheetId,
-                    sheetName: sheetName,
-                    users: sortedData.map(user => ({
-                        guild: user.guild,
-                        name: user.name,
-                        power: user.power,
-                        shape_legend: user.shape_legend || 0,
-                        shape_myth: user.shape_myth || 0,
-                        mount_legend: user.mount_legend || 0,
-                        mount_myth: user.mount_myth || 0,
-                        bgColor: guildColors[user.guild] || '#ffffff'
-                    }))
-                };
-
-                // iframe + form 방식으로 전송 (CORS 우회)
-                const iframeName = 'syncFrame_' + Date.now();
-                const iframe = document.createElement('iframe');
-                iframe.name = iframeName;
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
-
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = scriptUrl;
-                form.target = iframeName;
-                form.style.display = 'none';
-
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'data';
-                input.value = JSON.stringify(payload);
-                form.appendChild(input);
-
-                document.body.appendChild(form);
-                
-                document.getElementById('syncStatus').textContent = '서버에서 처리 중...';
-                document.getElementById('syncProgress').style.width = '60%';
-                
-                // 폼 제출
-                form.submit();
-
-                // 처리 대기
-                await new Promise(r => setTimeout(r, 2000));
-                
-                document.getElementById('syncProgress').style.width = '80%';
-                document.getElementById('syncStatus').textContent = '시트 업데이트 중...';
-                
-                await new Promise(r => setTimeout(r, 2000));
-                
-                document.getElementById('syncProgress').style.width = '100%';
-
-                // 정리
-                setTimeout(() => {
-                    if (form.parentNode) document.body.removeChild(form);
-                    if (iframe.parentNode) document.body.removeChild(iframe);
-                }, 1000);
-                
-                // 성공 표시
-                document.getElementById('modalBody').innerHTML = `
-                    <div style="text-align:center; padding:30px;">
-                        <div style="font-size:50px; margin-bottom:15px;">✅</div>
-                        <p style="font-size:18px; font-weight:600; color:#059669; margin-bottom:10px;">동기화 완료!</p>
-                        <p style="font-size:14px; color:#6b7280;">${sortedData.length}명의 데이터가 전송되었습니다.</p>
-                        <p style="font-size:12px; color:#9ca3af; margin-top:8px;">시트: ${sheetName}</p>
-                        <button class="btn btn-primary" onclick="closeModal()" style="margin-top:20px;">확인</button>
-                    </div>
-                `;
-                
-                // 로그 기록
-                await setDoc(doc(collection(db, "logs")), {
-                    who: isSuperAdmin ? 'SuperAdmin' : 'Admin',
-                    type: 'google_sheet_sync',
-                    old_value: '-',
-                    new_value: `${sortedData.length}명 → ${sheetName}`,
-                    createdAt: Date.now(),
-                    ip: await getIp()
-                });
-
-            } catch (e) {
-                console.error('Google Sheet Sync Error:', e);
-                document.getElementById('modalBody').innerHTML = `
-                    <div style="text-align:center; padding:30px;">
-                        <div style="font-size:50px; margin-bottom:15px;">❌</div>
-                        <p style="font-size:18px; font-weight:600; color:#dc2626; margin-bottom:10px;">동기화 실패</p>
-                        <p style="font-size:14px; color:#6b7280;">Apps Script 설정을 확인하세요.</p>
-                        <p style="font-size:12px; color:#9ca3af; margin-top:10px;">${e.message || e}</p>
-                        <button class="btn btn-primary" onclick="closeModal()" style="margin-top:20px;">확인</button>
-                    </div>
-                `;
             }
         }
 
@@ -2177,72 +2084,76 @@
             // 삭제 확인
             if(!await showConfirm('사용자 등록 해제', `<span style="color:#ef4444; font-weight:600;">[${name}]님을 등록 해제하시겠습니까?</span><br><br>• 사용자 정보는 영구 보관됩니다<br>• 삭제된 사용자 목록에서 확인 가능<br>• 복구는 불가능합니다`)) return;
             
-            // 삭제 사유 입력
-            openSmallModal('등록 해제 사유', '선택사항 - 나중에 참고용', `
-                <div class="form-group">
-                    <label class="form-label">사유 (선택사항)</label>
-                    <select id="deleteReason" class="form-input">
-                        <option value="자진 탈퇴">자진 탈퇴</option>
-                        <option value="장기 미접속">장기 미접속</option>
-                        <option value="길드 이동">길드 이동</option>
-                        <option value="규정 위반">규정 위반</option>
-                        <option value="기타">기타</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">상세 메모 (선택사항)</label>
-                    <textarea id="deleteMemo" class="form-input" rows="3" placeholder="추가 메모..."></textarea>
-                </div>
-            `);
-            
-            document.getElementById('modalSubmit').onclick = async () => {
-                const reason = document.getElementById('deleteReason').value;
-                const memo = document.getElementById('deleteMemo').value.trim();
+            // 삭제 사유 입력 (모달 충돌 방지를 위해 setTimeout 사용)
+            setTimeout(() => {
+                openSmallModal('등록 해제 사유', '선택사항 - 나중에 참고용', `
+                    <div class="form-group">
+                        <label class="form-label">사유 (선택사항)</label>
+                        <select id="deleteReason" class="form-input">
+                            <option value="자진 탈퇴">자진 탈퇴</option>
+                            <option value="장기 미접속">장기 미접속</option>
+                            <option value="길드 이동">길드 이동</option>
+                            <option value="규정 위반">규정 위반</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">상세 메모 (선택사항)</label>
+                        <textarea id="deleteMemo" class="form-input" rows="3" placeholder="추가 메모..."></textarea>
+                    </div>
+                `);
                 
-                try {
-                    // 1. 삭제 전에 사용자 정보 가져오기
-                    const userDoc = await getDoc(doc(db, "users", name));
-                    if (!userDoc.exists()) {
-                        showAlert('사용자를 찾을 수 없습니다', 'error');
-                        return;
-                    }
-                    
-                    const userData = userDoc.data();
-                    
-                    // 2. deletedUsers 컬렉션에 백업 저장
-                    await setDoc(doc(collection(db, "deletedUsers")), {
-                        ...userData,  // 모든 사용자 정보
-                        deletedAt: Date.now(),
-                        deletedBy: 'admin',
-                        deleteReason: reason,
-                        deleteMemo: memo || '',
-                        originalName: name,
-                        deletedIp: await getIp(),
-                        deletedDevice: navigator.userAgent
-                    });
-                    
-                    // 3. users 컬렉션에서 삭제
-                    await deleteDoc(doc(db, "users", name));
-                    
-                    // 4. 로그 기록
-                    await setDoc(doc(collection(db, "logs")), {
-                        who: name,
-                        type: 'user_deleted',
-                        old_value: '사용자 존재',
-                        new_value: `등록 해제 (사유: ${reason})`,
-                        createdAt: Date.now(),
-                        ip: await getIp(),
-                        device: navigator.userAgent
-                    });
-                    
-                    showAlert('등록 해제 완료 (정보는 영구 보관됨)', 'success');
-                    closeModal();
-                    setTimeout(() => location.reload(), 1000);
-                } catch (e) {
-                    console.error('Delete error:', e);
-                    showAlert('등록 해제 중 오류가 발생했습니다', 'error');
-                }
-            };
+                setTimeout(() => {
+                    document.getElementById('modalSubmit').onclick = async () => {
+                        const reason = document.getElementById('deleteReason').value;
+                        const memo = document.getElementById('deleteMemo').value.trim();
+                        
+                        try {
+                            // 1. 삭제 전에 사용자 정보 가져오기
+                            const userDoc = await getDoc(doc(db, "users", name));
+                            if (!userDoc.exists()) {
+                                showAlert('사용자를 찾을 수 없습니다', 'error');
+                                return;
+                            }
+                            
+                            const userData = userDoc.data();
+                            
+                            // 2. deletedUsers 컬렉션에 백업 저장
+                            await setDoc(doc(collection(db, "deletedUsers")), {
+                                ...userData,  // 모든 사용자 정보
+                                deletedAt: Date.now(),
+                                deletedBy: 'admin',
+                                deleteReason: reason,
+                                deleteMemo: memo || '',
+                                originalName: name,
+                                deletedIp: await getIp(),
+                                deletedDevice: navigator.userAgent
+                            });
+                            
+                            // 3. users 컬렉션에서 삭제
+                            await deleteDoc(doc(db, "users", name));
+                            
+                            // 4. 로그 기록
+                            await setDoc(doc(collection(db, "logs")), {
+                                who: name,
+                                type: 'user_deleted',
+                                old_value: '사용자 존재',
+                                new_value: `등록 해제 (사유: ${reason})`,
+                                createdAt: Date.now(),
+                                ip: await getIp(),
+                                device: navigator.userAgent
+                            });
+                            
+                            showAlert('등록 해제 완료 (정보는 영구 보관됨)', 'success');
+                            closeModal();
+                            setTimeout(() => location.reload(), 1000);
+                        } catch (e) {
+                            console.error('Delete error:', e);
+                            showAlert('등록 해제 중 오류가 발생했습니다', 'error');
+                        }
+                    };
+                }, 100);
+            }, 300);
         };
 
 
@@ -2335,28 +2246,23 @@
                     <table class="common-table" id="logTable">
                         <thead>
                             <tr>
-                                <th style="min-width: 130px;">시간</th>
-                                <th style="min-width: 100px;">대상</th>
-                                <th style="min-width: 180px;">작업</th>
-                                <th style="min-width: 200px;">내용</th>
-                                <th style="min-width: 120px;">IP</th>
-                                <th style="min-width: 200px;">브라우저</th>
+                                <th>시간</th>
+                                <th>대상</th>
+                                <th>작업</th>
+                                <th>내용</th>
                             </tr>
                         </thead>
                         <tbody>`;
             
             logs.forEach(l => {
-                const deviceShort = l.device.length > 50 ? l.device.substring(0, 50) + '...' : l.device;
                 const logType = formatLogType(l.type);
                 const logContent = formatLogContent(l);
                 
                 html += `<tr>
-                    <td>${l.time}</td>
+                    <td style="font-size:12px;">${l.time}</td>
                     <td><strong>${l.who}</strong></td>
                     <td><span style="white-space: nowrap;">${logType}</span></td>
                     <td>${logContent}</td>
-                    <td><code style="font-size:11px;">${l.ip}</code></td>
-                    <td title="${l.device}" style="font-size:11px;">${deviceShort}</td>
                 </tr>`; 
             });
             
@@ -2403,12 +2309,11 @@
                     <table class="common-table" id="deletedUsersTable">
                         <thead>
                             <tr>
-                                <th style="min-width: 100px;">닉네임</th>
-                                <th style="min-width: 80px;">길드</th>
-                                <th style="min-width: 100px;">전투력</th>
-                                <th style="min-width: 130px;">삭제일시</th>
-                                <th style="min-width: 100px;">사유</th>
-                                <th style="min-width: 150px;">메모</th>
+                                <th>닉네임</th>
+                                <th>길드</th>
+                                <th>전투력</th>
+                                <th>삭제일시</th>
+                                <th>사유</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -2420,7 +2325,6 @@
                     <td style="color:#3b82f6; font-weight:600;">${u.power.toLocaleString()}</td>
                     <td style="font-size:12px;">${u.deletedAt}</td>
                     <td><span style="padding:4px 8px; background:#fef2f2; color:#991b1b; border-radius:4px; font-size:12px;">${u.reason}</span></td>
-                    <td style="font-size:12px; color:#6b7280;">${u.memo || '-'}</td>
                 </tr>`;
             });
             
