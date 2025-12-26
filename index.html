@@ -663,9 +663,9 @@
         }
 
         function fromKST(dateString) {
-            // KST datetime-local 입력값을 UTC timestamp로 변환
-            const kstDate = new Date(dateString);
-            return kstDate.getTime() - (9 * 60 * 60 * 1000);
+            // datetime-local 입력값 (YYYY-MM-DDTHH:MM)을 KST로 간주하여 UTC timestamp로 변환
+            // 입력값에 +09:00을 붙여서 KST로 명시적 해석
+            return new Date(dateString + ':00+09:00').getTime();
         }
 
         function formatKSTDateTime(timestamp) {
