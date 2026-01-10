@@ -2919,17 +2919,17 @@
                     <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="margin-bottom: 0;">
                     <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">총 ${logs.length}개 로그</p>
                 </div>
-                <div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;">
-                    <table class="common-table" id="logTable" style="min-width: 1100px; table-layout: fixed;">
+                <div style="overflow-x: auto; overflow-y: visible; max-width: 100%; -webkit-overflow-scrolling: touch; padding-bottom: 10px;">
+                    <table class="common-table" id="logTable" style="min-width: 1000px; width: max-content;">
                         <thead>
                             <tr>
-                                <th style="width:145px;">시간</th>
-                                <th style="width:120px;">대상</th>
-                                <th style="width:110px;">작업</th>
-                                <th style="width:100px;">수정전</th>
-                                <th style="width:100px;">수정후</th>
-                                <th style="width:280px;">내용</th>
-                                <th style="width:180px;">작업자</th>
+                                <th style="min-width:140px; white-space:nowrap;">시간</th>
+                                <th style="min-width:100px; white-space:nowrap;">대상</th>
+                                <th style="min-width:100px; white-space:nowrap;">작업</th>
+                                <th style="min-width:90px; white-space:nowrap;">수정전</th>
+                                <th style="min-width:90px; white-space:nowrap;">수정후</th>
+                                <th style="min-width:200px; white-space:nowrap;">내용</th>
+                                <th style="min-width:130px; white-space:nowrap;">작업자</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -2960,11 +2960,11 @@
                             const newData = JSON.parse(l.newValue);
                             oldDisplay = oldData.power ? oldData.power.toLocaleString() : '-';
                             newDisplay = newData.power ? newData.power.toLocaleString() : '-';
-                            contentDisplay = l.changes || '변경없음';
+                            contentDisplay = l.changes || '정보 수정됨';
                         } catch(e) {
                             oldDisplay = '-';
-                            newDisplay = l.newValue === '관리자수정' ? '-' : '-';
-                            contentDisplay = l.newValue === '관리자수정' ? '관리자가 수정함' : '본인이 수정함';
+                            newDisplay = '-';
+                            contentDisplay = '정보 수정됨';
                         }
                         break;
                     
@@ -3044,7 +3044,9 @@
                 let workerDisplay = '-';
                 if (l.editedBy === 'self') {
                     workerDisplay = '<span style="color:#6b7280;">본인</span>';
-                } else if (l.editedBy && l.editedBy !== '-' && l.editedBy !== 'admin' && l.editedBy !== '아이디미기록') {
+                } else if (l.editedBy === 'admin' || l.editedBy === '아이디미기록') {
+                    workerDisplay = '<span style="color:#8b5cf6; font-weight:600;">👑 관리자</span>';
+                } else if (l.editedBy && l.editedBy !== '-') {
                     workerDisplay = `<span style="color:#8b5cf6; font-weight:600;">👑 ${l.editedBy}</span>`;
                 } else {
                     workerDisplay = '<span style="color:#9ca3af;">-</span>';
@@ -3052,11 +3054,11 @@
                 
                 html += `<tr>
                     <td style="font-size:12px; white-space:nowrap;">${l.time}</td>
-                    <td style="word-break:break-all;"><strong>${l.who}</strong></td>
-                    <td><span style="white-space:nowrap;">${logType}</span></td>
-                    <td style="color:#ef4444; word-break:break-all;">${oldDisplay}</td>
-                    <td style="color:#10b981; word-break:break-all;">${newDisplay}</td>
-                    <td style="font-size:12px; word-break:break-all;">${contentDisplay}</td>
+                    <td style="white-space:nowrap;"><strong>${l.who}</strong></td>
+                    <td style="white-space:nowrap;">${logType}</td>
+                    <td style="color:#ef4444; white-space:nowrap;">${oldDisplay}</td>
+                    <td style="color:#10b981; white-space:nowrap;">${newDisplay}</td>
+                    <td style="font-size:12px; max-width:200px;">${contentDisplay}</td>
                     <td style="font-size:12px; white-space:nowrap;">${workerDisplay}</td>
                 </tr>`; 
             });
