@@ -756,6 +756,7 @@
         let loggedInAdminId = null;
         let lockStartTime = 0;
         let lockEndTime = 0;
+        let biweeklyBaseTime = 0; // 2주 반복 기준 시간
         let spreadsheetConfig = null;
         const _0x = { a: "dGpkYWxzOTMyOA==", b: "dG5hbHM5MzI4QEA=" };
         
@@ -1030,6 +1031,36 @@
                     const data = docSnap.data();
                     lockStartTime = data.lockStartTime || 0;
                     lockEndTime = data.lockEndTime || 0;
+                    biweeklyBaseTime = data.biweeklyBaseTime || 0;
+                    
+                    // 2주 반복이 설정되어 있고, 현재 잠금 기간이 지났으면 다음 기간으로 자동 갱신
+                    if (biweeklyBaseTime > 0 && lockEndTime > 0) {
+                        const now = Date.now();
+                        if (now > lockEndTime) {
+                            // 다음 2주 기간 계산
+                            const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+                            let newStart = lockStartTime;
+                            let newEnd = lockEndTime;
+                            
+                            // 현재 시간이 지날 때까지 2주씩 추가
+                            while (newEnd < now) {
+                                newStart += twoWeeksMs;
+                                newEnd += twoWeeksMs;
+                            }
+                            
+                            // Firebase 업데이트
+                            await setDoc(docRef, {
+                                lockStartTime: newStart,
+                                lockEndTime: newEnd,
+                                biweeklyBaseTime: biweeklyBaseTime,
+                                lockType: 'biweekly'
+                            });
+                            
+                            lockStartTime = newStart;
+                            lockEndTime = newEnd;
+                            console.log('2주 반복 잠금 자동 갱신:', formatKSTDateTime(newStart), '~', formatKSTDateTime(newEnd));
+                        }
+                    }
                 }
                 updateLockUI();
             } catch (e) { console.log("Config error", e); }
@@ -1048,7 +1079,8 @@
                 addUserBtn.classList.add('disabled');
                 const remainMs = lockEndTime - Date.now();
                 const remainHours = Math.ceil(remainMs / (1000 * 60 * 60));
-                banner.innerText = `⛔ 관리자가 수정 잠금을 하여 수정이 불가능합니다 | 기간: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (약 ${remainHours}시간 남음)`;
+                const biweeklyText = biweeklyBaseTime > 0 ? ' (2주 반복)' : '';
+                banner.innerText = `⛔ 관리자가 수정 잠금을 하여 수정이 불가능합니다 | 기간: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)}${biweeklyText} (약 ${remainHours}시간 남음)`;
             } else {
                 banner.classList.remove('active');
                 addUserBtn.classList.remove('disabled');
@@ -2728,10 +2760,19 @@
             if (!isAdmin) return;
             
             let statusMsg = '';
+            let biweeklyStatusMsg = '';
+            
             if (lockStartTime > 0 && lockEndTime > 0) {
-                statusMsg = `현재 설정: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (KST)`;
+                statusMsg = `현재 잠금: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (KST)`;
             } else {
                 statusMsg = '현재 잠금 설정 없음';
+            }
+            
+            if (biweeklyBaseTime > 0) {
+                biweeklyStatusMsg = `<div style="background:#d1fae5; border:1px solid #10b981; border-radius:8px; padding:10px; margin-bottom:12px;">
+                    <p style="color:#065f46; font-weight:600; margin:0; font-size:13px;">✅ 2주 반복 활성화됨</p>
+                    <p style="color:#047857; font-size:12px; margin:4px 0 0;">잠금 종료 후 자동으로 2주 뒤로 갱신됩니다</p>
+                </div>`;
             }
 
             const startValue = lockStartTime > 0 ? toDatetimeLocalValue(lockStartTime) : '';
@@ -2739,6 +2780,20 @@
 
             openSmallModal('잠금 설정 (KST 기준)', '', `
                 <div style="margin-bottom:15px; color:#374151; font-size:13px; padding:10px; background:#f9fafb; border-radius:8px;">${statusMsg}</div>
+                ${biweeklyStatusMsg}
+                
+                <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
+                    <p style="color:#92400e; font-weight:600; margin:0 0 8px; font-size:13px;">⏰ 2주 반복 잠금 (길드전용)</p>
+                    <p style="color:#a16207; font-size:12px; margin:0 0 10px;">최초 1회 설정하면 2주마다 자동 반복됩니다<br>토요일 0시 ~ 월요일 0시 (KST)</p>
+                    <div style="display:flex; gap:8px;">
+                        <button id="biweeklyLockBtn" class="btn btn-primary" style="flex:1; background:#f59e0b;">${biweeklyBaseTime > 0 ? '🔄 다음 기간 확인' : '🔄 2주 반복 시작'}</button>
+                        ${biweeklyBaseTime > 0 ? '<button id="biweeklyStopBtn" class="btn btn-cancel" style="flex:1;">⏹️ 반복 중지</button>' : ''}
+                    </div>
+                </div>
+                
+                <hr style="border:none; border-top:1px solid #e5e7eb; margin:16px 0;">
+                <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">또는 수동으로 직접 설정 (1회성):</p>
+                
                 <div class="form-group">
                     <label class="form-label">잠금 시작 시간 (KST)</label>
                     <input type="datetime-local" id="lockStartInput" class="form-input" value="${startValue}">
@@ -2748,16 +2803,90 @@
                     <input type="datetime-local" id="lockEndInput" class="form-input" value="${endValue}">
                 </div>
                 <div class="form-group">
-                    <button id="unlockBtn" class="btn btn-cancel" style="width:100%">🔓 잠금 해제</button>
+                    <button id="unlockBtn" class="btn btn-cancel" style="width:100%">🔓 잠금 해제 (반복도 중지)</button>
                 </div>
                 <p style="font-size:12px; color:#6b7280; margin-top:-10px;">※ 한국 표준시(KST) 기준으로 설정됩니다</p>
             `);
 
+            // 2주 반복 중지 버튼
+            if (biweeklyBaseTime > 0) {
+                document.getElementById('biweeklyStopBtn').onclick = async () => {
+                    if (!await showConfirm('2주 반복 중지', '2주 반복을 중지하시겠습니까?\\n현재 잠금은 유지되고 반복만 중지됩니다.')) return;
+                    
+                    await setDoc(doc(db, "config", "system"), { 
+                        lockStartTime: lockStartTime,
+                        lockEndTime: lockEndTime,
+                        biweeklyBaseTime: 0,
+                        lockType: 'manual'
+                    });
+                    
+                    showAlert('2주 반복이 중지되었습니다', 'success'); 
+                    closeModal(); 
+                    setTimeout(() => location.reload(), 1000);
+                };
+            }
+
+            // 2주 반복 잠금 버튼 핸들러
+            document.getElementById('biweeklyLockBtn').onclick = async () => {
+                // 다음 토요일 0시(KST) 찾기
+                const now = toKST(Date.now());
+                const dayOfWeek = now.getUTCDay(); // 0=일, 6=토
+                
+                let daysUntilSaturday;
+                if (dayOfWeek === 6) {
+                    // 토요일이면 다음주 토요일
+                    daysUntilSaturday = 7;
+                } else if (dayOfWeek === 0) {
+                    // 일요일이면 다음주 토요일 (6일 후)
+                    daysUntilSaturday = 6;
+                } else {
+                    // 평일이면 이번주 토요일
+                    daysUntilSaturday = 6 - dayOfWeek;
+                }
+                
+                // 다음 토요일 0시 KST
+                const nextSaturdayKST = new Date(Date.UTC(
+                    now.getUTCFullYear(),
+                    now.getUTCMonth(),
+                    now.getUTCDate() + daysUntilSaturday,
+                    0, 0, 0
+                ));
+                
+                // 월요일 0시 KST (토요일 + 2일)
+                const nextMondayKST = new Date(nextSaturdayKST.getTime() + 2 * 24 * 60 * 60 * 1000);
+                
+                // KST를 UTC timestamp로 변환 (KST = UTC+9)
+                const startTime = nextSaturdayKST.getTime() - 9 * 60 * 60 * 1000;
+                const endTime = nextMondayKST.getTime() - 9 * 60 * 60 * 1000;
+                
+                const startStr = formatKSTDateTime(startTime);
+                const endStr = formatKSTDateTime(endTime);
+                
+                const confirmMsg = biweeklyBaseTime > 0 
+                    ? `다음 잠금 기간:\\n${startStr} ~ ${endStr}\\n\\n(2주 반복 유지)`
+                    : `다음 잠금 기간:\\n${startStr} ~ ${endStr}\\n\\n이후 2주마다 자동 반복됩니다.\\n설정하시겠습니까?`;
+                
+                if (!await showConfirm('2주 반복 잠금 설정', confirmMsg)) return;
+                
+                await setDoc(doc(db, "config", "system"), { 
+                    lockStartTime: startTime,
+                    lockEndTime: endTime,
+                    biweeklyBaseTime: startTime, // 기준 시간 저장
+                    lockType: 'biweekly'
+                });
+                
+                showAlert('2주 반복 잠금이 설정되었습니다', 'success'); 
+                closeModal(); 
+                setTimeout(() => location.reload(), 1000);
+            };
+
             document.getElementById('unlockBtn').onclick = async () => { 
-                if(!await showConfirm('잠금 해제', '잠금을 해제하시겠습니까?')) return; 
+                if(!await showConfirm('잠금 해제', '잠금을 해제하고 2주 반복도 중지하시겠습니까?')) return; 
                 await setDoc(doc(db, "config", "system"), { 
                     lockStartTime: 0, 
-                    lockEndTime: 0 
+                    lockEndTime: 0,
+                    biweeklyBaseTime: 0, // 반복도 해제
+                    lockType: null
                 }); 
                 showAlert('잠금이 해제되었습니다', 'success'); 
                 closeModal(); 
@@ -2783,10 +2912,12 @@
 
                 await setDoc(doc(db, "config", "system"), { 
                     lockStartTime: startTime,
-                    lockEndTime: endTime
+                    lockEndTime: endTime,
+                    biweeklyBaseTime: 0, // 수동 설정은 반복 없음
+                    lockType: 'manual'
                 });
                 
-                showAlert('잠금이 설정되었습니다', 'success'); 
+                showAlert('잠금이 설정되었습니다 (1회성)', 'success'); 
                 closeModal(); 
                 setTimeout(() => location.reload(), 1000);
             };
@@ -3865,14 +3996,26 @@
             openLargeModal('📦 주간 백업 관리', '전투력 현황을 백업하고 과거 기록을 조회합니다');
             
             let lastBackupTime = null;
+            let backupsList = [];
             try {
-                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
-                if (!backupsSnap.empty) {
-                    lastBackupTime = backupsSnap.docs[0].data().createdAt;
+                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(50)));
+                backupsSnap.forEach(doc => {
+                    const data = doc.data();
+                    backupsList.push({ id: doc.id, ...data });
+                });
+                if (backupsList.length > 0) {
+                    lastBackupTime = backupsList[0].createdAt;
                 }
             } catch(e) { console.error(e); }
             
             const lastBackupStr = lastBackupTime ? formatDateTime(lastBackupTime) : '없음';
+            
+            // 비교 백업 선택 옵션 생성
+            let compareOptions = '<option value="">최근 백업과 비교 (기본)</option>';
+            backupsList.forEach(b => {
+                const name = b.backupName || formatDateTime(b.createdAt);
+                compareOptions += `<option value="${b.id}">${name}</option>`;
+            });
             
             const html = `
                 <div style="margin-bottom:24px;">
@@ -3901,6 +4044,18 @@
                         </div>
                     </div>
                     
+                    <div style="background:#f9fafb; border-radius:12px; padding:16px; margin-bottom:20px;">
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="form-label" style="font-size:13px;">📝 백업 이름 (선택사항)</label>
+                            <input type="text" id="backupNameInput" class="form-input" placeholder="예: 1월 2주차, 길드전 전날 등" maxlength="50">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label" style="font-size:13px;">📊 비교 기준 백업</label>
+                            <select id="compareBackupSelect" class="form-input">${compareOptions}</select>
+                            <p style="font-size:11px; color:#6b7280; margin-top:4px;">전투력 증감을 어느 백업과 비교할지 선택합니다</p>
+                        </div>
+                    </div>
+                    
                     <div style="display:flex; gap:12px; flex-wrap:wrap;">
                         <button class="btn btn-primary" onclick="runManualBackup()" style="background:#0891b2;">📦 지금 백업하기</button>
                         <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">📋 백업 기록 보기</button>
@@ -3913,7 +4068,14 @@
         });
         
         window.runManualBackup = async function() {
-            if (!await showConfirm('백업 확인', '현재 전투력 현황을 백업하시겠습니까?')) return;
+            const backupName = document.getElementById('backupNameInput')?.value.trim() || '';
+            const compareBackupId = document.getElementById('compareBackupSelect')?.value || '';
+            
+            const confirmMsg = backupName 
+                ? `"${backupName}" 이름으로 백업하시겠습니까?` 
+                : '현재 전투력 현황을 백업하시겠습니까?';
+            
+            if (!await showConfirm('백업 확인', confirmMsg)) return;
             
             showAlert('백업 중...', 'success');
             
@@ -3921,13 +4083,27 @@
             
             let lastBackupData = {};
             try {
-                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
-                if (!backupsSnap.empty) {
-                    const lastBackup = backupsSnap.docs[0].data();
-                    if (lastBackup.users) {
-                        lastBackup.users.forEach(u => {
-                            lastBackupData[u.name] = u.power;
-                        });
+                // 비교할 백업 선택
+                if (compareBackupId) {
+                    const compareDoc = await getDoc(doc(db, "backups", compareBackupId));
+                    if (compareDoc.exists()) {
+                        const compareBackup = compareDoc.data();
+                        if (compareBackup.users) {
+                            compareBackup.users.forEach(u => {
+                                lastBackupData[u.name] = u.power;
+                            });
+                        }
+                    }
+                } else {
+                    // 기본: 최근 백업과 비교
+                    const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
+                    if (!backupsSnap.empty) {
+                        const lastBackup = backupsSnap.docs[0].data();
+                        if (lastBackup.users) {
+                            lastBackup.users.forEach(u => {
+                                lastBackupData[u.name] = u.power;
+                            });
+                        }
                     }
                 }
             } catch(e) { console.error(e); }
@@ -3967,7 +4143,9 @@
                     totalDiff: backupUsers.reduce((sum, u) => sum + u.diff, 0),
                     createdAt: now,
                     createdBy: loggedInAdminId || 'admin',
-                    type: 'manual'
+                    type: 'manual',
+                    backupName: backupName || null,
+                    compareBackupId: compareBackupId || null
                 });
                 
                 showAlert('백업이 완료되었습니다!', 'success');
@@ -3995,6 +4173,7 @@
                 }
                 
                 let html = `<div style="overflow-x:auto;"><table class="common-table"><thead><tr>
+                    <th>백업 이름</th>
                     <th>일시</th>
                     <th>유저 수</th>
                     <th>총 전투력</th>
@@ -4007,6 +4186,7 @@
                     const backup = docSnap.data();
                     const backupId = docSnap.id;
                     const time = formatDateTime(backup.createdAt);
+                    const backupName = backup.backupName || '-';
                     const totalPower = backup.totalPower ? backup.totalPower.toLocaleString() : '-';
                     const totalDiff = backup.totalDiff || 0;
                     const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
@@ -4014,6 +4194,7 @@
                     const type = backup.type === 'manual' ? '<span style="color:#f59e0b;">수동</span>' : '<span style="color:#10b981;">자동</span>';
                     
                     html += `<tr>
+                        <td style="font-weight:600; color:#374151;">${backupName}</td>
                         <td style="font-size:12px;">${time}</td>
                         <td>${backup.totalUsers || 0}명</td>
                         <td style="font-weight:600;">${totalPower}</td>
