@@ -4187,22 +4187,27 @@
                     const backupId = docSnap.id;
                     const time = formatDateTime(backup.createdAt);
                     const backupName = backup.backupName || '-';
+                    const backupNameEscaped = (backup.backupName || '').replace(/'/g, "\\'");
                     const totalPower = backup.totalPower ? backup.totalPower.toLocaleString() : '-';
                     const totalDiff = backup.totalDiff || 0;
                     const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
                     const diffSign = totalDiff >= 0 ? '+' : '';
                     const type = backup.type === 'manual' ? '<span style="color:#f59e0b;">수동</span>' : '<span style="color:#10b981;">자동</span>';
                     
-                    html += `<tr>
-                        <td style="font-weight:600; color:#374151;">${backupName}</td>
+                    html += `<tr id="backup-row-${backupId}">
+                        <td style="font-weight:600; color:#374151;">
+                            <span id="backup-name-${backupId}">${backupName}</span>
+                            <button onclick="editBackupName('${backupId}', '${backupNameEscaped}')" style="background:none; border:none; cursor:pointer; padding:2px 4px; font-size:12px;" title="이름 변경">✏️</button>
+                        </td>
                         <td style="font-size:12px;">${time}</td>
                         <td>${backup.totalUsers || 0}명</td>
                         <td style="font-weight:600;">${totalPower}</td>
                         <td style="color:${diffColor}; font-weight:600;">${diffSign}${totalDiff.toLocaleString()}</td>
                         <td>${type}</td>
-                        <td>
+                        <td style="white-space:nowrap;">
                             <button class="btn" onclick="viewBackupDetail('${backupId}')" style="padding:4px 8px; font-size:12px; background:#6366f1; color:white;">상세</button>
                             <button class="btn" onclick="downloadBackupExcel('${backupId}')" style="padding:4px 8px; font-size:12px; background:#10b981; color:white;">엑셀</button>
+                            <button class="btn" onclick="deleteBackup('${backupId}')" style="padding:4px 8px; font-size:12px; background:#ef4444; color:white;">삭제</button>
                         </td>
                     </tr>`;
                 });
@@ -4218,6 +4223,49 @@
                 <button class="btn" onclick="document.getElementById('backupManageBtn').click()" style="background:#0891b2; color:white;">← 백업 관리</button>
                 <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
             `;
+        };
+        
+        // 백업 이름 변경
+        window.editBackupName = async function(backupId, currentName) {
+            const newName = prompt('새 백업 이름을 입력하세요:', currentName || '');
+            if (newName === null) return; // 취소
+            
+            try {
+                await updateDoc(doc(db, "backups", backupId), {
+                    backupName: newName.trim() || null
+                });
+                
+                // UI 즉시 업데이트
+                const nameSpan = document.getElementById(`backup-name-${backupId}`);
+                if (nameSpan) {
+                    nameSpan.textContent = newName.trim() || '-';
+                }
+                
+                showAlert('백업 이름이 변경되었습니다', 'success');
+            } catch(e) {
+                console.error(e);
+                showAlert('이름 변경 중 오류가 발생했습니다', 'error');
+            }
+        };
+        
+        // 백업 삭제
+        window.deleteBackup = async function(backupId) {
+            if (!await showConfirm('백업 삭제', '이 백업을 삭제하시겠습니까?\\n삭제된 백업은 복구할 수 없습니다.')) return;
+            
+            try {
+                await deleteDoc(doc(db, "backups", backupId));
+                
+                // UI에서 행 제거
+                const row = document.getElementById(`backup-row-${backupId}`);
+                if (row) {
+                    row.remove();
+                }
+                
+                showAlert('백업이 삭제되었습니다', 'success');
+            } catch(e) {
+                console.error(e);
+                showAlert('삭제 중 오류가 발생했습니다', 'error');
+            }
         };
         
         window.viewBackupDetail = async function(backupId) {
