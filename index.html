@@ -186,6 +186,47 @@
         .guild-btn-arrow { font-size: 24px; color: #9ca3af; transition: transform 0.3s; }
         .guild-btn:hover .guild-btn-arrow { transform: translateX(4px); color: #3b82f6; }
 
+        /* 관리자 드롭다운 메뉴 */
+        .admin-dropdown { position: relative; display: none; }
+        .admin-dropdown.active { display: inline-block; }
+        .admin-dropdown-btn { 
+            display: flex; align-items: center; gap: 6px;
+            padding: 10px 16px; border-radius: 8px; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; white-space: nowrap;
+        }
+        .admin-dropdown-btn::after { content: '▼'; font-size: 10px; margin-left: 4px; transition: transform 0.2s; }
+        .admin-dropdown:hover .admin-dropdown-btn::after { transform: rotate(180deg); }
+        .admin-dropdown-menu {
+            position: absolute; top: 100%; left: 0; margin-top: 4px;
+            background: white; border: 1px solid #e5e7eb; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); min-width: 180px;
+            opacity: 0; visibility: hidden; transform: translateY(-10px);
+            transition: all 0.2s; z-index: 100;
+        }
+        .admin-dropdown:hover .admin-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .admin-dropdown-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; cursor: pointer; transition: background 0.15s;
+            border: none; background: none; width: 100%; text-align: left;
+            font-size: 13px; color: #374151;
+        }
+        .admin-dropdown-item:first-child { border-radius: 12px 12px 0 0; }
+        .admin-dropdown-item:last-child { border-radius: 0 0 12px 12px; }
+        .admin-dropdown-item:hover { background: #f3f4f6; }
+        .admin-dropdown-item.danger { color: #dc2626; }
+        .admin-dropdown-item.danger:hover { background: #fef2f2; }
+        .admin-dropdown-divider { height: 1px; background: #e5e7eb; margin: 4px 0; }
+        
+        .dropdown-member { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+        .dropdown-member:hover { background: linear-gradient(135deg, #2563eb, #1e40af); }
+        .dropdown-guild { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .dropdown-guild:hover { background: linear-gradient(135deg, #059669, #047857); }
+        .dropdown-data { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .dropdown-data:hover { background: linear-gradient(135deg, #d97706, #b45309); }
+        .dropdown-system { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+        .dropdown-system:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+
         
         .guild-detail-container { max-width: 900px; margin: 0 auto; padding: 40px 24px; display: none; }
         .guild-detail-container.active { display: block; }
@@ -298,8 +339,10 @@
         .btn-success:hover { background: #059669; }
         .btn-danger { background: #ef4444; color: #ffffff; }
         .btn-danger:hover { background: #dc2626; }
-        .alert { position: fixed; top: 24px; right: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 2000; animation: slideInRight 0.3s ease; max-width: 400px; }
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+        .alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 40px 16px 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08); z-index: 2000; animation: alertPopIn 0.3s ease; max-width: 400px; min-width: 250px; }
+        @keyframes alertPopIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+        .alert-close { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border: none; background: #f3f4f6; border-radius: 50%; color: #6b7280; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .alert-close:hover { background: #e5e7eb; color: #374151; }
         .alert-success { border-left: 4px solid #10b981; }
         .alert-error { border-left: 4px solid #ef4444; }
         .alert-title { font-weight: 600; color: #111827; margin-bottom: 4px; }
@@ -494,20 +537,51 @@
                 <button id="searchBtn" class="btn-common" style="padding: 8px 12px; background: #3b82f6; color: white;">🔍</button>
             </div>
             
-            <button id="approveBtn" class="btn-common btn-approve admin-only">✅ 승인 관리 <span id="pendingBadge" class="pending-badge" style="display:none;">0</span></button>
-            <button id="bulkAddBtn" class="btn-common btn-bulk admin-only">📝 일괄 등록/이동</button>
-            <button id="guildMoveBtn" class="btn-common admin-only" style="background:#0ea5e9; color:white;">🚀 길드 이동</button>
-            <button id="spreadsheetBtn" class="btn-common admin-only" style="background:#0f9d58; color:white;">📊 스프레드시트 연동</button>
-            <button id="excelBtn" class="btn-common btn-excel admin-only"><span>📊 엑셀 다운로드</span></button>
-            <button id="guildAddBtn" class="btn-common btn-guild-add admin-only"><span>🏰 길드 추가</span></button>
-            <button id="guildDeleteBtn" class="btn-common admin-only" style="background:#991b1b; color:white;">🏚️ 길드 삭제</button>
-            <button id="userManageBtn" class="btn-common btn-manage admin-only">👥 유저 관리</button>
-            <button id="bulkDeleteBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 일괄 등록 해제</button>
-            <button id="lockManageBtn" class="btn-common btn-lock admin-only">🔒 잠금 설정</button>
-            <button id="logViewBtn" class="btn-common btn-log super-admin-only" style="display:none;">📝 로그 확인</button>
-            <button id="deletedUsersBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 삭제된 사용자</button>
-            <button id="backupManageBtn" class="btn-common admin-only" style="background:#0891b2; color:white;">📦 주간 백업</button>
-            <button id="adminManageBtn" class="btn-common super-admin-only" style="background:#7c3aed; color:white; display:none;">👑 관리자 관리</button>
+            <!-- 회원 관리 드롭다운 -->
+            <div class="admin-dropdown admin-only" id="memberDropdown">
+                <button class="admin-dropdown-btn dropdown-member">👥 회원 관리</button>
+                <div class="admin-dropdown-menu">
+                    <button class="admin-dropdown-item" id="approveBtn">✅ 승인 관리 <span id="pendingBadge" class="pending-badge" style="display:none; margin-left:auto;">0</span></button>
+                    <button class="admin-dropdown-item" id="bulkAddBtn">📝 일괄 등록</button>
+                    <button class="admin-dropdown-item" id="userManageBtn">👤 유저 관리</button>
+                    <div class="admin-dropdown-divider"></div>
+                    <button class="admin-dropdown-item danger" id="bulkDeleteBtn">🗑️ 일괄 등록 해제</button>
+                </div>
+            </div>
+            
+            <!-- 길드 관리 드롭다운 -->
+            <div class="admin-dropdown admin-only" id="guildDropdown">
+                <button class="admin-dropdown-btn dropdown-guild">🏰 길드 관리</button>
+                <div class="admin-dropdown-menu">
+                    <button class="admin-dropdown-item" id="guildMoveBtn">🚀 길드 이동</button>
+                    <button class="admin-dropdown-item" id="guildAddBtn">➕ 길드 추가</button>
+                    <div class="admin-dropdown-divider"></div>
+                    <button class="admin-dropdown-item danger" id="guildDeleteBtn">🏚️ 길드 삭제</button>
+                </div>
+            </div>
+            
+            <!-- 데이터 관리 드롭다운 -->
+            <div class="admin-dropdown admin-only" id="dataDropdown">
+                <button class="admin-dropdown-btn dropdown-data">📊 데이터</button>
+                <div class="admin-dropdown-menu">
+                    <button class="admin-dropdown-item" id="spreadsheetBtn">📋 스프레드시트 연동</button>
+                    <button class="admin-dropdown-item" id="excelBtn">📥 엑셀 다운로드</button>
+                    <button class="admin-dropdown-item" id="backupManageBtn">📦 주간 백업</button>
+                </div>
+            </div>
+            
+            <!-- 시스템 관리 드롭다운 -->
+            <div class="admin-dropdown admin-only" id="systemDropdown">
+                <button class="admin-dropdown-btn dropdown-system">⚙️ 시스템</button>
+                <div class="admin-dropdown-menu">
+                    <button class="admin-dropdown-item" id="lockManageBtn">🔒 잠금 설정</button>
+                    <button class="admin-dropdown-item" id="deletedUsersBtn">🗑️ 삭제된 사용자</button>
+                    <div class="admin-dropdown-divider super-admin-only" style="display:none;"></div>
+                    <button class="admin-dropdown-item super-admin-only" id="logViewBtn" style="display:none;">📝 로그 확인</button>
+                    <button class="admin-dropdown-item super-admin-only" id="adminManageBtn" style="display:none;">👑 관리자 관리</button>
+                </div>
+            </div>
+            
             <button id="adminLoginBtn" class="btn-common btn-admin">관리자</button>
         </div>
     </div>
@@ -939,10 +1013,28 @@
             if(isAdmin) {
                 btn.textContent = isSuperAdmin ? '최종관리자님' : '관리자님'; 
                 btn.classList.add('logged-in');
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-flex');
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    if(el.classList.contains('admin-dropdown')) {
+                        el.style.display = 'inline-block';
+                    } else if(el.classList.contains('admin-dropdown-item')) {
+                        el.style.display = 'flex';
+                    } else if(el.classList.contains('admin-dropdown-divider')) {
+                        el.style.display = 'block';
+                    } else {
+                        el.style.display = 'inline-flex';
+                    }
+                });
                
                 if(isSuperAdmin) {
-                    document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'inline-flex');
+                    document.querySelectorAll('.super-admin-only').forEach(el => {
+                        if(el.classList.contains('admin-dropdown-item')) {
+                            el.style.display = 'flex';
+                        } else if(el.classList.contains('admin-dropdown-divider')) {
+                            el.style.display = 'block';
+                        } else {
+                            el.style.display = 'inline-flex';
+                        }
+                    });
                 } else {
                     document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'none');
                 }
@@ -1615,7 +1707,7 @@
                 </div>
                 <p style="font-size:12px; color:#666;">※ 기존 유저는 길드와 스펙이 변경되고 <b>전투력은 유지</b>됩니다.<br>※ 신규 유저는 전투력 0으로 생성됩니다.</p>
             `;
-            openLargeModal('일괄 등록 및 이동', '여러 유저를 한 번에 처리합니다.');
+            openLargeModal('일괄 등록', '여러 유저를 한 번에 등록합니다.');
             setModalBody(html);
 
             const footerBtn = document.createElement('button');
@@ -3677,11 +3769,14 @@
         });
 
         function showAlert(m, t='success') { 
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            
             const a = document.createElement('div'); 
             a.className = `alert alert-${t}`; 
-            a.innerHTML = `<div class="alert-title">${t==='success'?'성공':'알림'}</div><p class="alert-message" style="white-space: pre-line;">${m}</p>`; 
+            a.innerHTML = `<button class="alert-close" onclick="this.parentElement.remove()">×</button><div class="alert-title">${t==='success'?'성공':'알림'}</div><p class="alert-message" style="white-space: pre-line;">${m}</p>`; 
             document.body.appendChild(a); 
-            setTimeout(() => a.remove(), 5000); 
+            setTimeout(() => { if(a.parentElement) a.remove(); }, 5000); 
         }
 
         async function initializeDatabase() { 
@@ -3789,10 +3884,13 @@
             const guildStats = {};
             backupUsers.forEach(u => {
                 if (!guildStats[u.guild]) {
-                    guildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0 };
+                    guildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0, activeCount: 0 };
                 }
                 guildStats[u.guild].count++;
-                guildStats[u.guild].totalPower += u.power;
+                if (u.power > 0) {
+                    guildStats[u.guild].activeCount++;
+                    guildStats[u.guild].totalPower += u.power;
+                }
                 guildStats[u.guild].totalDiff += u.diff;
             });
             
@@ -3897,7 +3995,8 @@
                 let guildStatsHtml = '';
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
-                    const avgPower = Math.round(stats.totalPower / stats.count).toLocaleString();
+                    const activeCount = stats.activeCount || stats.count;
+                    const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
                     const diffSign = stats.totalDiff >= 0 ? '+' : '';
                     const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
                     guildStatsHtml += `<tr>
@@ -4077,10 +4176,13 @@
             const guildStats = {};
             backupUsers.forEach(u => {
                 if (!guildStats[u.guild]) {
-                    guildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0 };
+                    guildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0, activeCount: 0 };
                 }
                 guildStats[u.guild].count++;
-                guildStats[u.guild].totalPower += u.power;
+                if (u.power > 0) {
+                    guildStats[u.guild].activeCount++;
+                    guildStats[u.guild].totalPower += u.power;
+                }
                 guildStats[u.guild].totalDiff += u.diff;
             });
             
