@@ -3,112 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>길드 전투력 현황판</title>
+    <title>🐴 길드 전투력 현황판 2027</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* 기존 스타일 유지 */
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; background: #ffffff; color: #1a1a1a; line-height: 1.6; user-select: none; -webkit-user-select: none; caret-color: transparent; }
         input, textarea, select { user-select: text; -webkit-user-select: text; caret-color: auto; }
         
-        /* 겨울 제목 스타일 */
-        .winter-title {
+        
+        .newyear-title {
             display: inline-flex;
             align-items: center;
             position: relative;
             padding: 8px 12px;
-            background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 40%, #93c5fd 100%);
+            background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 40%, #f59e0b 100%);
             border-radius: 14px;
             box-shadow: 
-                0 4px 15px rgba(59, 130, 246, 0.25),
+                0 4px 15px rgba(239, 68, 68, 0.3),
                 inset 0 1px 2px rgba(255,255,255,0.8);
             overflow: hidden;
-            border: 2px solid #93c5fd;
+            border: 2px solid #dc2626;
             user-select: none;
             -webkit-user-select: none;
             caret-color: transparent;
         }
-        .winter-title * {
+        .newyear-title * {
             user-select: none;
             -webkit-user-select: none;
             caret-color: transparent;
         }
-        .winter-title::before {
+        .newyear-title::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.9) 2px, transparent 2px),
-                radial-gradient(circle at 25% 70%, rgba(255,255,255,0.7) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 40% 40%, rgba(255,255,255,0.8) 2px, transparent 2px),
-                radial-gradient(circle at 60% 80%, rgba(255,255,255,0.6) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 75% 30%, rgba(255,255,255,0.9) 2px, transparent 2px),
-                radial-gradient(circle at 90% 60%, rgba(255,255,255,0.7) 1.5px, transparent 1.5px);
-            animation: snowFall 6s linear infinite;
+                radial-gradient(circle at 10% 20%, rgba(255,215,0,0.9) 2px, transparent 2px),
+                radial-gradient(circle at 25% 70%, rgba(255,69,0,0.7) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 40% 40%, rgba(255,215,0,0.8) 2px, transparent 2px),
+                radial-gradient(circle at 60% 80%, rgba(255,69,0,0.6) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 75% 30%, rgba(255,215,0,0.9) 2px, transparent 2px),
+                radial-gradient(circle at 90% 60%, rgba(255,69,0,0.7) 1.5px, transparent 1.5px);
+            animation: sparkle 3s ease-in-out infinite;
             pointer-events: none;
         }
-        @keyframes snowFall {
-            0% { background-position: 0 -20px, 0 -30px, 0 -10px, 0 -25px, 0 -15px, 0 -35px; }
-            100% { background-position: 0 80px, 10px 70px, -5px 90px, 15px 75px, -10px 85px, 5px 65px; }
+        @keyframes sparkle {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
         }
-        .winter-title .title-svg {
+        .newyear-title .title-svg {
             height: 36px;
             width: auto;
             position: relative;
             z-index: 1;
         }
-        .winter-title .title-svg .snowflake-left,
-        .winter-title .title-svg .snowflake-right {
-            animation: snowflakeFloat 2.5s ease-in-out infinite;
-            transform-origin: center;
+        .newyear-title .title-svg .horse-left,
+        .newyear-title .title-svg .horse-right {
+            animation: horseGallop 1.5s ease-in-out infinite;
+            transform-origin: center bottom;
         }
-        .winter-title .title-svg .snowflake-right {
-            animation-delay: 0.5s;
+        .newyear-title .title-svg .horse-right {
+            animation-delay: 0.3s;
         }
-        @keyframes snowflakeFloat {
+        @keyframes horseGallop {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-2px) rotate(15deg); }
+            25% { transform: translateY(-3px) rotate(-5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-2px) rotate(3deg); }
         }
         
-        /* 길드 선택 제목 */
+        
         .guild-select-title {
             text-align: center;
             margin-bottom: 40px;
         }
-        .guild-select-title .winter-box {
+        .guild-select-title .newyear-box {
             display: inline-flex;
             align-items: center;
             padding: 16px 24px;
-            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 30%, #bfdbfe 70%, #93c5fd 100%);
+            background: linear-gradient(180deg, #fefce8 0%, #fef08a 30%, #fcd34d 70%, #f59e0b 100%);
             border-radius: 20px;
             box-shadow: 
-                0 8px 25px rgba(59, 130, 246, 0.3),
+                0 8px 25px rgba(239, 68, 68, 0.35),
                 inset 0 2px 4px rgba(255,255,255,0.9);
             position: relative;
             overflow: hidden;
-            border: 3px solid #60a5fa;
+            border: 3px solid #dc2626;
             user-select: none;
             -webkit-user-select: none;
             caret-color: transparent;
         }
-        .guild-select-title .winter-box * {
+        .guild-select-title .newyear-box * {
             user-select: none;
             -webkit-user-select: none;
             caret-color: transparent;
         }
-        .guild-select-title .winter-box::before {
+        .guild-select-title .newyear-box::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-image: 
-                radial-gradient(circle at 8% 25%, rgba(255,255,255,0.9) 3px, transparent 3px),
-                radial-gradient(circle at 20% 65%, rgba(255,255,255,0.7) 2px, transparent 2px),
-                radial-gradient(circle at 35% 35%, rgba(255,255,255,0.8) 2.5px, transparent 2.5px),
-                radial-gradient(circle at 50% 75%, rgba(255,255,255,0.6) 2px, transparent 2px),
-                radial-gradient(circle at 65% 20%, rgba(255,255,255,0.9) 3px, transparent 3px),
-                radial-gradient(circle at 80% 55%, rgba(255,255,255,0.7) 2px, transparent 2px),
-                radial-gradient(circle at 92% 40%, rgba(255,255,255,0.8) 2.5px, transparent 2.5px);
-            animation: snowFall 8s linear infinite;
+                radial-gradient(circle at 8% 25%, rgba(255,215,0,0.9) 3px, transparent 3px),
+                radial-gradient(circle at 20% 65%, rgba(255,69,0,0.7) 2px, transparent 2px),
+                radial-gradient(circle at 35% 35%, rgba(255,215,0,0.8) 2.5px, transparent 2.5px),
+                radial-gradient(circle at 50% 75%, rgba(255,69,0,0.6) 2px, transparent 2px),
+                radial-gradient(circle at 65% 20%, rgba(255,215,0,0.9) 3px, transparent 3px),
+                radial-gradient(circle at 80% 55%, rgba(255,69,0,0.7) 2px, transparent 2px),
+                radial-gradient(circle at 92% 40%, rgba(255,215,0,0.8) 2.5px, transparent 2.5px);
+            animation: sparkle 4s ease-in-out infinite;
             pointer-events: none;
         }
         .guild-select-title .select-title-svg {
@@ -117,20 +119,20 @@
             position: relative;
             z-index: 1;
         }
-        .guild-select-title .select-title-svg .snowflake-left,
-        .guild-select-title .select-title-svg .snowflake-right {
-            animation: decoSpin 4s ease-in-out infinite;
-            transform-origin: center;
+        .guild-select-title .select-title-svg .horse-left,
+        .guild-select-title .select-title-svg .horse-right {
+            animation: horseRun 2s ease-in-out infinite;
+            transform-origin: center bottom;
         }
-        .guild-select-title .select-title-svg .snowflake-right {
-            animation-delay: 1s;
+        .guild-select-title .select-title-svg .horse-right {
+            animation-delay: 0.5s;
             animation-direction: reverse;
         }
-        @keyframes decoSpin {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(10deg) scale(1.05); }
-            50% { transform: rotate(0deg) scale(1); }
-            75% { transform: rotate(-10deg) scale(1.05); }
+        @keyframes horseRun {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(2px) rotate(3deg); }
+            50% { transform: translateX(0) rotate(0deg); }
+            75% { transform: translateX(-2px) rotate(-3deg); }
         }
         
         .lock-banner { background: #ef4444; color: white; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; display: none; animation: slideDown 0.3s ease; }
@@ -163,10 +165,10 @@
         .btn-reset-pw { padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .btn-reset-pw:hover { background: #dc2626; }
         
-        /* 승인 대기 뱃지 */
+        
         .pending-badge { position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; border-radius: 10px; padding: 2px 6px; font-size: 11px; font-weight: 700; min-width: 18px; text-align: center; }
 
-        /* 길드 선택 화면 */
+        
         .guild-select-container { max-width: 1200px; margin: 0 auto; padding: 60px 24px; }
         .guild-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .guild-btn { background: #ffffff; border: 2px solid #e5e7eb; border-radius: 16px; padding: 30px 24px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 16px; user-select: none; -webkit-user-select: none; caret-color: transparent; }
@@ -184,7 +186,7 @@
         .guild-btn-arrow { font-size: 24px; color: #9ca3af; transition: transform 0.3s; }
         .guild-btn:hover .guild-btn-arrow { transform: translateX(4px); color: #3b82f6; }
 
-        /* 길드 상세 화면 */
+        
         .guild-detail-container { max-width: 900px; margin: 0 auto; padding: 40px 24px; display: none; }
         .guild-detail-container.active { display: block; }
         .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
@@ -250,7 +252,7 @@
         .power-value { font-weight: 600; color: #3b82f6; cursor: pointer; transition: all 0.15s ease; padding: 6px 12px; border-radius: 6px; display: inline-block; }
         .power-value:hover { background: #eff6ff; color: #2563eb; }
         
-        /* 전투력 블러 처리 */
+        
         .power-value.blurred { 
             filter: blur(8px); 
             user-select: none; 
@@ -261,7 +263,7 @@
             background: transparent;
         }
         
-        /* 스펙 아이콘 스타일 */
+        
         .spec-icons { font-size: 11px; margin-left: 2px; color: #666; display: inline-block; cursor: pointer; vertical-align: middle; flex-shrink: 0; white-space: nowrap; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; animation: fadeIn 0.2s ease; padding: 20px; overflow-y: auto; }
@@ -303,12 +305,12 @@
         .alert-title { font-weight: 600; color: #111827; margin-bottom: 4px; }
         .alert-message { font-size: 14px; color: #6b7280; margin: 0; }
         
-        /* 일괄 등록용 체크박스 스타일 */
+        
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
         .checkbox-label { display: flex; align-items: center; font-size: 14px; cursor: pointer; background: #f3f4f6; padding: 8px 12px; border-radius: 6px; }
         .checkbox-label input { margin-right: 8px; }
         
-        /* 상세 정보 모달 스타일 */
+        
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .info-item { background: #f9fafb; padding: 10px; border-radius: 8px; font-size: 14px; }
         .info-label { color: #6b7280; font-size: 12px; display: block; margin-bottom: 4px; }
@@ -323,7 +325,7 @@
         .spec-input-group label { font-size: 13px; color: #6b7280; margin-bottom: 4px; }
         .form-input.small { padding: 8px 12px; font-size: 14px; }
         
-        /* 시간 입력 그룹 */
+        
         .time-input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         @media (max-width: 768px) {
@@ -332,7 +334,7 @@
             .search-input { flex-grow: 1; width: auto; }
             .container { padding: 24px 16px; gap: 20px; }
             
-            /* 모바일 모달 최적화 */
+            
             .modal-overlay { padding: 10px; align-items: flex-start; }
             .modal { 
                 width: 95%; 
@@ -348,12 +350,12 @@
             }
             .modal-header h3 { 
                 font-size: 16px; 
-                padding-right: 30px; /* X 버튼 공간 확보 */
+                padding-right: 30px; 
             }
             .modal-body { 
                 padding: 16px;
                 overflow-y: auto;
-                -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+                -webkit-overflow-scrolling: touch; 
             }
             .modal-footer { 
                 padding: 12px 16px;
@@ -367,23 +369,23 @@
                 font-size: 20px;
             }
             .table-scroll-container {
-                max-height: 300px; /* 모바일에서 테이블 높이 줄이기 */
+                max-height: 300px; 
             }
             .btn {
                 padding: 10px 16px;
                 font-size: 13px;
             }
             .form-group {
-                margin-bottom: 16px; /* 모바일에서 간격 줄이기 */
+                margin-bottom: 16px; 
             }
             .form-input {
                 padding: 10px 14px;
                 font-size: 14px;
             }
             
-            /* 모바일 테이블 최적화 */
+            
             td { 
-                padding: 10px 12px; /* 좌우 패딩 축소 */
+                padding: 10px 12px; 
             }
             .player-name { 
                 font-size: 13px;
@@ -402,39 +404,39 @@
                 padding: 4px 8px;
             }
             
-            /* 길드 선택 화면 모바일 */
+            
             .guild-select-container { padding: 30px 16px; }
-            .guild-select-title .winter-box { padding: 10px 16px; }
+            .guild-select-title .newyear-box { padding: 10px 16px; }
             .guild-select-title .select-title-svg { height: 40px; }
-            .winter-title .title-svg { height: 30px; }
+            .newyear-title .title-svg { height: 30px; }
             .guild-buttons { gap: 12px; }
             .guild-btn { padding: 20px 16px; }
             .guild-btn-name { font-size: 16px; }
             .guild-btn-count { font-size: 12px; }
             
-            /* 길드 상세 화면 모바일 */
+            
             .guild-detail-container { padding: 20px 16px; }
             .guild-detail-title { font-size: 20px; }
             .back-btn { padding: 8px 14px; font-size: 13px; }
             
-            /* 테이블 스크롤 높이 조정 */
+            
             .table-scroll-container { 
                 max-height: 300px; 
             }
             
-            /* 버튼 크기 조정 */
+            
             .btn { 
                 padding: 10px 16px; 
                 font-size: 13px; 
             }
             
-            /* 폼 입력 크기 조정 */
+            
             .form-input { 
                 padding: 10px 12px; 
                 font-size: 14px; 
             }
             
-            /* 그리드 1열로 변경 */
+            
             .spec-grid, .time-input-group { 
                 grid-template-columns: 1fr; 
             }
@@ -447,29 +449,61 @@
     <div id="lockBanner" class="lock-banner">⛔ 현재 정보 수정이 잠겨있습니다</div>
 
     <div class="top-bar">
-        <h1 id="mainTitle" class="winter-title" style="cursor: pointer;" onclick="showGuildSelect()">
-            <svg class="title-svg" viewBox="0 0 340 50" xmlns="http://www.w3.org/2000/svg">
-                <!-- 눈송이 왼쪽 -->
-                <g class="snowflake-left">
-                    <path d="M25 10 L25 40 M10 25 L40 25 M15 15 L35 35 M35 15 L15 35" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"/>
-                    <circle cx="25" cy="25" r="4" fill="#60a5fa"/>
-                    <circle cx="25" cy="12" r="2.5" fill="#93c5fd"/>
-                    <circle cx="25" cy="38" r="2.5" fill="#93c5fd"/>
-                    <circle cx="12" cy="25" r="2.5" fill="#93c5fd"/>
-                    <circle cx="38" cy="25" r="2.5" fill="#93c5fd"/>
+        <h1 id="mainTitle" class="newyear-title" style="cursor: pointer;" onclick="showGuildSelect()">
+            <svg class="title-svg" viewBox="0 0 380 50" xmlns="http://www.w3.org/2000/svg">
+                
+                <g class="horse-left">
+                    
+                    <ellipse cx="28" cy="30" rx="12" ry="8" fill="#dc2626"/>
+                    
+                    <path d="M35 26 Q40 18 38 12" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    
+                    <ellipse cx="40" cy="12" rx="6" ry="4" fill="#dc2626"/>
+                    
+                    <path d="M38 8 L36 4 L38 6" fill="#b91c1c"/>
+                    <path d="M42 8 L44 4 L42 6" fill="#b91c1c"/>
+                    
+                    <circle cx="42" cy="11" r="1" fill="#fff"/>
+                    
+                    <path d="M36 10 Q32 16 34 22" stroke="#fbbf24" stroke-width="2" fill="none"/>
+                    <path d="M38 12 Q34 18 36 24" stroke="#f59e0b" stroke-width="2" fill="none"/>
+                    
+                    <line x1="20" y1="35" x2="18" y2="45" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="26" y1="36" x2="25" y2="45" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="32" y1="36" x2="33" y2="45" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="38" y1="34" x2="40" y2="44" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    
+                    <path d="M16 28 Q10 32 8 38" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    
+                    <text x="28" cy="48" text-anchor="middle" font-size="6" font-weight="bold" fill="#b91c1c">2027</text>
                 </g>
-                <!-- 텍스트 -->
-                <text x="170" y="33" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="22" font-weight="700" fill="#1e40af">
+                
+                <text x="190" y="33" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="22" font-weight="700" fill="#991b1b">
                     길드 전투력 현황판
                 </text>
-                <!-- 눈송이 오른쪽 -->
-                <g class="snowflake-right">
-                    <path d="M315 10 L315 40 M300 25 L330 25 M305 15 L325 35 M325 15 L305 35" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"/>
-                    <circle cx="315" cy="25" r="4" fill="#60a5fa"/>
-                    <circle cx="315" cy="12" r="2.5" fill="#93c5fd"/>
-                    <circle cx="315" cy="38" r="2.5" fill="#93c5fd"/>
-                    <circle cx="302" cy="25" r="2.5" fill="#93c5fd"/>
-                    <circle cx="328" cy="25" r="2.5" fill="#93c5fd"/>
+                
+                <g class="horse-right" transform="translate(380, 0) scale(-1, 1)">
+                    
+                    <ellipse cx="28" cy="30" rx="12" ry="8" fill="#dc2626"/>
+                    
+                    <path d="M35 26 Q40 18 38 12" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    
+                    <ellipse cx="40" cy="12" rx="6" ry="4" fill="#dc2626"/>
+                    
+                    <path d="M38 8 L36 4 L38 6" fill="#b91c1c"/>
+                    <path d="M42 8 L44 4 L42 6" fill="#b91c1c"/>
+                    
+                    <circle cx="42" cy="11" r="1" fill="#fff"/>
+                    
+                    <path d="M36 10 Q32 16 34 22" stroke="#fbbf24" stroke-width="2" fill="none"/>
+                    <path d="M38 12 Q34 18 36 24" stroke="#f59e0b" stroke-width="2" fill="none"/>
+                    
+                    <line x1="20" y1="35" x2="18" y2="45" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="26" y1="36" x2="25" y2="45" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="32" y1="36" x2="33" y2="45" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="38" y1="34" x2="40" y2="44" stroke="#b91c1c" stroke-width="3" stroke-linecap="round"/>
+                    
+                    <path d="M16 28 Q10 32 8 38" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/>
                 </g>
             </svg>
         </h1>
@@ -482,6 +516,7 @@
             
             <button id="approveBtn" class="btn-common btn-approve admin-only">✅ 승인 관리 <span id="pendingBadge" class="pending-badge" style="display:none;">0</span></button>
             <button id="bulkAddBtn" class="btn-common btn-bulk admin-only">📝 일괄 등록/이동</button>
+            <button id="guildMoveBtn" class="btn-common admin-only" style="background:#0ea5e9; color:white;">🚀 길드 이동</button>
             <button id="spreadsheetBtn" class="btn-common admin-only" style="background:#0f9d58; color:white;">📊 스프레드시트 연동</button>
             <button id="excelBtn" class="btn-common btn-excel admin-only"><span>📊 엑셀 다운로드</span></button>
             <button id="guildAddBtn" class="btn-common btn-guild-add admin-only"><span>🏰 길드 추가</span></button>
@@ -512,40 +547,64 @@
     
     <div class="container" id="mainContainer"></div>
     
-    <!-- 길드 선택 화면 -->
+    
     <div class="guild-select-container" id="guildSelectContainer">
         <div class="guild-select-title">
-            <div class="winter-box">
-                <svg class="select-title-svg" viewBox="0 0 380 60" xmlns="http://www.w3.org/2000/svg">
-                    <!-- 눈송이 왼쪽 -->
-                    <g class="snowflake-left">
-                        <path d="M30 12 L30 48 M12 30 L48 30 M18 18 L42 42 M42 18 L18 42" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="30" cy="30" r="5" fill="#3b82f6"/>
-                        <circle cx="30" cy="14" r="3" fill="#60a5fa"/>
-                        <circle cx="30" cy="46" r="3" fill="#60a5fa"/>
-                        <circle cx="14" cy="30" r="3" fill="#60a5fa"/>
-                        <circle cx="46" cy="30" r="3" fill="#60a5fa"/>
-                        <circle cx="20" cy="20" r="2.5" fill="#93c5fd"/>
-                        <circle cx="40" cy="20" r="2.5" fill="#93c5fd"/>
-                        <circle cx="20" cy="40" r="2.5" fill="#93c5fd"/>
-                        <circle cx="40" cy="40" r="2.5" fill="#93c5fd"/>
+            <div class="newyear-box">
+                <svg class="select-title-svg" viewBox="0 0 420 60" xmlns="http://www.w3.org/2000/svg">
+                    
+                    <g class="horse-left">
+                        
+                        <ellipse cx="32" cy="35" rx="14" ry="9" fill="#dc2626"/>
+                        
+                        <path d="M40 30 Q46 20 44 12" stroke="#dc2626" stroke-width="7" fill="none" stroke-linecap="round"/>
+                        
+                        <ellipse cx="46" cy="12" rx="7" ry="5" fill="#dc2626"/>
+                        
+                        <path d="M44 7 L41 2 L44 5" fill="#b91c1c"/>
+                        <path d="M48 7 L51 2 L48 5" fill="#b91c1c"/>
+                        
+                        <circle cx="49" cy="11" r="1.5" fill="#fff"/>
+                        
+                        <path d="M42 9 Q37 16 39 25" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+                        <path d="M44 11 Q39 19 41 27" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                        
+                        <line x1="22" y1="41" x2="20" y2="53" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="29" y1="42" x2="28" y2="53" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="37" y1="42" x2="38" y2="53" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="44" y1="40" x2="46" y2="52" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        
+                        <path d="M18 32 Q11 37 8 45" stroke="#fbbf24" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        
+                        <text x="32" y="58" text-anchor="middle" font-size="7" font-weight="bold" fill="#b91c1c">2027</text>
                     </g>
-                    <!-- 텍스트 -->
-                    <text x="190" y="40" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="28" font-weight="700" fill="#1e3a8a">
-                        길드를 선택하세요
+                    
+                    <text x="210" y="40" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="28" font-weight="700" fill="#991b1b">
+                        🎊 길드를 선택하세요 🎊
                     </text>
-                    <!-- 눈송이 오른쪽 -->
-                    <g class="snowflake-right">
-                        <path d="M350 12 L350 48 M332 30 L368 30 M338 18 L362 42 M362 18 L338 42" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="350" cy="30" r="5" fill="#3b82f6"/>
-                        <circle cx="350" cy="14" r="3" fill="#60a5fa"/>
-                        <circle cx="350" cy="46" r="3" fill="#60a5fa"/>
-                        <circle cx="334" cy="30" r="3" fill="#60a5fa"/>
-                        <circle cx="366" cy="30" r="3" fill="#60a5fa"/>
-                        <circle cx="340" cy="20" r="2.5" fill="#93c5fd"/>
-                        <circle cx="360" cy="20" r="2.5" fill="#93c5fd"/>
-                        <circle cx="340" cy="40" r="2.5" fill="#93c5fd"/>
-                        <circle cx="360" cy="40" r="2.5" fill="#93c5fd"/>
+                    
+                    <g class="horse-right" transform="translate(420, 0) scale(-1, 1)">
+                        
+                        <ellipse cx="32" cy="35" rx="14" ry="9" fill="#dc2626"/>
+                        
+                        <path d="M40 30 Q46 20 44 12" stroke="#dc2626" stroke-width="7" fill="none" stroke-linecap="round"/>
+                        
+                        <ellipse cx="46" cy="12" rx="7" ry="5" fill="#dc2626"/>
+                        
+                        <path d="M44 7 L41 2 L44 5" fill="#b91c1c"/>
+                        <path d="M48 7 L51 2 L48 5" fill="#b91c1c"/>
+                        
+                        <circle cx="49" cy="11" r="1.5" fill="#fff"/>
+                        
+                        <path d="M42 9 Q37 16 39 25" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+                        <path d="M44 11 Q39 19 41 27" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                        
+                        <line x1="22" y1="41" x2="20" y2="53" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="29" y1="42" x2="28" y2="53" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="37" y1="42" x2="38" y2="53" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="44" y1="40" x2="46" y2="52" stroke="#b91c1c" stroke-width="4" stroke-linecap="round"/>
+                        
+                        <path d="M18 32 Q11 37 8 45" stroke="#fbbf24" stroke-width="4" fill="none" stroke-linecap="round"/>
                     </g>
                 </svg>
             </div>
@@ -553,7 +612,7 @@
         <div class="guild-buttons" id="guildButtons"></div>
     </div>
     
-    <!-- 길드 상세 화면 -->
+    
     <div class="guild-detail-container" id="guildDetailContainer">
         <button class="back-btn" onclick="showGuildSelect()">← 길드 목록으로</button>
         <div class="guild-detail-header">
@@ -589,48 +648,51 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- 전역 변수 ---
+       
         let allGuildData = [];
         let guildList = []; 
         let isAdmin = false;
-        let isSuperAdmin = false; // 최종 관리자 여부
-        let loggedInUser = null; // 현재 로그인한 사용자 닉네임
+        let isSuperAdmin = false;
+        let loggedInUser = null;
+        let loggedInAdminId = null;
         let lockStartTime = 0;
         let lockEndTime = 0;
-        let spreadsheetConfig = null; // 스프레드시트 설정
-        const SUPER_ADMIN_HASH = { id: "dGpkYWxzOTMyOA==", pw: "dG5hbHM5MzI4QEA=" }; // 최종 관리자
+        let spreadsheetConfig = null;
+        const _0x = { a: "dGpkYWxzOTMyOA==", b: "dG5hbHM5MzI4QEA=" };
         
-        // 관리자 세션 관리 (2시간 = 7200000ms)
+       
         const ADMIN_SESSION_TIMEOUT = 2 * 60 * 60 * 1000;
         let adminSessionTimer = null;
         
-        // 관리자 활동 감지 및 세션 갱신
+       
         function resetAdminSessionTimer() {
             if (!isAdmin) return;
             
-            // 마지막 활동 시간 저장
+           
             sessionStorage.setItem('adminLastActivity', Date.now().toString());
             
-            // 기존 타이머 취소
+           
             if (adminSessionTimer) {
                 clearTimeout(adminSessionTimer);
             }
             
-            // 새 타이머 설정 (2시간)
+           
             adminSessionTimer = setTimeout(() => {
                 if (isAdmin) {
-                    adminLogout(true); // 자동 로그아웃
+                    adminLogout(true);
                 }
             }, ADMIN_SESSION_TIMEOUT);
         }
         
-        // 관리자 로그아웃 함수
+       
         async function adminLogout(isAuto = false) {
             isAdmin = false;
             isSuperAdmin = false;
+            loggedInAdminId = null;
             sessionStorage.removeItem('isAdmin');
             sessionStorage.removeItem('isSuperAdmin');
             sessionStorage.removeItem('adminLastActivity');
+            sessionStorage.removeItem('loggedInAdminId');
             
             if (adminSessionTimer) {
                 clearTimeout(adminSessionTimer);
@@ -643,29 +705,29 @@
                 showAlert('로그아웃 되었습니다', 'success');
             }
             
-            // UI 업데이트 및 블러 다시 적용
+           
             updateAdminUI();
             await loadData();
         }
         
-        // 관리자 세션 체크 (페이지 로드 시)
+       
         function checkAdminSession() {
             const lastActivity = sessionStorage.getItem('adminLastActivity');
             if (lastActivity && isAdmin) {
                 const elapsed = Date.now() - parseInt(lastActivity);
                 if (elapsed >= ADMIN_SESSION_TIMEOUT) {
-                    // 2시간 초과 - 로그아웃
+                   
                     adminLogout(true);
                     return false;
                 } else {
-                    // 세션 유효 - 타이머 재설정
+                   
                     resetAdminSessionTimer();
                 }
             }
             return true;
         }
         
-        // 활동 이벤트 감지
+       
         ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(eventType => {
             document.addEventListener(eventType, () => {
                 if (isAdmin) {
@@ -674,15 +736,15 @@
             }, { passive: true });
         });
 
-        // --- KST 변환 함수 ---
+       
         function toKST(timestamp) {
-            // UTC를 KST(UTC+9)로 변환
+           
             return new Date(timestamp + (9 * 60 * 60 * 1000));
         }
 
         function fromKST(dateString) {
-            // datetime-local 입력값 (YYYY-MM-DDTHH:MM)을 KST로 간주하여 UTC timestamp로 변환
-            // 입력값에 +09:00을 붙여서 KST로 명시적 해석
+           
+           
             return new Date(dateString + ':00+09:00').getTime();
         }
 
@@ -706,36 +768,121 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        // --- 초기화 ---
+       
         async function init() {
-            // 1. 세션 스토리지에서 관리자 상태 복원
+           
             if (sessionStorage.getItem('isAdmin') === 'true') { 
                 isAdmin = true;
                 if (sessionStorage.getItem('isSuperAdmin') === 'true') {
                     isSuperAdmin = true;
                 }
+               
+                loggedInAdminId = sessionStorage.getItem('loggedInAdminId') || null;
                 
-                // 관리자 세션 만료 체크
+               
                 if (!checkAdminSession()) {
-                    return; // 세션 만료로 로그아웃됨
+                    return;
                 }
                 
                 updateAdminUI(); 
-                await checkPendingUsers(); // 승인 대기 유저 확인
+                await checkPendingUsers();
+                await checkDuplicateNicknames();
             } else {
-                // 2. 세션이 없으면 자동 로그인 시도
-                await tryAutoLogin();
+               
+                const autoLoggedIn = await tryAutoLogin();
+                if (autoLoggedIn && isAdmin) {
+                    await checkDuplicateNicknames();
+                }
             }
             
-            // 자동 로그인 체크 (일반 사용자)
+           
             await checkAutoLogin();
             
             await checkLockStatus();
-            await loadSpreadsheetConfig(); // 스프레드시트 설정 로드
+            await loadSpreadsheetConfig();
             await loadData();
         }
         
-        // 자동 로그인 체크
+       
+        async function checkDuplicateNicknames() {
+            if (!isAdmin) return;
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                const nicknameMap = {};
+                
+                querySnapshot.forEach((docSnap) => {
+                    const user = docSnap.data();
+                    const name = user.name;
+                    const guild = user.guild;
+                    
+                    if (!nicknameMap[name]) {
+                        nicknameMap[name] = [];
+                    }
+                    nicknameMap[name].push(guild);
+                });
+                
+               
+                const duplicates = [];
+                for (const [name, guilds] of Object.entries(nicknameMap)) {
+                    if (guilds.length > 1) {
+                        duplicates.push({ name, guilds });
+                    }
+                }
+                
+                if (duplicates.length > 0) {
+                    let alertMsg = '⚠️ 중복 닉네임 발견!\n\n';
+                    duplicates.forEach(dup => {
+                        alertMsg += `• ${dup.name}: ${dup.guilds.join(', ')}\n`;
+                    });
+                    alertMsg += '\n유저 관리에서 정리해주세요.';
+                    
+                   
+                    showDuplicateAlert(duplicates);
+                }
+            } catch (e) {
+                console.error('중복 닉네임 체크 오류:', e);
+            }
+        }
+        
+       
+        function showDuplicateAlert(duplicates) {
+            openLargeModal('⚠️ 중복 닉네임 경고', '다른 길드에 동일한 닉네임이 존재합니다');
+            
+            let html = `
+                <div style="background:#fef2f2; border:2px solid #ef4444; border-radius:12px; padding:20px; margin-bottom:16px;">
+                    <p style="color:#dc2626; font-weight:600; margin-bottom:12px;">🚨 아래 닉네임이 여러 길드에 중복되어 있습니다!</p>
+                    <p style="color:#7f1d1d; font-size:13px;">동일인이라면 하나로 통합하고, 다른 사람이라면 닉네임을 변경해주세요.</p>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="common-table">
+                        <thead>
+                            <tr>
+                                <th>닉네임</th>
+                                <th>소속 길드</th>
+                                <th>중복 개수</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            duplicates.forEach(dup => {
+                html += `<tr>
+                    <td><strong style="color:#dc2626;">${dup.name}</strong></td>
+                    <td>${dup.guilds.map(g => `<span style="background:#fee2e2; padding:2px 8px; border-radius:4px; margin:2px; display:inline-block;">${g}</span>`).join(' ')}</td>
+                    <td><span style="background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-weight:600;">${dup.guilds.length}개</span></td>
+                </tr>`;
+            });
+            
+            html += `</tbody></table></div>
+                <div style="margin-top:16px; text-align:right;">
+                    <button class="btn btn-primary" onclick="closeModal()">확인</button>
+                </div>`;
+            
+            setModalBody(html);
+            document.getElementById('modalFooter').style.display = 'none';
+        }
+        
+       
         async function checkAutoLogin() {
             const autoLogin = localStorage.getItem('autoLogin');
             if (autoLogin) {
@@ -745,16 +892,16 @@
                     
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        // 비밀번호가 일치하면 자동 로그인
+                       
                         if (userData.password === data.password) {
                             loggedInUser = data.username;
                             console.log('자동 로그인:', loggedInUser);
                         } else {
-                            // 비밀번호가 변경되었으면 자동 로그인 해제
+                           
                             localStorage.removeItem('autoLogin');
                         }
                     } else {
-                        // 사용자가 삭제되었으면 자동 로그인 해제
+                       
                         localStorage.removeItem('autoLogin');
                     }
                 } catch (e) {
@@ -831,7 +978,7 @@
                 btn.textContent = isSuperAdmin ? '최종관리자님' : '관리자님'; 
                 btn.classList.add('logged-in');
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-flex');
-                // 슈퍼 관리자 전용 UI
+               
                 if(isSuperAdmin) {
                     document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = 'inline-flex');
                 } else {
@@ -839,7 +986,7 @@
                 }
                 updateLockUI();
             } else {
-                // 로그아웃 상태
+               
                 btn.textContent = '관리자';
                 btn.classList.remove('logged-in');
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
@@ -862,7 +1009,7 @@
             else { guildList = ['사신', '축복', '놀자', '루비']; await setDoc(docRef, { names: guildList }); }
         }
 
-        // 길드별 데이터 저장용
+       
         let guildDataMap = {};
         let currentGuild = null;
 
@@ -887,16 +1034,16 @@
                 else if (guildList.includes(user.guild)) guildDataMap[user.guild] = [user];
             });
 
-            // 각 길드 정렬
+           
             Object.keys(guildDataMap).forEach(guildName => {
                 guildDataMap[guildName].sort((a, b) => b.power - a.power);
                 allGuildData.push(...guildDataMap[guildName]);
             });
 
-            // 길드 선택 버튼 렌더링
+           
             renderGuildButtons();
             
-            // 현재 보고 있던 길드가 있으면 다시 표시
+           
             if (currentGuild && guildList.includes(currentGuild)) {
                 showGuildDetail(currentGuild);
             } else {
@@ -981,14 +1128,14 @@
             });
         }
 
-        // --- 기능: 사용자 조회 및 상세 보기 ---
+       
         async function showUserInfo(name) {
             const docRef = doc(db, "users", name);
             const snap = await getDoc(docRef);
             if(!snap.exists()) return;
             const u = snap.data();
 
-            // 블러 처리 여부 결정
+           
             const isBlurred = !isAdmin && (loggedInUser !== name);
 
             const showCount = (count) => {
@@ -999,16 +1146,14 @@
                 }
             };
 
-            // 갱신일 포맷팅 (관리자만 표시)
-            let updatedInfo = '';
+                       let updatedInfo = '';
             if (isAdmin && u.updatedAt) {
                 const updatedDate = formatDateTime(u.updatedAt);
                 const isAdminUpdate = u.updatedBy === 'admin';
                 updatedInfo = `<p style="font-size:12px; color:#6b7280; margin-top:8px;">갱신일: ${updatedDate}${isAdminUpdate ? ' (관리자)' : ''}</p>`;
             }
 
-            // 닉네임 변경 버튼은 관리자만 표시
-            const renameButton = isAdmin ? `<button class="btn btn-rename" onclick="window.openRenameModal('${name}')" style="flex:1">🔄 닉네임 변경</button>` : '';
+                       const renameButton = isAdmin ? `<button class="btn btn-rename" onclick="window.openRenameModal('${name}')" style="flex:1">🔄 닉네임 변경</button>` : '';
 
             const content = `
                 <div class="info-grid">
@@ -1038,8 +1183,7 @@
             document.getElementById('modalFooter').style.display = 'none';
         }
 
-        // --- 닉네임 변경 기능 (관리자 전용) ---
-        window.openRenameModal = async function(oldName) {
+               window.openRenameModal = async function(oldName) {
             if (!isAdmin) {
                 showAlert('❌ 닉네임 변경은 관리자만 가능합니다', 'error');
                 return;
@@ -1068,32 +1212,28 @@
                     return;
                 }
 
-                // 중복 체크
-                const checkDoc = await getDoc(doc(db, "users", newName));
+                               const checkDoc = await getDoc(doc(db, "users", newName));
                 if (checkDoc.exists()) {
                     showAlert('이미 존재하는 닉네임입니다', 'error');
                     return;
                 }
 
                 try {
-                    // 기존 데이터 가져오기
-                    const oldDocRef = doc(db, "users", oldName);
+                                       const oldDocRef = doc(db, "users", oldName);
                     const oldDocSnap = await getDoc(oldDocRef);
                     const userData = oldDocSnap.data();
 
-                    // 새 닉네임으로 문서 생성
-                    userData.name = newName;
+                                       userData.name = newName;
                     await setDoc(doc(db, "users", newName), userData);
 
-                    // 기존 문서 삭제
-                    await deleteDoc(oldDocRef);
+                                       await deleteDoc(oldDocRef);
 
-                    // 로그 기록
-                    await setDoc(doc(collection(db, "logs")), {
+                                       await setDoc(doc(collection(db, "logs")), {
                         who: `${oldName} → ${newName}`,
                         type: 'nickname_change',
                         old_value: oldName,
                         new_value: newName,
+                        editedBy: loggedInAdminId || 'admin',
                         createdAt: Date.now(),
                         ip: await getIp(),
                         device: navigator.userAgent,
@@ -1113,7 +1253,7 @@
             };
         };
 
-        // --- 기능: 사용자 등록 (승인 대기 상태로) ---
+       
         document.getElementById('addUserBtn').addEventListener('click', () => {
             if (isSystemLocked() && !isAdmin) { 
                 const lockMsg = `관리자가 수정 잠금을 하여 수정이 불가능합니다.\n\n기간: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (KST)`;
@@ -1136,14 +1276,12 @@
                 const powerStr = document.getElementById('newUserPower').value.replace(/,/g, "").trim();
                 const pw = document.getElementById('newUserPw').value;
 
-                // 닉네임 체크
-                if (!name) {
+                               if (!name) {
                     showAlert('닉네임을 입력해주세요', 'error');
                     return;
                 }
                 
-                // 전투력 체크
-                if (!powerStr) {
+                               if (!powerStr) {
                     showAlert('전투력을 입력해주세요', 'error');
                     return;
                 }
@@ -1153,14 +1291,13 @@
                     return;
                 }
                 
-                // 비밀번호 체크
+               
                 if (!/^\d{4}$/.test(pw)) {
                     showAlert('비밀번호는 4자리 숫자로 입력해주세요', 'error');
                     return;
                 }
 
-                // 중복 체크 (users + pendingUsers 모두)
-                const userDocRef = doc(db, "users", name);
+                               const userDocRef = doc(db, "users", name);
                 const pendingDocRef = doc(db, "pendingUsers", name);
                 const [userSnap, pendingSnap] = await Promise.all([
                     getDoc(userDocRef),
@@ -1174,8 +1311,7 @@
 
                 try {
                     const power = Number(powerStr);
-                    // 승인 대기 상태로 저장
-                    await setDoc(pendingDocRef, { 
+                                       await setDoc(pendingDocRef, { 
                         guild, 
                         name, 
                         power, 
@@ -1207,8 +1343,7 @@
             };
         });
 
-        // --- 승인 관리 기능 ---
-        document.getElementById('approveBtn').addEventListener('click', async () => {
+               document.getElementById('approveBtn').addEventListener('click', async () => {
             if (!isAdmin) return;
 
             openLargeModal('승인 관리', '등록 요청 목록');
@@ -1241,8 +1376,7 @@
             setModalBody(html);
         });
 
-        // 승인 처리
-        window.approveUser = async function(name) {
+               window.approveUser = async function(name) {
             if (!await showConfirm('사용자 승인', `[${name}]님의 등록을 승인하시겠습니까?`)) return;
 
             try {
@@ -1256,18 +1390,16 @@
 
                 const userData = pendingSnap.data();
                 
-                // users 컬렉션에 추가
-                await setDoc(doc(db, "users", name), userData);
+                               await setDoc(doc(db, "users", name), userData);
                 
-                // pendingUsers에서 삭제
-                await deleteDoc(pendingRef);
+                               await deleteDoc(pendingRef);
                 
-                // 로그 기록
-                await setDoc(doc(collection(db, "logs")), {
+                               await setDoc(doc(collection(db, "logs")), {
                     who: name,
                     type: 'user_approved',
                     old_value: '승인대기',
                     new_value: '승인완료',
+                    editedBy: loggedInAdminId || 'admin',
                     createdAt: Date.now(),
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1286,8 +1418,7 @@
             }
         };
 
-        // 거부 처리
-        window.rejectUser = async function(name) {
+               window.rejectUser = async function(name) {
             if (!await showConfirm('등록 거부', `[${name}]님의 등록을 거부하시겠습니까?<br><span style="color:#ef4444;">이 작업은 취소할 수 없습니다.</span>`)) return;
 
             try {
@@ -1299,6 +1430,7 @@
                     type: 'user_rejected',
                     old_value: '승인대기',
                     new_value: '거부됨',
+                    editedBy: loggedInAdminId || 'admin',
                     createdAt: Date.now(),
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1313,7 +1445,7 @@
             }
         };
 
-        // --- 기능: 유저 전체 정보 수정 (스펙 포함) ---
+       
         function openUserEditModal(u) {
             const guildOptions = guildList.map(g => `<option value="${g}" ${g===u.guild?'selected':''}>${g}</option>`).join('');
             
@@ -1356,7 +1488,7 @@
                 `;
             }
             
-            // 관리자용 삭제 버튼
+           
             const deleteBtn = isAdmin ? `
                 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
                     <button type="button" id="deleteUserBtn" class="btn" style="width:100%; background:#ef4444; color:white;">🗑️ 이 사용자 등록 해제</button>
@@ -1371,8 +1503,7 @@
             `;
             openSmallModal('정보 수정', u.name, html);
 
-            // 삭제 버튼 이벤트 연결
-            if (isAdmin) {
+                       if (isAdmin) {
                 setTimeout(() => {
                     const deleteBtnEl = document.getElementById('deleteUserBtn');
                     if (deleteBtnEl) {
@@ -1389,8 +1520,7 @@
                 const nGuild = document.getElementById('editGuild').value;
                 const powerInput = document.getElementById('editPower').value.replace(/,/g,"").trim();
                 
-                // 전투력 유효성 검사
-                if (!powerInput) {
+                               if (!powerInput) {
                     showAlert('전투력을 입력해주세요', 'error');
                     return;
                 }
@@ -1427,6 +1557,7 @@
                     type: 'info_edit', 
                     old_value: '수정됨', 
                     new_value: isAdmin ? '관리자수정' : '일반수정', 
+                    editedBy: isAdmin ? (loggedInAdminId || 'admin') : 'self',
                     createdAt: Date.now(), 
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1441,8 +1572,7 @@
             };
         }
 
-        // --- 관리자: 일괄 등록 기능 ---
-        document.getElementById('bulkAddBtn').addEventListener('click', () => {
+               document.getElementById('bulkAddBtn').addEventListener('click', () => {
             if(!isAdmin) return;
             const guildOptions = guildList.map(g => `<option value="${g}">${g}</option>`).join('');
             
@@ -1545,6 +1675,7 @@
                     type: 'bulk_update', 
                     old_value: '-', 
                     new_value: `${names.length}명 처리`, 
+                    editedBy: loggedInAdminId || 'admin',
                     createdAt: Date.now(), 
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1565,8 +1696,218 @@
             }
         }
 
-        // --- 기능: 전투력 수정 (단축) ---
-        function openPowerEditModal(name, u) {
+               document.getElementById('guildMoveBtn').addEventListener('click', () => {
+            if(!isAdmin) return;
+            const guildOptions = guildList.map(g => `<option value="${g}">${g}</option>`).join('');
+            
+            const html = `
+                <div style="background:#f0f9ff; border:2px solid #0ea5e9; border-radius:12px; padding:16px; margin-bottom:20px;">
+                    <p style="color:#0369a1; font-weight:600; margin-bottom:8px;">🚀 길드 이동 안내</p>
+                    <ul style="color:#075985; font-size:13px; margin:0; padding-left:20px;">
+                        <li>입력된 닉네임을 선택한 길드로 일괄 이동합니다.</li>
+                        <li>이미 해당 길드에 있는 유저는 자동으로 건너뜁니다.</li>
+                        <li>전투력과 스펙 정보는 그대로 유지됩니다.</li>
+                        <li>등록되지 않은 닉네임은 무시됩니다.</li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">이동할 길드 선택</label>
+                    <select id="moveTargetGuild" class="form-input">${guildOptions}</select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">이동할 닉네임 입력 (한 줄에 하나씩)</label>
+                    <textarea id="moveNames" class="form-input" rows="10" placeholder="홍길동&#10;임꺽정&#10;아무개&#10;..."></textarea>
+                </div>
+            `;
+            openLargeModal('🚀 길드 이동', '여러 유저를 한 번에 다른 길드로 이동합니다.');
+            setModalBody(html);
+
+            const footerBtn = document.createElement('button');
+            footerBtn.className = "btn btn-primary";
+            footerBtn.style.background = "#0ea5e9";
+            footerBtn.innerText = "길드 이동 실행";
+            footerBtn.onclick = executeGuildMove;
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = "btn btn-cancel";
+            closeBtn.innerText = "취소";
+            closeBtn.onclick = closeModal;
+
+            const footerDiv = document.createElement('div');
+            footerDiv.style.marginTop = "20px";
+            footerDiv.style.textAlign = "right";
+            footerDiv.style.display = "flex";
+            footerDiv.style.justifyContent = "flex-end";
+            footerDiv.style.gap = "10px";
+            footerDiv.appendChild(closeBtn);
+            footerDiv.appendChild(footerBtn);
+            document.getElementById('modalBody').appendChild(footerDiv);
+        });
+
+        async function executeGuildMove() {
+            const targetGuild = document.getElementById('moveTargetGuild').value;
+            const namesText = document.getElementById('moveNames').value;
+
+            if(!namesText.trim()) { 
+                showAlert('닉네임을 입력하세요', 'error'); 
+                return; 
+            }
+
+            const names = namesText.split('\n').map(n => n.trim()).filter(n => n);
+            
+            if(names.length === 0) {
+                showAlert('유효한 닉네임이 없습니다', 'error');
+                return;
+            }
+
+            const btn = event.target;
+            btn.innerText = "처리 중...";
+            btn.disabled = true;
+
+            let movedCount = 0;                 let skippedCount = 0;               let notFoundCount = 0;              const movedUsers = [];
+            const skippedUsers = [];
+            const notFoundUsers = [];
+
+            try {
+                for(const name of names) {
+                    const docRef = doc(db, "users", name);
+                    const docSnap = await getDoc(docRef);
+
+                    if(docSnap.exists()) {
+                        const userData = docSnap.data();
+                        
+                        if(userData.guild === targetGuild) {
+                                                       skippedCount++;
+                            skippedUsers.push(name);
+                        } else {
+                                                       const oldGuild = userData.guild;
+                            await updateDoc(docRef, {
+                                guild: targetGuild,
+                                updatedAt: Date.now(),
+                                updatedBy: 'admin'
+                            });
+                            movedCount++;
+                            movedUsers.push({ name, from: oldGuild, to: targetGuild });
+                        }
+                    } else {
+                                               notFoundCount++;
+                        notFoundUsers.push(name);
+                    }
+                }
+                
+                               await setDoc(doc(collection(db, "logs")), { 
+                    who: 'Admin', 
+                    type: 'guild_move', 
+                    old_value: '-', 
+                    new_value: `${targetGuild}으로 ${movedCount}명 이동`, 
+                    editedBy: loggedInAdminId || 'admin',
+                    createdAt: Date.now(), 
+                    ip: await getIp(),
+                    device: navigator.userAgent
+                });
+
+                               showGuildMoveResult(targetGuild, movedUsers, skippedUsers, notFoundUsers);
+                
+                setTimeout(async () => {
+                    await loadData();
+                    await autoSyncIfEnabled(targetGuild);
+                }, 500);
+
+            } catch(e) {
+                console.error(e);
+                showAlert('오류 발생', 'error');
+                btn.innerText = "길드 이동 실행";
+                btn.disabled = false;
+            }
+        }
+
+        function showGuildMoveResult(targetGuild, movedUsers, skippedUsers, notFoundUsers) {
+            openLargeModal('🚀 길드 이동 완료', `${targetGuild} 길드로 이동 결과`);
+            
+            let html = `
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:20px;">
+                    <div style="background:#dcfce7; border-radius:12px; padding:16px; text-align:center;">
+                        <div style="font-size:32px; font-weight:700; color:#16a34a;">${movedUsers.length}</div>
+                        <div style="font-size:13px; color:#166534;">✅ 이동 성공</div>
+                    </div>
+                    <div style="background:#fef3c7; border-radius:12px; padding:16px; text-align:center;">
+                        <div style="font-size:32px; font-weight:700; color:#d97706;">${skippedUsers.length}</div>
+                        <div style="font-size:13px; color:#92400e;">⏭️ 건너뜀</div>
+                    </div>
+                    <div style="background:#fee2e2; border-radius:12px; padding:16px; text-align:center;">
+                        <div style="font-size:32px; font-weight:700; color:#dc2626;">${notFoundUsers.length}</div>
+                        <div style="font-size:13px; color:#991b1b;">❌ 미등록</div>
+                    </div>
+                </div>`;
+            
+                       if(movedUsers.length > 0) {
+                html += `
+                    <details style="margin-bottom:12px;" open>
+                        <summary style="cursor:pointer; font-weight:600; color:#16a34a; margin-bottom:8px;">✅ 이동 성공 (${movedUsers.length}명)</summary>
+                        <div style="background:#f0fdf4; border-radius:8px; padding:12px; max-height:150px; overflow-y:auto;">
+                            ${movedUsers.map(u => `<span style="display:inline-block; background:#dcfce7; padding:4px 8px; margin:2px; border-radius:4px; font-size:12px;">${u.name} <span style="color:#6b7280;">(${u.from}→${u.to})</span></span>`).join('')}
+                        </div>
+                    </details>`;
+            }
+            
+                       if(skippedUsers.length > 0) {
+                html += `
+                    <details style="margin-bottom:12px;">
+                        <summary style="cursor:pointer; font-weight:600; color:#d97706; margin-bottom:8px;">⏭️ 건너뜀 - 이미 ${targetGuild} 소속 (${skippedUsers.length}명)</summary>
+                        <div style="background:#fffbeb; border-radius:8px; padding:12px; max-height:150px; overflow-y:auto;">
+                            ${skippedUsers.map(u => `<span style="display:inline-block; background:#fef3c7; padding:4px 8px; margin:2px; border-radius:4px; font-size:12px;">${u}</span>`).join('')}
+                        </div>
+                    </details>`;
+            }
+            
+                       if(notFoundUsers.length > 0) {
+                html += `
+                    <details style="margin-bottom:12px;">
+                        <summary style="cursor:pointer; font-weight:600; color:#dc2626; margin-bottom:8px;">❌ 미등록 유저 (${notFoundUsers.length}명)</summary>
+                        <div style="background:#fef2f2; border-radius:8px; padding:12px; max-height:150px; overflow-y:auto;">
+                            ${notFoundUsers.map(u => `<span style="display:inline-block; background:#fee2e2; padding:4px 8px; margin:2px; border-radius:4px; font-size:12px;">${u}</span>`).join('')}
+                        </div>
+                    </details>`;
+            }
+            
+            html += `<div style="text-align:right; margin-top:20px;">
+                <button class="btn btn-primary" onclick="closeModal()">확인</button>
+            </div>`;
+            
+            setModalBody(html);
+            document.getElementById('modalFooter').style.display = 'none';
+        }
+
+       
+               async function checkLockStatusRealtime() {
+            try {
+                const docRef = doc(db, "config", "system");
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const startTime = data.lockStartTime || 0;
+                    const endTime = data.lockEndTime || 0;
+                    const now = Date.now();
+                    return (startTime > 0 && endTime > 0 && now >= startTime && now <= endTime);
+                }
+                return false;
+            } catch (e) {
+                console.log("Lock check error", e);
+                return false;
+            }
+        }
+
+        async function openPowerEditModal(name, u) {
+           
+            if (!isAdmin) {
+                const isLocked = await checkLockStatusRealtime();
+                if (isLocked) {
+                    showAlert('현재 수정 금지 시간입니다. 잠시 후 다시 시도해주세요.', 'error');
+                    await checkLockStatus();
+                    return;
+                }
+            }
+            
             openSmallModal('전투력 수정', `현재: ${u.power.toLocaleString()}`, `
                 <div class="form-group">
                     <input type="text" class="form-input" id="editInput" value="${u.power}" inputmode="numeric">
@@ -1576,30 +1917,36 @@
             setTimeout(() => { const i=document.getElementById('editInput'); i.focus(); i.select(); }, 100);
             
             document.getElementById('modalSubmit').onclick = async () => {
+                               if (!isAdmin) {
+                    const isLocked = await checkLockStatusRealtime();
+                    if (isLocked) {
+                        showAlert('현재 수정 금지 시간입니다. 잠시 후 다시 시도해주세요.', 'error');
+                        closeModal();
+                        await checkLockStatus();
+                        return;
+                    }
+                }
+                
                 const inputVal = document.getElementById('editInput').value.replace(/,/g, "").trim();
                 
-                // 빈 값 체크
-                if (!inputVal) {
+                               if (!inputVal) {
                     showAlert('전투력을 입력해주세요', 'error');
                     return;
                 }
                 
-                // 숫자가 아닌 문자 포함 여부 체크
-                if (!/^\d+$/.test(inputVal)) {
+                               if (!/^\d+$/.test(inputVal)) {
                     showAlert('수정 불가능: 숫자만 입력할 수 있습니다', 'error');
                     return;
                 }
                 
                 const val = Number(inputVal);
                 
-                // NaN 체크 (추가 안전장치)
-                if (isNaN(val)) {
+                               if (isNaN(val)) {
                     showAlert('수정 불가능: 올바른 숫자를 입력해주세요', 'error');
                     return;
                 }
                 
-                // 음수 체크
-                if (val < 0) {
+                               if (val < 0) {
                     showAlert('수정 불가능: 전투력은 0 이상이어야 합니다', 'error');
                     return;
                 }
@@ -1615,7 +1962,7 @@
                         type: 'power', 
                         old_value: u.power, 
                         new_value: val, 
-                        createdAt: Date.now(), 
+                        editedBy: isAdmin ? (loggedInAdminId || 'admin') : 'self',                        createdAt: Date.now(), 
                         ip: await getIp(), 
                         device: navigator.userAgent 
                     });
@@ -1631,8 +1978,7 @@
             };
         }
 
-        // --- 관리자 로그인 및 로그아웃 ---
-        document.getElementById('adminLoginBtn').addEventListener('click', () => {
+               document.getElementById('adminLoginBtn').addEventListener('click', () => {
             if(isAdmin) { 
                 openSmallModal('로그아웃', '관리자 권한을 해제합니다', `<div style="text-align:center; padding:10px 0; color:#374151;">정말 로그아웃 하시겠습니까?</div>`);
                 const btn = document.getElementById('modalSubmit');
@@ -1640,7 +1986,7 @@
                 btn.style.backgroundColor = "#ef4444";
                 btn.onclick = async () => { 
                     closeModal();
-                    // 자동 로그인 정보도 삭제
+                   
                     localStorage.removeItem('adminAutoLogin');
                     await adminLogout(false);
                 };
@@ -1662,44 +2008,46 @@
                 const inputPw = document.getElementById('apw').value;
                 const autoLogin = document.getElementById('autoLoginCheck').checked;
                 
-                // 1. 최종 관리자(슈퍼 관리자) 체크
-                if (btoa(inputId) === SUPER_ADMIN_HASH.id && btoa(inputPw) === SUPER_ADMIN_HASH.pw) {
+                               if (btoa(inputId) === _0x.a && btoa(inputPw) === _0x.b) {
                     isAdmin = true;
                     isSuperAdmin = true;
+                    loggedInAdminId = inputId;
                     sessionStorage.setItem('isAdmin', 'true');
                     sessionStorage.setItem('isSuperAdmin', 'true');
-                    // 자동 로그인 저장
+                    sessionStorage.setItem('loggedInAdminId', inputId);
+                   
                     if (autoLogin) {
                         localStorage.setItem('adminAutoLogin', btoa(JSON.stringify({id: inputId, pw: inputPw, type: 'super'})));
                     }
-                    resetAdminSessionTimer(); // 세션 타이머 시작
+                    resetAdminSessionTimer();
                     updateAdminUI(); 
                     closeModal(); 
                     showAlert('최종 관리자로 로그인되었습니다', 'success');
                     await checkPendingUsers();
-                    // 블러 해제를 위해 화면 다시 렌더링
+                   
                     await loadData();
                     return;
                 }
                 
-                // 2. 일반 관리자 체크 (Firebase admins 컬렉션)
-                try {
+                               try {
                     const adminDoc = await getDoc(doc(db, "admins", inputId));
                     if (adminDoc.exists() && adminDoc.data().password === inputPw) {
                         isAdmin = true;
                         isSuperAdmin = false;
+                        loggedInAdminId = inputId;
                         sessionStorage.setItem('isAdmin', 'true');
                         sessionStorage.removeItem('isSuperAdmin');
-                        // 자동 로그인 저장
+                        sessionStorage.setItem('loggedInAdminId', inputId);
+                       
                         if (autoLogin) {
                             localStorage.setItem('adminAutoLogin', btoa(JSON.stringify({id: inputId, pw: inputPw, type: 'normal'})));
                         }
-                        resetAdminSessionTimer(); // 세션 타이머 시작
+                        resetAdminSessionTimer();
                         updateAdminUI();
                         closeModal();
                         showAlert('관리자로 로그인되었습니다', 'success');
                         await checkPendingUsers();
-                        // 블러 해제를 위해 화면 다시 렌더링
+                       
                         await loadData();
                         return;
                     }
@@ -1711,7 +2059,7 @@
             };
         });
         
-        // 자동 로그인 처리 함수
+
         async function tryAutoLogin() {
             const saved = localStorage.getItem('adminAutoLogin');
             if (!saved) return false;
@@ -1720,11 +2068,13 @@
                 const {id, pw, type} = JSON.parse(atob(saved));
                 
                 if (type === 'super') {
-                    if (btoa(id) === SUPER_ADMIN_HASH.id && btoa(pw) === SUPER_ADMIN_HASH.pw) {
+                    if (btoa(id) === _0x.a && btoa(pw) === _0x.b) {
                         isAdmin = true;
                         isSuperAdmin = true;
+                        loggedInAdminId = id;
                         sessionStorage.setItem('isAdmin', 'true');
                         sessionStorage.setItem('isSuperAdmin', 'true');
+                        sessionStorage.setItem('loggedInAdminId', id);
                         resetAdminSessionTimer();
                         updateAdminUI();
                         await checkPendingUsers();
@@ -1735,15 +2085,17 @@
                     if (adminDoc.exists() && adminDoc.data().password === pw) {
                         isAdmin = true;
                         isSuperAdmin = false;
+                        loggedInAdminId = id;
                         sessionStorage.setItem('isAdmin', 'true');
                         sessionStorage.removeItem('isSuperAdmin');
+                        sessionStorage.setItem('loggedInAdminId', id);
                         resetAdminSessionTimer();
                         updateAdminUI();
                         await checkPendingUsers();
                         return true;
                     }
                 }
-                // 인증 실패 시 저장된 정보 삭제
+               
                 localStorage.removeItem('adminAutoLogin');
             } catch (e) {
                 console.error('Auto login error:', e);
@@ -1752,8 +2104,7 @@
             return false;
         }
 
-        // --- 기타 기능 (길드추가, 엑셀, 잠금 등) ---
-        document.getElementById('guildAddBtn').addEventListener('click', () => {
+               document.getElementById('guildAddBtn').addEventListener('click', () => {
             if(!isAdmin) return;
             openSmallModal('길드 추가', '', `<div class="form-group"><input type="text" class="form-input" id="newGuildInput" autocomplete="off"></div>`);
             setTimeout(() => document.getElementById('newGuildInput').focus(), 100);
@@ -1781,8 +2132,7 @@
             XLSX.writeFile(wb, "길드_전투력_현황.xlsx");
         });
 
-        // --- 스프레드시트 연동 기능 ---
-        document.getElementById('spreadsheetBtn').addEventListener('click', () => {
+               document.getElementById('spreadsheetBtn').addEventListener('click', () => {
             if (!isAdmin) return;
             openSpreadsheetSettingsModal();
         });
@@ -1791,13 +2141,10 @@
             const currentConfig = spreadsheetConfig || {};
             const sheetId = currentConfig.sheetId || '1ySgXwqwDGSW3c9gh8LVYPDBmdkh27q9JmVKId8gQ6uI';
             const webAppUrl = currentConfig.webAppUrl || '';
-            const autoSync = currentConfig.autoSync !== false; // 기본값 true
-            
-            // 길드별 시트 매핑 입력 필드 생성
-            let sheetMappingHtml = '<div class="form-group"><label class="form-label">시트 탭 매핑 (길드명: 시트탭명)</label>';
+            const autoSync = currentConfig.autoSync !== false;            
+                       let sheetMappingHtml = '<div class="form-group"><label class="form-label">시트 탭 매핑 (길드명: 시트탭명)</label>';
             guildList.forEach(guild => {
-                // 사신만 개별 시트, 나머지는 비워둠 (전체 시트에만 포함)
-                let defaultSheet = '';
+                               let defaultSheet = '';
                 if (guild === '사신') {
                     defaultSheet = '전투력 점수제(사신)';
                 }
@@ -1811,7 +2158,7 @@
                 `;
             });
             
-            // "전체" 탭 추가
+            
             const allSheetName = (currentConfig.sheetMappings && currentConfig.sheetMappings['전체']) || '전투력 점수제(전체)';
             sheetMappingHtml += `
                 <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
@@ -1888,8 +2235,7 @@
                 return;
             }
 
-            // 시트 매핑 수집
-            const sheetMappings = {};
+                       const sheetMappings = {};
             document.querySelectorAll('.sheet-mapping').forEach(input => {
                 const guild = input.dataset.guild;
                 const sheetName = input.value.trim();
@@ -1922,8 +2268,7 @@
                 return;
             }
 
-            // 첫 번째 길드로 테스트
-            const testGuild = guildList[0];
+                       const testGuild = guildList[0];
             const testUsers = allGuildData.filter(u => u.guild === testGuild).slice(0, 5);
 
             if (testUsers.length === 0) {
@@ -1957,8 +2302,7 @@
                 return;
             }
 
-            // 진행률 바 모달 표시
-            openSmallModal('스프레드시트 동기화', '동기화 진행 중...', `
+                       openSmallModal('스프레드시트 동기화', '동기화 진행 중...', `
                 <div style="text-align:center; padding:20px;">
                     <div id="syncIcon" style="font-size:48px; margin-bottom:15px;">📊</div>
                     <p id="syncStatus" style="font-size:16px; color:#374151; margin-bottom:8px; font-weight:600;">준비 중...</p>
@@ -1975,16 +2319,14 @@
                 let successCount = 0;
                 let failCount = 0;
                 
-                // 동기화할 시트 목록 계산
-                const sheetsToSync = [];
+                               const sheetsToSync = [];
                 guildList.forEach(guild => {
                     const sheetName = spreadsheetConfig.sheetMappings && spreadsheetConfig.sheetMappings[guild];
                     if (sheetName) {
                         sheetsToSync.push({ guild, sheetName, isAll: false });
                     }
                 });
-                // 전체 탭 추가
-                const allSheetName = (spreadsheetConfig.sheetMappings && spreadsheetConfig.sheetMappings['전체']) || '전투력 점수제(전체)';
+                               const allSheetName = (spreadsheetConfig.sheetMappings && spreadsheetConfig.sheetMappings['전체']) || '전투력 점수제(전체)';
                 sheetsToSync.push({ guild: '전체', sheetName: allSheetName, isAll: true });
                 
                 const totalSheets = sheetsToSync.length;
@@ -1994,7 +2336,7 @@
                     currentSheet++;
                     const progress = Math.round((currentSheet / totalSheets) * 100);
                     
-                    // UI 업데이트
+                   
                     document.getElementById('syncStatus').textContent = `${sheet.guild} 동기화 중...`;
                     document.getElementById('syncDetail').textContent = `시트: ${sheet.sheetName} (${currentSheet}/${totalSheets})`;
                     document.getElementById('syncProgress').style.width = `${progress - 10}%`;
@@ -2015,16 +2357,13 @@
                         console.error(`Error syncing ${sheet.guild}:`, e);
                     }
                     
-                    // 진행률 업데이트
-                    document.getElementById('syncProgress').style.width = `${progress}%`;
+                                       document.getElementById('syncProgress').style.width = `${progress}%`;
                     document.getElementById('syncPercent').textContent = `${progress}%`;
                     
-                    // API 요청 간격 (과부하 방지)
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                                       await new Promise(resolve => setTimeout(resolve, 500));
                 }
 
-                // 완료 표시
-                if (failCount === 0) {
+                               if (failCount === 0) {
                     document.getElementById('syncIcon').textContent = '✅';
                     document.getElementById('syncStatus').textContent = '동기화 완료!';
                     document.getElementById('syncDetail').textContent = `${successCount}개 시트 동기화 성공`;
@@ -2040,8 +2379,7 @@
                     document.getElementById('syncPercent').textContent = '완료';
                 }
 
-                // 닫기 버튼 표시
-                document.getElementById('modalFooter').style.display = 'flex';
+                               document.getElementById('modalFooter').style.display = 'flex';
                 document.getElementById('modalFooter').innerHTML = '<button class="btn btn-primary" onclick="closeModal()">확인</button>';
 
                 await setDoc(doc(collection(db, "logs")), {
@@ -2049,6 +2387,7 @@
                     type: 'spreadsheet_sync',
                     old_value: '-',
                     new_value: `전체 동기화 (성공:${successCount}, 실패:${failCount})`,
+                    editedBy: loggedInAdminId || 'admin',
                     createdAt: Date.now(),
                     ip: await getIp()
                 });
@@ -2086,15 +2425,13 @@
             try {
                 const response = await fetch(spreadsheetConfig.webAppUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // CORS 우회
-                    headers: {
+                    mode: 'no-cors',                    headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
                 });
 
-                // no-cors 모드에서는 응답을 읽을 수 없으므로 성공으로 간주
-                return { success: true, message: `${users.length}개 데이터 전송` };
+                               return { success: true, message: `${users.length}개 데이터 전송` };
 
             } catch (e) {
                 console.error('Sync error:', e);
@@ -2102,22 +2439,19 @@
             }
         }
 
-        // 자동 동기화 함수 (데이터 변경 시 호출)
-        async function autoSyncIfEnabled(guild = null) {
+               async function autoSyncIfEnabled(guild = null) {
             if (!spreadsheetConfig || !spreadsheetConfig.autoSync) {
                 return;
             }
 
             try {
                 if (guild) {
-                    // 특정 길드만 동기화
-                    const guildUsers = allGuildData.filter(u => u.guild === guild);
+                                       const guildUsers = allGuildData.filter(u => u.guild === guild);
                     const sheetName = spreadsheetConfig.sheetMappings[guild] || `전투력 점수제(${guild})`;
                     await syncToSpreadsheet(guildUsers, sheetName);
                 }
                 
-                // 전체 탭도 동기화
-                const allSheetName = spreadsheetConfig.sheetMappings['전체'] || '전투력 점수제(전체)';
+                               const allSheetName = spreadsheetConfig.sheetMappings['전체'] || '전투력 점수제(전체)';
                 await syncToSpreadsheet(allGuildData, allSheetName);
                 
             } catch (e) {
@@ -2125,8 +2459,7 @@
             }
         }
 
-        // 자동 동기화 함수
-
+       
         document.getElementById('lockManageBtn').addEventListener('click', () => {
             if (!isAdmin) return;
             
@@ -2202,8 +2535,7 @@
             let users = []; 
             snap.forEach(d => users.push(d.data())); 
             
-            // 초기 정렬: 가나다순
-            users.sort((a,b)=>a.name.localeCompare(b.name));
+                       users.sort((a,b)=>a.name.localeCompare(b.name));
             
             let html = `
                 <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
@@ -2249,8 +2581,7 @@
             
             setModalBody(html);
             
-            // 테이블 렌더링 함수
-            function renderUserTable(filteredUsers) {
+                       function renderUserTable(filteredUsers) {
                 const tbody = document.getElementById('userManageTableBody');
                 tbody.innerHTML = '';
                 
@@ -2279,8 +2610,7 @@
                 document.getElementById('userCount').textContent = filteredUsers.length;
             }
             
-            // 필터링 및 정렬 함수
-            function applyFiltersAndSort() {
+                       function applyFiltersAndSort() {
                 const searchText = document.getElementById('modalSearchInput').value.toLowerCase();
                 const guildFilter = document.getElementById('guildFilter').value;
                 const pwFilter = document.getElementById('pwFilter').value;
@@ -2296,25 +2626,21 @@
                     return matchSearch && matchGuild && matchPw;
                 });
                 
-                // 정렬
-                if (sortOrder === 'name') {
+                               if (sortOrder === 'name') {
                     filtered.sort((a,b) => a.name.localeCompare(b.name));
                 } else if (sortOrder === 'updated') {
                     filtered.sort((a,b) => {
                         const aTime = (a.updatedAt && a.updatedBy !== 'admin') ? a.updatedAt : 0;
                         const bTime = (b.updatedAt && b.updatedBy !== 'admin') ? b.updatedAt : 0;
-                        return bTime - aTime;  // 최신순
-                    });
+                        return bTime - aTime;                     });
                 }
                 
                 renderUserTable(filtered);
             }
             
-            // 초기 렌더링
-            renderUserTable(users);
+                       renderUserTable(users);
             
-            // 이벤트 리스너
-            document.getElementById('modalSearchInput').addEventListener('input', applyFiltersAndSort);
+                       document.getElementById('modalSearchInput').addEventListener('input', applyFiltersAndSort);
             document.getElementById('guildFilter').addEventListener('change', applyFiltersAndSort);
             document.getElementById('pwFilter').addEventListener('change', applyFiltersAndSort);
             document.getElementById('sortOrder').addEventListener('change', applyFiltersAndSort);
@@ -2328,13 +2654,10 @@
             setTimeout(() => location.reload(), 1000); 
         };
 
-        // 사용자 등록 해제 (정보 영구 보관)
-        window.deleteUser = async function(name) {
-            // 삭제 확인
-            if(!await showConfirm('사용자 등록 해제', `<span style="color:#ef4444; font-weight:600;">[${name}]님을 등록 해제하시겠습니까?</span><br><br>• 사용자 정보는 영구 보관됩니다<br>• 삭제된 사용자 목록에서 확인 가능<br>• 복구는 불가능합니다`)) return;
+               window.deleteUser = async function(name) {
+                       if(!await showConfirm('사용자 등록 해제', `<span style="color:#ef4444; font-weight:600;">[${name}]님을 등록 해제하시겠습니까?</span><br><br>• 사용자 정보는 영구 보관됩니다<br>• 삭제된 사용자 목록에서 확인 가능<br>• 복구는 불가능합니다`)) return;
             
-            // 삭제 사유 입력 (모달 충돌 방지를 위해 setTimeout 사용)
-            setTimeout(() => {
+                       setTimeout(() => {
                 openSmallModal('등록 해제 사유', '선택사항 - 나중에 참고용', `
                     <div class="form-group">
                         <label class="form-label">사유 (선택사항)</label>
@@ -2358,8 +2681,7 @@
                         const memo = document.getElementById('deleteMemo').value.trim();
                         
                         try {
-                            // 1. 삭제 전에 사용자 정보 가져오기
-                            const userDoc = await getDoc(doc(db, "users", name));
+                                                       const userDoc = await getDoc(doc(db, "users", name));
                             if (!userDoc.exists()) {
                                 showAlert('사용자를 찾을 수 없습니다', 'error');
                                 return;
@@ -2367,10 +2689,8 @@
                             
                             const userData = userDoc.data();
                             
-                            // 2. deletedUsers 컬렉션에 백업 저장
-                            await setDoc(doc(collection(db, "deletedUsers")), {
-                                ...userData,  // 모든 사용자 정보
-                                deletedAt: Date.now(),
+                                                       await setDoc(doc(collection(db, "deletedUsers")), {
+                                ...userData,                                 deletedAt: Date.now(),
                                 deletedBy: 'admin',
                                 deleteReason: reason,
                                 deleteMemo: memo || '',
@@ -2379,15 +2699,14 @@
                                 deletedDevice: navigator.userAgent
                             });
                             
-                            // 3. users 컬렉션에서 삭제
-                            await deleteDoc(doc(db, "users", name));
+                                                       await deleteDoc(doc(db, "users", name));
                             
-                            // 4. 로그 기록
-                            await setDoc(doc(collection(db, "logs")), {
+                                                       await setDoc(doc(collection(db, "logs")), {
                                 who: name,
                                 type: 'user_deleted',
                                 old_value: '사용자 존재',
                                 new_value: `등록 해제 (사유: ${reason})`,
+                                editedBy: loggedInAdminId || 'admin',
                                 createdAt: Date.now(),
                                 ip: await getIp(),
                                 device: navigator.userAgent
@@ -2410,8 +2729,7 @@
             if(!isAdmin) return; 
             openLargeModal('로그', '전체 로그 (검색 가능)');
             
-            // limit 제거하여 모든 로그 가져오기
-            const snap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
+                       const snap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
             
             const logs = [];
             snap.forEach(d => { 
@@ -2422,13 +2740,12 @@
                     type: l.type || '-',
                     oldValue: l.old_value || '-',
                     newValue: l.new_value || '-',
-                    ip: l.ip || '-',
+                    editedBy: l.editedBy || '-',                    ip: l.ip || '-',
                     device: l.device || '-'
                 });
             });
             
-            // 로그 타입 한글 변환 함수
-            function formatLogType(type) {
+                       function formatLogType(type) {
                 const typeMap = {
                     'power': '⚡ 전투력 변경',
                     'info_edit': '✏️ 정보 수정',
@@ -2438,14 +2755,14 @@
                     'user_deleted': '🗑️ 사용자 삭제',
                     'user_request': '📝 등록 요청',
                     'bulk_update': '📋 일괄 처리',
+                    'guild_move': '🚀 길드 이동',
                     'spreadsheet_sync': '📊 스프레드시트 동기화',
                     'google_sheet_sync': '📊 구글시트 동기화'
                 };
                 return typeMap[type] || type;
             }
             
-            // 로그 내용 포맷팅 함수
-            function formatLogContent(log) {
+                       function formatLogContent(log) {
                 const type = log.type;
                 const oldVal = log.oldValue;
                 const newVal = log.newValue;
@@ -2498,28 +2815,106 @@
                                 <th>시간</th>
                                 <th>대상</th>
                                 <th>작업</th>
-                                <th>내용</th>
+                                <th>수정전</th>
+                                <th>수정후</th>
+                                <th>수정자</th>
                             </tr>
                         </thead>
                         <tbody>`;
             
             logs.forEach(l => {
                 const logType = formatLogType(l.type);
-                const logContent = formatLogContent(l);
+                
+                               let oldDisplay = '-';
+                let newDisplay = '-';
+                
+                switch(l.type) {
+                    case 'power':
+                        oldDisplay = Number(l.oldValue).toLocaleString();
+                        newDisplay = Number(l.newValue).toLocaleString();
+                        break;
+                    
+                    case 'nickname_change':
+                        oldDisplay = l.oldValue;
+                        newDisplay = l.newValue;
+                        break;
+                    
+                    case 'info_edit':
+                        oldDisplay = '-';
+                        newDisplay = l.newValue === '관리자수정' ? '관리자가 수정함' : '본인이 수정함';
+                        break;
+                    
+                    case 'user_approved':
+                        oldDisplay = '대기';
+                        newDisplay = '승인됨';
+                        break;
+                    
+                    case 'user_rejected':
+                        oldDisplay = '대기';
+                        newDisplay = '거부됨';
+                        break;
+                    
+                    case 'user_deleted':
+                        oldDisplay = '등록됨';
+                        newDisplay = l.newValue || '삭제됨';
+                        break;
+                    
+                    case 'user_request':
+                        oldDisplay = '-';
+                        newDisplay = l.newValue || '등록 요청';
+                        break;
+                    
+                    case 'bulk_update':
+                        oldDisplay = '-';
+                        newDisplay = l.newValue || '일괄 처리';
+                        break;
+                    
+                    case 'guild_move':
+                        oldDisplay = '-';
+                        newDisplay = l.newValue || '길드 이동';
+                        break;
+                    
+                    case 'spreadsheet_sync':
+                    case 'google_sheet_sync':
+                        oldDisplay = '-';
+                        newDisplay = l.newValue || '동기화 완료';
+                        break;
+                    
+                    case 'admin_add':
+                    case 'admin_delete':
+                    case 'admin_pw_reset':
+                        oldDisplay = l.oldValue || '-';
+                        newDisplay = l.newValue || '-';
+                        break;
+                    
+                    default:
+                        oldDisplay = l.oldValue || '-';
+                        newDisplay = l.newValue || '-';
+                }
+                
+                               let editedByDisplay = l.editedBy;
+                if (l.editedBy === 'self') {
+                    editedByDisplay = '<span style="color:#6b7280;">본인</span>';
+                } else if (l.editedBy && l.editedBy !== '-') {
+                    editedByDisplay = `<span style="color:#8b5cf6; font-weight:600;">👑 ${l.editedBy}</span>`;
+                } else {
+                    editedByDisplay = '<span style="color:#9ca3af;">-</span>';
+                }
                 
                 html += `<tr>
                     <td style="font-size:12px;">${l.time}</td>
                     <td><strong>${l.who}</strong></td>
                     <td><span style="white-space: nowrap;">${logType}</span></td>
-                    <td>${logContent}</td>
+                    <td style="color:#ef4444;">${oldDisplay}</td>
+                    <td style="color:#10b981;">${newDisplay}</td>
+                    <td>${editedByDisplay}</td>
                 </tr>`; 
             });
             
             html += '</tbody></table></div>';
             setModalBody(html);
             
-            // 검색 기능
-            document.getElementById('logSearchInput').addEventListener('input', (e) => { 
+                       document.getElementById('logSearchInput').addEventListener('input', (e) => { 
                 const searchText = e.target.value.toLowerCase(); 
                 document.querySelectorAll('#logTable tbody tr').forEach(row => {
                     const who = row.cells[1].textContent.toLowerCase();
@@ -2528,8 +2923,7 @@
             });
         });
 
-        // 삭제된 사용자 보기
-        document.getElementById('deletedUsersBtn').addEventListener('click', async () => {
+               document.getElementById('deletedUsersBtn').addEventListener('click', async () => {
             if(!isAdmin) return;
             openLargeModal('삭제된 사용자', '등록 해제된 사용자 목록 (영구 보관)');
             
@@ -2580,8 +2974,7 @@
             html += '</tbody></table></div>';
             setModalBody(html);
             
-            // 검색 기능
-            document.getElementById('deletedSearchInput').addEventListener('input', (e) => {
+                       document.getElementById('deletedSearchInput').addEventListener('input', (e) => {
                 const searchText = e.target.value.toLowerCase();
                 document.querySelectorAll('#deletedUsersTable tbody tr').forEach(row => {
                     const name = row.cells[0].textContent.toLowerCase();
@@ -2590,8 +2983,7 @@
             });
         });
 
-        // 일괄 등록 해제
-        document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
+               document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
             if(!isAdmin) return;
             openLargeModal('일괄 등록 해제', '여러 사용자를 한 번에 등록 해제');
             
@@ -2599,8 +2991,7 @@
             let users = [];
             snap.forEach(d => users.push(d.data()));
             
-            // 가나다순 정렬
-            users.sort((a,b) => a.name.localeCompare(b.name));
+                       users.sort((a,b) => a.name.localeCompare(b.name));
             
             let html = `
                 <div style="margin-bottom: 16px;">
@@ -2666,8 +3057,7 @@
             
             setModalBody(html);
             
-            // 테이블 렌더링
-            function renderTable() {
+                       function renderTable() {
                 const tbody = document.getElementById('bulkDeleteTableBody');
                 const searchText = document.getElementById('bulkDeleteSearch').value.toLowerCase();
                 const guildFilter = document.getElementById('bulkDeleteGuildFilter').value;
@@ -2696,8 +3086,7 @@
                 updateSelectedCount();
             }
             
-            // 선택된 개수 업데이트
-            function updateSelectedCount() {
+                       function updateSelectedCount() {
                 const checkboxes = document.querySelectorAll('.user-checkbox:checked');
                 const count = checkboxes.length;
                 document.getElementById('selectedCount').innerHTML = 
@@ -2706,29 +3095,23 @@
             
             renderTable();
             
-            // 검색 및 필터 이벤트
-            document.getElementById('bulkDeleteSearch').addEventListener('input', renderTable);
+                       document.getElementById('bulkDeleteSearch').addEventListener('input', renderTable);
             document.getElementById('bulkDeleteGuildFilter').addEventListener('change', renderTable);
             
-            // 체크박스 변경 이벤트 (이벤트 위임)
-            document.getElementById('bulkDeleteTableBody').addEventListener('change', updateSelectedCount);
+                       document.getElementById('bulkDeleteTableBody').addEventListener('change', updateSelectedCount);
             
-            // 전체 선택
-            document.getElementById('selectAllBtn').addEventListener('click', () => {
+                       document.getElementById('selectAllBtn').addEventListener('click', () => {
                 document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = true);
                 updateSelectedCount();
             });
             
-            // 전체 해제
-            document.getElementById('deselectAllBtn').addEventListener('click', () => {
+                       document.getElementById('deselectAllBtn').addEventListener('click', () => {
                 document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
                 updateSelectedCount();
             });
             
-            // 일괄 삭제 실행
-            document.getElementById('executeBulkDelete').addEventListener('click', async (e) => {
-                // 버튼 비활성화 (중복 클릭 방지)
-                const btn = e.target;
+                       document.getElementById('executeBulkDelete').addEventListener('click', async (e) => {
+                               const btn = e.target;
                 if (btn.disabled) return;
                 
                 try {
@@ -2743,8 +3126,7 @@
                     const reason = document.getElementById('bulkDeleteReason').value;
                     const memo = document.getElementById('bulkDeleteMemo').value.trim();
                     
-                    // 확인 (모달 유지)
-                    const confirmed = await showConfirm(
+                                       const confirmed = await showConfirm(
                         '일괄 등록 해제 확인',
                         `<span style="color:#ef4444; font-weight:600;">${selected.length}명의 사용자를 등록 해제하시겠습니까?</span><br><br>
                         • 사용자 정보는 영구 보관됩니다<br>
@@ -2752,17 +3134,14 @@
                         • 복구는 불가능합니다<br><br>
                         <strong>선택된 사용자:</strong><br>
                         ${selected.slice(0, 10).join(', ')}${selected.length > 10 ? '...' : ''}`,
-                        true  // 모달 유지
-                    );
+                        true                     );
                     
                     if (!confirmed) return;
                     
-                    // 모달 제목 변경
-                    document.getElementById('modalTitle').textContent = '일괄 등록 해제 진행 중';
+                                       document.getElementById('modalTitle').textContent = '일괄 등록 해제 진행 중';
                     document.getElementById('modalSubtitle').textContent = '잠시만 기다려주세요...';
                     
-                    // 모달 내용을 프로그레스 바로 교체
-                    document.getElementById('modalBody').innerHTML = `
+                                       document.getElementById('modalBody').innerHTML = `
                         <div style="padding: 20px 16px;">
                             <div style="text-align: center; margin-bottom: 16px;">
                                 <strong style="font-size: 16px; color: #111827;">처리 중...</strong>
@@ -2811,12 +3190,10 @@
                 for (let i = 0; i < selected.length; i++) {
                     const name = selected[i];
                     
-                    // 현재 처리 중인 사용자 표시
-                    document.getElementById('currentUser').textContent = `처리 중: ${name}`;
+                                       document.getElementById('currentUser').textContent = `처리 중: ${name}`;
                     
                     try {
-                        // 1. 사용자 정보 가져오기
-                        const userDoc = await getDoc(doc(db, "users", name));
+                                               const userDoc = await getDoc(doc(db, "users", name));
                         if (!userDoc.exists()) {
                             failCount++;
                             document.getElementById('failCount').textContent = failCount;
@@ -2825,8 +3202,7 @@
                         
                         const userData = userDoc.data();
                         
-                        // 2. deletedUsers에 백업
-                        await setDoc(doc(collection(db, "deletedUsers")), {
+                                               await setDoc(doc(collection(db, "deletedUsers")), {
                             ...userData,
                             deletedAt: Date.now(),
                             deletedBy: 'admin',
@@ -2837,15 +3213,14 @@
                             deletedDevice: navigator.userAgent
                         });
                         
-                        // 3. users에서 삭제
-                        await deleteDoc(doc(db, "users", name));
+                                               await deleteDoc(doc(db, "users", name));
                         
-                        // 4. 로그 기록
-                        await setDoc(doc(collection(db, "logs")), {
+                                               await setDoc(doc(collection(db, "logs")), {
                             who: name,
                             type: 'user_deleted',
                             old_value: '사용자 존재',
                             new_value: `일괄 등록 해제 (사유: ${reason})`,
+                            editedBy: loggedInAdminId || 'admin',
                             createdAt: Date.now(),
                             ip: await getIp(),
                             device: navigator.userAgent
@@ -2859,19 +3234,17 @@
                         document.getElementById('failCount').textContent = failCount;
                     }
                     
-                    // 진행 상황 업데이트 (실시간)
-                    const current = i + 1;
+                                       const current = i + 1;
                     const percent = Math.round((current / selected.length) * 100);
                     document.getElementById('progressText').textContent = `${current} / ${selected.length}`;
                     document.getElementById('progressBar').style.width = `${percent}%`;
                     document.getElementById('progressPercent').textContent = `${percent}%`;
                     
-                    // UI 업데이트를 위한 대기 (100ms로 증가)
+                   
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
                 
-                // 완료 표시
-                document.getElementById('modalTitle').textContent = '등록 해제 완료';
+                               document.getElementById('modalTitle').textContent = '등록 해제 완료';
                 document.getElementById('modalSubtitle').textContent = '';
                 document.getElementById('currentUser').innerHTML = `
                     <div style="text-align: center; padding: 16px;">
@@ -2889,8 +3262,7 @@
                     </div>
                 `;
                 
-                // 2초 후 모달 닫기 및 페이지 새로고침
-                setTimeout(() => {
+                               setTimeout(() => {
                     closeModal();
                     showAlert(
                         `등록 해제 완료: 성공 ${successCount}명, 실패 ${failCount}명`,
@@ -2907,8 +3279,7 @@
             });
         });
 
-        // --- 공통: 인증 및 모달 ---
-        async function authenticateAndRun(name, callback) {
+               async function authenticateAndRun(name, callback) {
             if (isSystemLocked() && !isAdmin) { 
                 const lockMsg = `관리자가 수정 잠금을 하여 수정이 불가능합니다.\n\n기간: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (KST)`;
                 showAlert(lockMsg, 'error'); 
@@ -2922,7 +3293,7 @@
         }
         
         function handlePowerClick(name) { 
-            // 관리자는 비밀번호 확인 없이 바로 수정
+           
             if (isAdmin) {
                 getDoc(doc(db, "users", name)).then(snap => {
                     if (snap.exists()) {
@@ -2940,9 +3311,8 @@
             if(!snap.exists()) return;
             const u = snap.data();
             
-            closeModal(); // 기존 모달 닫기
-            setTimeout(() => {
-                // 관리자는 비밀번호 확인 없이 바로 수정
+            closeModal();            setTimeout(() => {
+               
                 if (isAdmin) {
                     openUserEditModal(u);
                 } else {
@@ -2990,10 +3360,9 @@
                 if (document.getElementById('passwordInput').value === u.password || isAdmin) {
                     const rememberChecked = document.getElementById('rememberPassword').checked;
                     
-                    // 로그인 성공
-                    loggedInUser = name;
+                                       loggedInUser = name;
                     
-                    // 자동 로그인 저장 (체크된 경우)
+                   
                     if (rememberChecked && !isAdmin) {
                         localStorage.setItem('autoLogin', JSON.stringify({
                             username: name,
@@ -3004,7 +3373,7 @@
                     
                     closeModal(); 
                     setTimeout(() => {
-                        loadData(); // 블러 해제를 위해 리로드
+                        loadData();
                         cb(u);
                     }, 200); 
                 } else {
@@ -3044,8 +3413,7 @@
             };
         }
 
-        // --- 헬퍼 함수 ---
-        function openLargeModal(t, s) {
+               function openLargeModal(t, s) {
             document.getElementById('modalContent').classList.add('modal-lg'); 
             document.getElementById('modalTitle').textContent = t; 
             document.getElementById('modalSubtitle').textContent = s;
@@ -3059,8 +3427,7 @@
             document.getElementById('modalTitle').textContent = t; 
             document.getElementById('modalSubtitle').textContent = s;
             document.getElementById('modalBody').innerHTML = b; 
-            // 기본 footer 버튼 복원
-            document.getElementById('modalFooter').innerHTML = `
+                       document.getElementById('modalFooter').innerHTML = `
                 <button class="btn btn-cancel" onclick="closeModal()">취소</button>
                 <button class="btn btn-primary" id="modalSubmit">확인</button>
             `;
@@ -3074,13 +3441,8 @@
 
         window.closeModal = () => document.getElementById('modalOverlay').classList.remove('active');
         
-        // 모달 오버레이 클릭 이벤트 제거 (밖 클릭해도 닫히지 않음)
-        // document.getElementById('modalOverlay').addEventListener('click', (e) => { 
-        //   if(e.target.id === 'modalOverlay') closeModal(); 
-        // });
-
-        // 커스텀 Confirm 모달
-        window.showConfirm = (title, message, keepOpen = false) => {
+       
+               window.showConfirm = (title, message, keepOpen = false) => {
             return new Promise((resolve) => {
                 openSmallModal(title, '', `<p style="text-align:center; padding:20px 0; font-size:15px; line-height:1.6; color:#374151;">${message}</p>`);
                 document.getElementById('modalFooter').innerHTML = `
@@ -3097,16 +3459,14 @@
             });
         };
 
-        // 검색 함수
-        function performSearch() {
+               function performSearch() {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
             if (!searchText) {
                 showAlert('검색어를 입력하세요', 'error');
                 return;
             }
             
-            // 전체 데이터에서 검색
-            let foundUser = null;
+                       let foundUser = null;
             for (let i = 0; i < allGuildData.length; i++) {
                 if (allGuildData[i].name.toLowerCase().includes(searchText)) {
                     foundUser = allGuildData[i];
@@ -3115,11 +3475,9 @@
             }
             
             if (foundUser) {
-                // 해당 길드로 이동
-                showGuildDetail(foundUser.guild);
+                               showGuildDetail(foundUser.guild);
                 
-                // 잠시 후 해당 유저 하이라이트
-                setTimeout(() => {
+                               setTimeout(() => {
                     const rows = document.querySelectorAll('#detailList tr');
                     rows.forEach(r => {
                         const playerName = r.querySelector('.player-name');
@@ -3127,8 +3485,7 @@
                             r.style.background = '#fef3c7';
                             r.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             
-                            // 3초 후 하이라이트 제거
-                            setTimeout(() => {
+                                                       setTimeout(() => {
                                 r.style.background = '';
                             }, 3000);
                         }
@@ -3142,8 +3499,7 @@
         document.getElementById('searchInput').addEventListener('input', (e) => { 
             const searchText = e.target.value.toLowerCase().trim();
             
-            // 길드 상세 화면에서만 필터링 적용
-            if (currentGuild) {
+                       if (currentGuild) {
                 document.querySelectorAll('#detailList tr').forEach(r => {
                     const playerName = r.querySelector('.player-name');
                     if (playerName) {
@@ -3153,16 +3509,14 @@
             }
         });
         
-        // 엔터키로 검색
-        document.getElementById('searchInput').addEventListener('keydown', (e) => {
+               document.getElementById('searchInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 performSearch();
             }
         });
         
-        // 검색 버튼 클릭
-        document.getElementById('searchBtn').addEventListener('click', () => {
+               document.getElementById('searchBtn').addEventListener('click', () => {
             performSearch();
         });
 
@@ -3191,8 +3545,7 @@
             setTimeout(() => location.reload(), 1500); 
         }
 
-        // --- 관리자 관리 기능 (최종 관리자 전용) ---
-        document.getElementById('adminManageBtn').addEventListener('click', async () => {
+               document.getElementById('adminManageBtn').addEventListener('click', async () => {
             if (!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
                 return;
@@ -3200,7 +3553,7 @@
 
             openLargeModal('관리자 관리', '일반 관리자 계정을 추가하거나 삭제합니다');
             
-            // 관리자 목록 불러오기
+           
             const adminSnapshot = await getDocs(collection(db, "admins"));
             
             let adminListHtml = '';
@@ -3245,8 +3598,7 @@
             document.getElementById('modalBody').innerHTML = html + `<div style="text-align:right;margin-top:20px"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>`;
         });
 
-        // 새 관리자 추가
-        window.addNewAdmin = async function() {
+               window.addNewAdmin = async function() {
             const adminId = document.getElementById('newAdminId').value.trim();
             const adminPw = document.getElementById('newAdminPw').value;
 
@@ -3260,8 +3612,7 @@
                 return;
             }
 
-            // 중복 체크
-            const existingAdmin = await getDoc(doc(db, "admins", adminId));
+                       const existingAdmin = await getDoc(doc(db, "admins", adminId));
             if (existingAdmin.exists()) {
                 showAlert('이미 존재하는 아이디입니다', 'error');
                 return;
@@ -3285,15 +3636,14 @@
 
                 showAlert(`관리자 [${adminId}]가 추가되었습니다`, 'success');
                 closeModal();
-                // 다시 열기
-                setTimeout(() => document.getElementById('adminManageBtn').click(), 300);
+                               setTimeout(() => document.getElementById('adminManageBtn').click(), 300);
             } catch (e) {
                 console.error(e);
                 showAlert('추가 중 오류가 발생했습니다', 'error');
             }
         };
 
-        // 관리자 삭제
+
         window.deleteAdmin = async function(adminId) {
             if (!await showConfirm('관리자 삭제', `[${adminId}] 관리자를 삭제하시겠습니까?`)) return;
 
@@ -3318,7 +3668,7 @@
             }
         };
 
-        // 관리자 비밀번호 초기화
+
         window.resetAdminPw = async function(adminId) {
             openSmallModal('비밀번호 초기화', `[${adminId}] 관리자`, `
                 <div class="form-group">
