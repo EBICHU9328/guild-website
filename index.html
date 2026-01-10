@@ -504,8 +504,9 @@
             <button id="userManageBtn" class="btn-common btn-manage admin-only">👥 유저 관리</button>
             <button id="bulkDeleteBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 일괄 등록 해제</button>
             <button id="lockManageBtn" class="btn-common btn-lock admin-only">🔒 잠금 설정</button>
-            <button id="logViewBtn" class="btn-common btn-log admin-only">📝 로그 확인</button>
+            <button id="logViewBtn" class="btn-common btn-log super-admin-only" style="display:none;">📝 로그 확인</button>
             <button id="deletedUsersBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 삭제된 사용자</button>
+            <button id="backupManageBtn" class="btn-common admin-only" style="background:#0891b2; color:white;">📦 주간 백업</button>
             <button id="adminManageBtn" class="btn-common super-admin-only" style="background:#7c3aed; color:white; display:none;">👑 관리자 관리</button>
             <button id="adminLoginBtn" class="btn-common btn-admin">관리자</button>
         </div>
@@ -2834,7 +2835,10 @@
 
 
         document.getElementById('logViewBtn').addEventListener('click', async () => {
-            if(!isAdmin) return; 
+            if(!isSuperAdmin) {
+                showAlert('최종 관리자만 접근할 수 있습니다', 'error');
+                return;
+            }
             openLargeModal('로그', '전체 로그 (검색 가능)');
             
                        const snap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
@@ -3696,6 +3700,409 @@
             showAlert("초기 데이터 생성 완료", "success"); 
             setTimeout(() => location.reload(), 1500); 
         }
+
+               document.getElementById('backupManageBtn').addEventListener('click', async () => {
+            if (!isAdmin) return;
+            
+            openLargeModal('📦 주간 백업 관리', '전투력 현황을 백업하고 과거 기록을 조회합니다');
+            
+            let lastBackupTime = null;
+            try {
+                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
+                if (!backupsSnap.empty) {
+                    lastBackupTime = backupsSnap.docs[0].data().createdAt;
+                }
+            } catch(e) { console.error(e); }
+            
+            const lastBackupStr = lastBackupTime ? formatDateTime(lastBackupTime) : '없음';
+            
+            const html = `
+                <div style="margin-bottom:24px;">
+                    <div style="background:#f0f9ff; border:1px solid #0891b2; border-radius:12px; padding:16px; margin-bottom:20px;">
+                        <p style="color:#0891b2; font-weight:600; margin-bottom:8px;">📌 백업 안내</p>
+                        <ul style="color:#0e7490; font-size:13px; margin:0; padding-left:20px;">
+                            <li>백업 데이터는 Firebase에 영구 저장됩니다</li>
+                            <li>몇 달, 몇 년 뒤에도 조회 가능합니다</li>
+                            <li>매주 토요일 오후 9시(KST)에 자동 백업됩니다</li>
+                            <li>백업 내용: 닉네임, 길드, 전투력, 주간 증가량</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+                        <div style="background:#fef3c7; padding:20px; border-radius:12px; text-align:center;">
+                            <p style="color:#92400e; font-size:13px; margin:0;">마지막 백업</p>
+                            <p style="color:#b45309; font-size:16px; font-weight:600; margin:8px 0 0;">${lastBackupStr}</p>
+                        </div>
+                        <div style="background:#d1fae5; padding:20px; border-radius:12px; text-align:center;">
+                            <p style="color:#065f46; font-size:13px; margin:0;">현재 유저 수</p>
+                            <p style="color:#047857; font-size:16px; font-weight:600; margin:8px 0 0;">${allGuildData.length}명</p>
+                        </div>
+                        <div style="background:#e0e7ff; padding:20px; border-radius:12px; text-align:center;">
+                            <p style="color:#3730a3; font-size:13px; margin:0;">총 전투력</p>
+                            <p style="color:#4338ca; font-size:16px; font-weight:600; margin:8px 0 0;">${allGuildData.reduce((sum, u) => sum + u.power, 0).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="runManualBackup()" style="background:#0891b2;">📦 지금 백업하기</button>
+                        <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">📋 백업 기록 보기</button>
+                    </div>
+                </div>
+            `;
+            
+            setModalBody(html);
+            document.getElementById('modalFooter').innerHTML = '<button class="btn btn-cancel" onclick="closeModal()">닫기</button>';
+        });
+        
+        window.runManualBackup = async function() {
+            if (!await showConfirm('백업 확인', '현재 전투력 현황을 백업하시겠습니까?')) return;
+            
+            showAlert('백업 중...', 'success');
+            
+            const now = Date.now();
+            
+            let lastBackupData = {};
+            try {
+                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
+                if (!backupsSnap.empty) {
+                    const lastBackup = backupsSnap.docs[0].data();
+                    if (lastBackup.users) {
+                        lastBackup.users.forEach(u => {
+                            lastBackupData[u.name] = u.power;
+                        });
+                    }
+                }
+            } catch(e) { console.error(e); }
+            
+            const backupUsers = allGuildData.map(u => ({
+                name: u.name,
+                guild: u.guild,
+                power: u.power,
+                prevPower: lastBackupData[u.name] || u.power,
+                diff: u.power - (lastBackupData[u.name] || u.power),
+                shape_legend: u.shape_legend || 0,
+                shape_myth: u.shape_myth || 0,
+                mount_legend: u.mount_legend || 0,
+                mount_myth: u.mount_myth || 0
+            })).sort((a, b) => b.power - a.power);
+            
+            const guildStats = {};
+            backupUsers.forEach(u => {
+                if (!guildStats[u.guild]) {
+                    guildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0 };
+                }
+                guildStats[u.guild].count++;
+                guildStats[u.guild].totalPower += u.power;
+                guildStats[u.guild].totalDiff += u.diff;
+            });
+            
+            const backupId = `backup_${now}`;
+            try {
+                await setDoc(doc(db, "backups", backupId), {
+                    users: backupUsers,
+                    guildStats: guildStats,
+                    totalUsers: backupUsers.length,
+                    totalPower: backupUsers.reduce((sum, u) => sum + u.power, 0),
+                    totalDiff: backupUsers.reduce((sum, u) => sum + u.diff, 0),
+                    createdAt: now,
+                    createdBy: loggedInAdminId || 'admin',
+                    type: 'manual'
+                });
+                
+                showAlert('백업이 완료되었습니다!', 'success');
+                setTimeout(() => document.getElementById('backupManageBtn').click(), 1000);
+            } catch(e) {
+                console.error(e);
+                showAlert('백업 중 오류가 발생했습니다', 'error');
+            }
+        };
+        
+        window.viewBackupHistory = async function() {
+            openLargeModal('📋 백업 기록', '과거 백업 내역을 조회하고 상세 데이터를 확인합니다');
+            setModalBody('<p style="text-align:center; padding:40px;">로딩 중...</p>');
+            
+            try {
+                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(50)));
+                
+                if (backupsSnap.empty) {
+                    setModalBody('<p style="text-align:center; color:#9ca3af; padding:40px;">백업 기록이 없습니다</p>');
+                    document.getElementById('modalFooter').innerHTML = `
+                        <button class="btn" onclick="document.getElementById('backupManageBtn').click()" style="background:#0891b2; color:white;">← 백업 관리</button>
+                        <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
+                    `;
+                    return;
+                }
+                
+                let html = `<div style="overflow-x:auto;"><table class="common-table"><thead><tr>
+                    <th>일시</th>
+                    <th>유저 수</th>
+                    <th>총 전투력</th>
+                    <th>주간 증감</th>
+                    <th>유형</th>
+                    <th>관리</th>
+                </tr></thead><tbody>`;
+                
+                backupsSnap.forEach(docSnap => {
+                    const backup = docSnap.data();
+                    const backupId = docSnap.id;
+                    const time = formatDateTime(backup.createdAt);
+                    const totalPower = backup.totalPower ? backup.totalPower.toLocaleString() : '-';
+                    const totalDiff = backup.totalDiff || 0;
+                    const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
+                    const diffSign = totalDiff >= 0 ? '+' : '';
+                    const type = backup.type === 'manual' ? '<span style="color:#f59e0b;">수동</span>' : '<span style="color:#10b981;">자동</span>';
+                    
+                    html += `<tr>
+                        <td style="font-size:12px;">${time}</td>
+                        <td>${backup.totalUsers || 0}명</td>
+                        <td style="font-weight:600;">${totalPower}</td>
+                        <td style="color:${diffColor}; font-weight:600;">${diffSign}${totalDiff.toLocaleString()}</td>
+                        <td>${type}</td>
+                        <td>
+                            <button class="btn" onclick="viewBackupDetail('${backupId}')" style="padding:4px 8px; font-size:12px; background:#6366f1; color:white;">상세</button>
+                            <button class="btn" onclick="downloadBackupExcel('${backupId}')" style="padding:4px 8px; font-size:12px; background:#10b981; color:white;">엑셀</button>
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                setModalBody(html);
+            } catch(e) {
+                console.error(e);
+                setModalBody('<p style="text-align:center; color:#ef4444; padding:40px;">기록을 불러오는 중 오류가 발생했습니다</p>');
+            }
+            
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn" onclick="document.getElementById('backupManageBtn').click()" style="background:#0891b2; color:white;">← 백업 관리</button>
+                <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
+            `;
+        };
+        
+        window.viewBackupDetail = async function(backupId) {
+            openLargeModal('📊 백업 상세', '해당 시점의 전투력 현황');
+            setModalBody('<p style="text-align:center; padding:40px;">로딩 중...</p>');
+            
+            try {
+                const backupDoc = await getDoc(doc(db, "backups", backupId));
+                if (!backupDoc.exists()) {
+                    setModalBody('<p style="text-align:center; color:#ef4444;">백업 데이터를 찾을 수 없습니다</p>');
+                    return;
+                }
+                
+                const backup = backupDoc.data();
+                const time = formatDateTime(backup.createdAt);
+                const users = backup.users || [];
+                const guildStats = backup.guildStats || {};
+                
+                let guildStatsHtml = '';
+                Object.keys(guildStats).sort().forEach(guild => {
+                    const stats = guildStats[guild];
+                    const avgPower = Math.round(stats.totalPower / stats.count).toLocaleString();
+                    const diffSign = stats.totalDiff >= 0 ? '+' : '';
+                    const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
+                    guildStatsHtml += `<tr>
+                        <td style="font-weight:600;">${guild}</td>
+                        <td style="text-align:center;">${stats.count}명</td>
+                        <td style="text-align:right;">${avgPower}</td>
+                        <td style="text-align:right; color:${diffColor};">${diffSign}${stats.totalDiff.toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                let usersHtml = '';
+                users.forEach((u, idx) => {
+                    const diffSign = u.diff >= 0 ? '+' : '';
+                    const diffColor = u.diff >= 0 ? '#10b981' : '#ef4444';
+                    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                    usersHtml += `<tr>
+                        <td style="text-align:center;">${medal}</td>
+                        <td>${u.name}</td>
+                        <td style="text-align:center;">${u.guild}</td>
+                        <td style="text-align:right; font-weight:600;">${u.power.toLocaleString()}</td>
+                        <td style="text-align:right; color:${diffColor};">${diffSign}${u.diff.toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                const totalDiff = backup.totalDiff || 0;
+                const diffSign = totalDiff >= 0 ? '+' : '';
+                const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
+                
+                const html = `
+                    <div style="margin-bottom:20px;">
+                        <p style="color:#6b7280; margin:0;">백업 일시: <strong>${time}</strong> | 유형: ${backup.type === 'manual' ? '수동' : '자동'}</p>
+                    </div>
+                    
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:24px;">
+                        <div style="background:#fef3c7; padding:16px; border-radius:8px; text-align:center;">
+                            <p style="color:#92400e; font-size:12px; margin:0;">총 인원</p>
+                            <p style="color:#b45309; font-size:20px; font-weight:700; margin:4px 0 0;">${backup.totalUsers}명</p>
+                        </div>
+                        <div style="background:#d1fae5; padding:16px; border-radius:8px; text-align:center;">
+                            <p style="color:#065f46; font-size:12px; margin:0;">총 전투력</p>
+                            <p style="color:#047857; font-size:20px; font-weight:700; margin:4px 0 0;">${backup.totalPower.toLocaleString()}</p>
+                        </div>
+                        <div style="background:#e0e7ff; padding:16px; border-radius:8px; text-align:center;">
+                            <p style="color:#3730a3; font-size:12px; margin:0;">주간 증감</p>
+                            <p style="color:${diffColor}; font-size:20px; font-weight:700; margin:4px 0 0;">${diffSign}${totalDiff.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin:0 0 12px; color:#374151;">📊 길드별 현황</h4>
+                    <div style="overflow-x:auto; margin-bottom:24px;">
+                        <table class="common-table">
+                            <thead><tr><th>길드</th><th>인원</th><th>평균 전투력</th><th>주간 증감</th></tr></thead>
+                            <tbody>${guildStatsHtml}</tbody>
+                        </table>
+                    </div>
+                    
+                    <h4 style="margin:0 0 12px; color:#374151;">👥 전체 명단 (${users.length}명)</h4>
+                    <div style="max-height:400px; overflow-y:auto; overflow-x:auto;">
+                        <table class="common-table">
+                            <thead><tr><th>순위</th><th>닉네임</th><th>길드</th><th>전투력</th><th>증감</th></tr></thead>
+                            <tbody>${usersHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+                
+                setModalBody(html);
+            } catch(e) {
+                console.error(e);
+                setModalBody('<p style="text-align:center; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다</p>');
+            }
+            
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn" onclick="downloadBackupExcel('${backupId}')" style="background:#10b981; color:white;">📥 엑셀 다운로드</button>
+                <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">← 백업 기록</button>
+                <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
+            `;
+        };
+        
+        window.downloadBackupExcel = async function(backupId) {
+            try {
+                const backupDoc = await getDoc(doc(db, "backups", backupId));
+                if (!backupDoc.exists()) {
+                    showAlert('백업 데이터를 찾을 수 없습니다', 'error');
+                    return;
+                }
+                
+                const backup = backupDoc.data();
+                const users = backup.users || [];
+                const time = formatDateTime(backup.createdAt).replace(/[:\s]/g, '-');
+                
+                const ws = XLSX.utils.json_to_sheet(users.map((u, idx) => ({
+                    '순위': idx + 1,
+                    '닉네임': u.name,
+                    '길드': u.guild,
+                    '전투력': u.power,
+                    '이전 전투력': u.prevPower,
+                    '주간 증감': u.diff,
+                    '형상 전설': u.shape_legend || 0,
+                    '형상 신화': u.shape_myth || 0,
+                    '탈것 전설': u.mount_legend || 0,
+                    '탈것 신화': u.mount_myth || 0
+                })));
+                
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '백업데이터');
+                XLSX.writeFile(wb, `길드전투력_백업_${time}.xlsx`);
+                
+                showAlert('엑셀 다운로드 완료!', 'success');
+            } catch(e) {
+                console.error(e);
+                showAlert('다운로드 중 오류가 발생했습니다', 'error');
+            }
+        };
+        
+        async function checkAutoBackup() {
+            if (!isAdmin) return;
+            
+            const now = new Date();
+            const kstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+            const dayOfWeek = kstNow.getDay();
+            const hour = kstNow.getHours();
+            
+            if (dayOfWeek === 6 && hour >= 21) {
+                const todayStart = new Date(kstNow);
+                todayStart.setHours(21, 0, 0, 0);
+                const todayStartTimestamp = todayStart.getTime();
+                
+                try {
+                    const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
+                    
+                    let needBackup = true;
+                    if (!backupsSnap.empty) {
+                        const lastBackup = backupsSnap.docs[0].data();
+                        if (lastBackup.createdAt >= todayStartTimestamp) {
+                            needBackup = false;
+                        }
+                    }
+                    
+                    if (needBackup) {
+                        console.log('자동 백업 실행...');
+                        await performAutoBackup();
+                    }
+                } catch(e) {
+                    console.error('자동 백업 체크 오류:', e);
+                }
+            }
+        }
+        
+        async function performAutoBackup() {
+            const now = Date.now();
+            
+            let lastBackupData = {};
+            try {
+                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
+                if (!backupsSnap.empty) {
+                    const lastBackup = backupsSnap.docs[0].data();
+                    if (lastBackup.users) {
+                        lastBackup.users.forEach(u => {
+                            lastBackupData[u.name] = u.power;
+                        });
+                    }
+                }
+            } catch(e) { console.error(e); }
+            
+            const backupUsers = allGuildData.map(u => ({
+                name: u.name,
+                guild: u.guild,
+                power: u.power,
+                prevPower: lastBackupData[u.name] || u.power,
+                diff: u.power - (lastBackupData[u.name] || u.power),
+                shape_legend: u.shape_legend || 0,
+                shape_myth: u.shape_myth || 0,
+                mount_legend: u.mount_legend || 0,
+                mount_myth: u.mount_myth || 0
+            })).sort((a, b) => b.power - a.power);
+            
+            const guildStats = {};
+            backupUsers.forEach(u => {
+                if (!guildStats[u.guild]) {
+                    guildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0 };
+                }
+                guildStats[u.guild].count++;
+                guildStats[u.guild].totalPower += u.power;
+                guildStats[u.guild].totalDiff += u.diff;
+            });
+            
+            const backupId = `backup_${now}`;
+            try {
+                await setDoc(doc(db, "backups", backupId), {
+                    users: backupUsers,
+                    guildStats: guildStats,
+                    totalUsers: backupUsers.length,
+                    totalPower: backupUsers.reduce((sum, u) => sum + u.power, 0),
+                    totalDiff: backupUsers.reduce((sum, u) => sum + u.diff, 0),
+                    createdAt: now,
+                    createdBy: 'auto',
+                    type: 'auto'
+                });
+                console.log('자동 백업 완료!');
+            } catch(e) {
+                console.error('자동 백업 실패:', e);
+            }
+        }
+        
+        setTimeout(checkAutoBackup, 3000);
 
                document.getElementById('adminManageBtn').addEventListener('click', async () => {
             if (!isSuperAdmin) {
