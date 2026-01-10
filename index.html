@@ -520,6 +520,7 @@
             <button id="spreadsheetBtn" class="btn-common admin-only" style="background:#0f9d58; color:white;">📊 스프레드시트 연동</button>
             <button id="excelBtn" class="btn-common btn-excel admin-only"><span>📊 엑셀 다운로드</span></button>
             <button id="guildAddBtn" class="btn-common btn-guild-add admin-only"><span>🏰 길드 추가</span></button>
+            <button id="guildDeleteBtn" class="btn-common admin-only" style="background:#991b1b; color:white;">🏚️ 길드 삭제</button>
             <button id="userManageBtn" class="btn-common btn-manage admin-only">👥 유저 관리</button>
             <button id="bulkDeleteBtn" class="btn-common admin-only" style="background:#dc2626; color:white;">🗑️ 일괄 등록 해제</button>
             <button id="lockManageBtn" class="btn-common btn-lock admin-only">🔒 잠금 설정</button>
@@ -1233,7 +1234,7 @@
                         type: 'nickname_change',
                         old_value: oldName,
                         new_value: newName,
-                        editedBy: loggedInAdminId || 'admin',
+                        editedBy: loggedInAdminId || '아이디미기록',
                         createdAt: Date.now(),
                         ip: await getIp(),
                         device: navigator.userAgent,
@@ -1399,7 +1400,7 @@
                     type: 'user_approved',
                     old_value: '승인대기',
                     new_value: '승인완료',
-                    editedBy: loggedInAdminId || 'admin',
+                    editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(),
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1430,7 +1431,7 @@
                     type: 'user_rejected',
                     old_value: '승인대기',
                     new_value: '거부됨',
-                    editedBy: loggedInAdminId || 'admin',
+                    editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(),
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1544,20 +1545,70 @@
                     updatedBy: isAdmin ? 'admin' : 'user'
                 };
                 
+                let newSL = u.shape_legend || 0;
+                let newSM = u.shape_myth || 0;
+                let newML = u.mount_legend || 0;
+                let newMM = u.mount_myth || 0;
+                
                 if (isAdmin) {
-                    newData.shape_legend = Number(document.getElementById('eSL').value) || 0;
-                    newData.shape_myth = Number(document.getElementById('eSM').value) || 0;
-                    newData.mount_legend = Number(document.getElementById('eML').value) || 0;
-                    newData.mount_myth = Number(document.getElementById('eMM').value) || 0;
+                    newSL = Number(document.getElementById('eSL').value) || 0;
+                    newSM = Number(document.getElementById('eSM').value) || 0;
+                    newML = Number(document.getElementById('eML').value) || 0;
+                    newMM = Number(document.getElementById('eMM').value) || 0;
+                    newData.shape_legend = newSL;
+                    newData.shape_myth = newSM;
+                    newData.mount_legend = newML;
+                    newData.mount_myth = newMM;
                 }
+                
+                const changes = [];
+                if (u.power !== nPower) {
+                    changes.push(`전투력: ${u.power.toLocaleString()} → ${nPower.toLocaleString()}`);
+                }
+                if (u.guild !== nGuild) {
+                    changes.push(`길드: ${u.guild} → ${nGuild}`);
+                }
+                if (isAdmin) {
+                    if ((u.shape_legend || 0) !== newSL) {
+                        changes.push(`형상전설: ${u.shape_legend || 0} → ${newSL}`);
+                    }
+                    if ((u.shape_myth || 0) !== newSM) {
+                        changes.push(`형상신화: ${u.shape_myth || 0} → ${newSM}`);
+                    }
+                    if ((u.mount_legend || 0) !== newML) {
+                        changes.push(`탈것전설: ${u.mount_legend || 0} → ${newML}`);
+                    }
+                    if ((u.mount_myth || 0) !== newMM) {
+                        changes.push(`탈것신화: ${u.mount_myth || 0} → ${newMM}`);
+                    }
+                }
+                
+                const oldValues = {
+                    power: u.power,
+                    guild: u.guild,
+                    shape_legend: u.shape_legend || 0,
+                    shape_myth: u.shape_myth || 0,
+                    mount_legend: u.mount_legend || 0,
+                    mount_myth: u.mount_myth || 0
+                };
+                
+                const newValues = {
+                    power: nPower,
+                    guild: nGuild,
+                    shape_legend: newSL,
+                    shape_myth: newSM,
+                    mount_legend: newML,
+                    mount_myth: newMM
+                };
 
                 await updateDoc(doc(db, "users", u.name), newData);
                 await setDoc(doc(collection(db, "logs")), { 
                     who: u.name, 
                     type: 'info_edit', 
-                    old_value: '수정됨', 
-                    new_value: isAdmin ? '관리자수정' : '일반수정', 
-                    editedBy: isAdmin ? (loggedInAdminId || 'admin') : 'self',
+                    old_value: JSON.stringify(oldValues), 
+                    new_value: JSON.stringify(newValues),
+                    changes: changes.length > 0 ? changes.join(', ') : '변경없음',
+                    editedBy: isAdmin ? (loggedInAdminId || '아이디미기록') : 'self',
                     createdAt: Date.now(), 
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1675,7 +1726,7 @@
                     type: 'bulk_update', 
                     old_value: '-', 
                     new_value: `${names.length}명 처리`, 
-                    editedBy: loggedInAdminId || 'admin',
+                    editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(), 
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1800,7 +1851,7 @@
                     type: 'guild_move', 
                     old_value: '-', 
                     new_value: `${targetGuild}으로 ${movedCount}명 이동`, 
-                    editedBy: loggedInAdminId || 'admin',
+                    editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(), 
                     ip: await getIp(),
                     device: navigator.userAgent
@@ -1962,7 +2013,7 @@
                         type: 'power', 
                         old_value: u.power, 
                         new_value: val, 
-                        editedBy: isAdmin ? (loggedInAdminId || 'admin') : 'self',                        createdAt: Date.now(), 
+                        editedBy: isAdmin ? (loggedInAdminId || '아이디미기록') : 'self',                        createdAt: Date.now(), 
                         ip: await getIp(), 
                         device: navigator.userAgent 
                     });
@@ -2114,6 +2165,103 @@
                 await updateDoc(doc(db, "config", "guilds"), { names: [...guildList, name] });
                 showAlert('추가됨', 'success'); closeModal(); setTimeout(() => location.reload(), 1000);
             };
+        });
+
+        document.getElementById('guildDeleteBtn').addEventListener('click', async () => {
+            if(!isAdmin) return;
+            
+            const guildOptions = guildList.map(g => {
+                const memberCount = guildDataMap[g] ? guildDataMap[g].length : 0;
+                return `<option value="${g}">${g} (${memberCount}명)</option>`;
+            }).join('');
+            
+            openLargeModal('🏚️ 길드 삭제', '삭제할 길드를 선택하세요');
+            
+            const html = `
+                <div style="background:#fef2f2; border:2px solid #dc2626; border-radius:12px; padding:16px; margin-bottom:20px;">
+                    <p style="color:#dc2626; font-weight:600; margin-bottom:8px;">⚠️ 주의사항</p>
+                    <ul style="color:#991b1b; font-size:13px; margin:0; padding-left:20px;">
+                        <li>길드에 소속된 유저가 있으면 삭제할 수 없습니다.</li>
+                        <li>먼저 '길드 이동' 기능으로 유저를 다른 길드로 이동시켜주세요.</li>
+                        <li>삭제된 길드는 복구할 수 없습니다.</li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">삭제할 길드 선택</label>
+                    <select id="deleteGuildSelect" class="form-input">${guildOptions}</select>
+                </div>
+                <div id="guildDeleteInfo" style="margin-top:16px; padding:16px; background:#f9fafb; border-radius:8px;">
+                    <p style="color:#6b7280; text-align:center;">길드를 선택하면 상세 정보가 표시됩니다.</p>
+                </div>
+            `;
+            
+            setModalBody(html);
+            
+            const updateGuildInfo = () => {
+                const selectedGuild = document.getElementById('deleteGuildSelect').value;
+                const members = guildDataMap[selectedGuild] || [];
+                const infoDiv = document.getElementById('guildDeleteInfo');
+                
+                if (members.length > 0) {
+                    infoDiv.innerHTML = `
+                        <div style="text-align:center;">
+                            <div style="font-size:48px; margin-bottom:8px;">🚫</div>
+                            <p style="color:#dc2626; font-weight:600; font-size:16px;">삭제 불가</p>
+                            <p style="color:#991b1b; margin-top:8px;">${selectedGuild} 길드에 <strong>${members.length}명</strong>의 유저가 있습니다.</p>
+                            <p style="color:#6b7280; font-size:13px; margin-top:12px;">길드 이동 기능으로 유저를 먼저 이동시켜주세요.</p>
+                            <div style="margin-top:16px; max-height:150px; overflow-y:auto; text-align:left; background:#fee2e2; padding:12px; border-radius:8px;">
+                                <p style="font-size:12px; color:#991b1b; margin-bottom:8px;">소속 유저 목록:</p>
+                                ${members.map(m => `<span style="display:inline-block; background:#fecaca; padding:2px 8px; margin:2px; border-radius:4px; font-size:11px;">${m.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    infoDiv.innerHTML = `
+                        <div style="text-align:center;">
+                            <div style="font-size:48px; margin-bottom:8px;">✅</div>
+                            <p style="color:#16a34a; font-weight:600; font-size:16px;">삭제 가능</p>
+                            <p style="color:#166534; margin-top:8px;">${selectedGuild} 길드에 소속된 유저가 없습니다.</p>
+                            <button id="confirmDeleteGuildBtn" class="btn btn-primary" style="margin-top:16px; background:#dc2626;">🗑️ ${selectedGuild} 길드 삭제</button>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        const deleteBtn = document.getElementById('confirmDeleteGuildBtn');
+                        if (deleteBtn) {
+                            deleteBtn.onclick = async () => {
+                                if (!await showConfirm('길드 삭제 확인', `정말로 <strong>${selectedGuild}</strong> 길드를 삭제하시겠습니까?<br><br><span style="color:#dc2626;">이 작업은 되돌릴 수 없습니다.</span>`)) return;
+                                
+                                try {
+                                    const newGuildList = guildList.filter(g => g !== selectedGuild);
+                                    await updateDoc(doc(db, "config", "guilds"), { names: newGuildList });
+                                    
+                                    await setDoc(doc(collection(db, "logs")), {
+                                        who: 'Admin',
+                                        type: 'guild_delete',
+                                        old_value: selectedGuild,
+                                        new_value: '길드 삭제됨',
+                                        editedBy: loggedInAdminId || '아이디미기록',
+                                        createdAt: Date.now(),
+                                        ip: await getIp()
+                                    });
+                                    
+                                    showAlert(`${selectedGuild} 길드가 삭제되었습니다`, 'success');
+                                    closeModal();
+                                    setTimeout(() => location.reload(), 1000);
+                                } catch (e) {
+                                    console.error(e);
+                                    showAlert('삭제 중 오류가 발생했습니다', 'error');
+                                }
+                            };
+                        }
+                    }, 100);
+                }
+            };
+            
+            document.getElementById('deleteGuildSelect').addEventListener('change', updateGuildInfo);
+            updateGuildInfo();
+            
+            document.getElementById('modalFooter').innerHTML = '<button class="btn btn-cancel" onclick="closeModal()">닫기</button>';
         });
 
         document.getElementById('excelBtn').addEventListener('click', () => {
@@ -2387,7 +2535,7 @@
                     type: 'spreadsheet_sync',
                     old_value: '-',
                     new_value: `전체 동기화 (성공:${successCount}, 실패:${failCount})`,
-                    editedBy: loggedInAdminId || 'admin',
+                    editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(),
                     ip: await getIp()
                 });
@@ -2706,7 +2854,7 @@
                                 type: 'user_deleted',
                                 old_value: '사용자 존재',
                                 new_value: `등록 해제 (사유: ${reason})`,
-                                editedBy: loggedInAdminId || 'admin',
+                                editedBy: loggedInAdminId || '아이디미기록',
                                 createdAt: Date.now(),
                                 ip: await getIp(),
                                 device: navigator.userAgent
@@ -2740,7 +2888,9 @@
                     type: l.type || '-',
                     oldValue: l.old_value || '-',
                     newValue: l.new_value || '-',
-                    editedBy: l.editedBy || '-',                    ip: l.ip || '-',
+                    changes: l.changes || '',
+                    editedBy: l.editedBy || '-',
+                    ip: l.ip || '-',
                     device: l.device || '-'
                 });
             });
@@ -2756,6 +2906,7 @@
                     'user_request': '📝 등록 요청',
                     'bulk_update': '📋 일괄 처리',
                     'guild_move': '🚀 길드 이동',
+                    'guild_delete': '🏚️ 길드 삭제',
                     'spreadsheet_sync': '📊 스프레드시트 동기화',
                     'google_sheet_sync': '📊 구글시트 동기화'
                 };
@@ -2808,16 +2959,17 @@
                     <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="margin-bottom: 0;">
                     <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">총 ${logs.length}개 로그</p>
                 </div>
-                <div class="table-scroll-container">
-                    <table class="common-table" id="logTable">
+                <div style="overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch;">
+                    <table class="common-table" id="logTable" style="min-width: 900px;">
                         <thead>
                             <tr>
-                                <th>시간</th>
-                                <th>대상</th>
-                                <th>작업</th>
-                                <th>수정전</th>
-                                <th>수정후</th>
-                                <th>수정자</th>
+                                <th style="min-width:140px;">시간</th>
+                                <th style="min-width:100px;">대상</th>
+                                <th style="min-width:120px;">작업</th>
+                                <th style="min-width:120px;">수정전</th>
+                                <th style="min-width:120px;">수정후</th>
+                                <th style="min-width:200px;">내용</th>
+                                <th style="min-width:150px;">작업자</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -2827,87 +2979,129 @@
                 
                                let oldDisplay = '-';
                 let newDisplay = '-';
+                let contentDisplay = '-';
                 
                 switch(l.type) {
                     case 'power':
                         oldDisplay = Number(l.oldValue).toLocaleString();
                         newDisplay = Number(l.newValue).toLocaleString();
+                        contentDisplay = `전투력: ${oldDisplay} → ${newDisplay}`;
                         break;
                     
                     case 'nickname_change':
                         oldDisplay = l.oldValue;
                         newDisplay = l.newValue;
+                        contentDisplay = `닉네임 변경`;
                         break;
                     
                     case 'info_edit':
-                        oldDisplay = '-';
-                        newDisplay = l.newValue === '관리자수정' ? '관리자가 수정함' : '본인이 수정함';
+                        try {
+                            const oldData = JSON.parse(l.oldValue);
+                            const newData = JSON.parse(l.newValue);
+                            oldDisplay = oldData.power ? oldData.power.toLocaleString() : '-';
+                            newDisplay = newData.power ? newData.power.toLocaleString() : '-';
+                            contentDisplay = l.changes || '변경없음';
+                        } catch(e) {
+                            oldDisplay = '-';
+                            newDisplay = l.newValue === '관리자수정' ? '-' : '-';
+                            contentDisplay = l.newValue === '관리자수정' ? '관리자가 수정함' : '본인이 수정함';
+                        }
                         break;
                     
                     case 'user_approved':
                         oldDisplay = '대기';
                         newDisplay = '승인됨';
+                        contentDisplay = '사용자 승인 완료';
                         break;
                     
                     case 'user_rejected':
                         oldDisplay = '대기';
                         newDisplay = '거부됨';
+                        contentDisplay = '등록 거부됨';
                         break;
                     
                     case 'user_deleted':
                         oldDisplay = '등록됨';
-                        newDisplay = l.newValue || '삭제됨';
+                        newDisplay = '삭제됨';
+                        contentDisplay = l.newValue || '등록 해제';
                         break;
                     
                     case 'user_request':
                         oldDisplay = '-';
-                        newDisplay = l.newValue || '등록 요청';
+                        newDisplay = '요청됨';
+                        contentDisplay = l.newValue || '등록 요청';
                         break;
                     
                     case 'bulk_update':
                         oldDisplay = '-';
-                        newDisplay = l.newValue || '일괄 처리';
+                        newDisplay = '-';
+                        contentDisplay = l.newValue || '일괄 처리';
                         break;
                     
                     case 'guild_move':
                         oldDisplay = '-';
-                        newDisplay = l.newValue || '길드 이동';
+                        newDisplay = '-';
+                        contentDisplay = l.newValue || '길드 이동';
+                        break;
+                    
+                    case 'guild_delete':
+                        oldDisplay = l.oldValue || '-';
+                        newDisplay = '삭제됨';
+                        contentDisplay = `${l.oldValue} 길드 삭제`;
                         break;
                     
                     case 'spreadsheet_sync':
                     case 'google_sheet_sync':
                         oldDisplay = '-';
-                        newDisplay = l.newValue || '동기화 완료';
+                        newDisplay = '-';
+                        contentDisplay = l.newValue || '동기화 완료';
                         break;
                     
                     case 'admin_add':
+                        oldDisplay = '-';
+                        newDisplay = l.newValue || '-';
+                        contentDisplay = '관리자 추가';
+                        break;
+                    
                     case 'admin_delete':
+                        oldDisplay = l.oldValue || '-';
+                        newDisplay = '삭제됨';
+                        contentDisplay = '관리자 삭제';
+                        break;
+                    
                     case 'admin_pw_reset':
                         oldDisplay = l.oldValue || '-';
-                        newDisplay = l.newValue || '-';
+                        newDisplay = '-';
+                        contentDisplay = '비밀번호 초기화';
                         break;
                     
                     default:
                         oldDisplay = l.oldValue || '-';
                         newDisplay = l.newValue || '-';
+                        contentDisplay = '-';
                 }
                 
-                               let editedByDisplay = l.editedBy;
+                let workerDisplay = '-';
                 if (l.editedBy === 'self') {
-                    editedByDisplay = '<span style="color:#6b7280;">본인</span>';
+                    workerDisplay = '<span style="color:#6b7280;">본인이 수정함</span>';
                 } else if (l.editedBy && l.editedBy !== '-') {
-                    editedByDisplay = `<span style="color:#8b5cf6; font-weight:600;">👑 ${l.editedBy}</span>`;
+                    if (l.editedBy === 'admin' || l.editedBy === '아이디미기록') {
+                        workerDisplay = '<span style="color:#8b5cf6; font-weight:600;">👑 관리자가 수정함</span>';
+                    } else {
+                        workerDisplay = `<span style="color:#8b5cf6; font-weight:600;">👑 관리자(${l.editedBy})가 수정함</span>`;
+                    }
                 } else {
-                    editedByDisplay = '<span style="color:#9ca3af;">-</span>';
+                    workerDisplay = '<span style="color:#9ca3af;">-</span>';
                 }
                 
                 html += `<tr>
-                    <td style="font-size:12px;">${l.time}</td>
+                    <td style="font-size:12px; white-space:nowrap;">${l.time}</td>
                     <td><strong>${l.who}</strong></td>
                     <td><span style="white-space: nowrap;">${logType}</span></td>
                     <td style="color:#ef4444;">${oldDisplay}</td>
                     <td style="color:#10b981;">${newDisplay}</td>
-                    <td>${editedByDisplay}</td>
+                    <td style="font-size:12px; max-width:250px; word-break:break-all;">${contentDisplay}</td>
+                    <td style="font-size:12px;">${workerDisplay}</td>
                 </tr>`; 
             });
             
@@ -3220,7 +3414,7 @@
                             type: 'user_deleted',
                             old_value: '사용자 존재',
                             new_value: `일괄 등록 해제 (사유: ${reason})`,
-                            editedBy: loggedInAdminId || 'admin',
+                            editedBy: loggedInAdminId || '아이디미기록',
                             createdAt: Date.now(),
                             ip: await getIp(),
                             device: navigator.userAgent
