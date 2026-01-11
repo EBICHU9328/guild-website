@@ -565,6 +565,7 @@
                 <button class="admin-dropdown-btn dropdown-data">📊 데이터</button>
                 <div class="admin-dropdown-menu">
                     <button class="admin-dropdown-item" id="spreadsheetBtn">📋 스프레드시트 연동</button>
+                    <button class="admin-dropdown-item" id="syncExcludeBtn">🚫 연동 제외 관리</button>
                     <button class="admin-dropdown-item" id="excelBtn">📥 엑셀 다운로드</button>
                     <button class="admin-dropdown-item" id="backupManageBtn">📦 주간 백업</button>
                 </div>
@@ -758,6 +759,7 @@
         let lockEndTime = 0;
         let biweeklyBaseTime = 0; // 2주 반복 기준 시간
         let spreadsheetConfig = null;
+        let syncExcludeList = []; // 스프레드시트 연동 제외 목록
         const _0x = { a: "dGpkYWxzOTMyOA==", b: "dG5hbHM5MzI4QEA=" };
         
        
@@ -1017,6 +1019,7 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     spreadsheetConfig = docSnap.data();
+                    syncExcludeList = spreadsheetConfig.excludeList || [];
                 }
             } catch (e) {
                 console.log("Spreadsheet config error", e);
@@ -2433,6 +2436,179 @@
             openSpreadsheetSettingsModal();
         });
 
+        // 연동 제외 관리 버튼
+        document.getElementById('syncExcludeBtn').addEventListener('click', () => {
+            if (!isAdmin) return;
+            openSyncExcludeModal();
+        });
+
+        async function openSyncExcludeModal() {
+            openLargeModal('🚫 연동 제외 관리', '스프레드시트에 연동하지 않을 유저를 선택합니다');
+            
+            // 검색 및 필터 UI
+            let html = `
+                <div style="margin-bottom:16px;">
+                    <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
+                        <p style="color:#92400e; font-size:13px; margin:0;">
+                            ⚠️ 체크된 유저는 스프레드시트 연동에서 제외됩니다.<br>
+                            현재 <b>${syncExcludeList.length}명</b>이 제외 목록에 있습니다.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <div style="flex:2; min-width:200px;">
+                            <input type="text" id="excludeSearchInput" class="form-input" placeholder="닉네임 검색..." autocomplete="off">
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <select id="excludeGuildFilter" class="form-input">
+                                <option value="">전체 길드</option>
+                                ${guildList.map(g => `<option value="${g}">${g}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <select id="excludeStatusFilter" class="form-input">
+                                <option value="">전체 상태</option>
+                                <option value="excluded">제외된 유저만</option>
+                                <option value="included">포함된 유저만</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div style="max-height:400px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px;">
+                    <table class="common-table" style="margin:0;">
+                        <thead style="position:sticky; top:0; background:white; z-index:1;">
+                            <tr>
+                                <th style="width:50px;">제외</th>
+                                <th>닉네임</th>
+                                <th>길드</th>
+                                <th>전투력</th>
+                            </tr>
+                        </thead>
+                        <tbody id="excludeUserList">
+            `;
+            
+            // 유저 목록 생성
+            const sortedUsers = [...allGuildData].sort((a, b) => a.name.localeCompare(b.name));
+            sortedUsers.forEach(user => {
+                const isExcluded = syncExcludeList.includes(user.name);
+                html += `
+                    <tr class="exclude-row" data-name="${user.name}" data-guild="${user.guild}" data-excluded="${isExcluded}">
+                        <td style="text-align:center;">
+                            <input type="checkbox" class="exclude-checkbox" data-name="${user.name}" ${isExcluded ? 'checked' : ''}>
+                        </td>
+                        <td style="font-weight:600;">${user.name}</td>
+                        <td>${user.guild}</td>
+                        <td>${user.power.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                    <span id="excludeCount" style="color:#6b7280; font-size:13px;">총 ${sortedUsers.length}명</span>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" onclick="selectAllExclude(true)" style="padding:6px 12px; font-size:12px; background:#ef4444; color:white;">전체 제외</button>
+                        <button class="btn" onclick="selectAllExclude(false)" style="padding:6px 12px; font-size:12px; background:#10b981; color:white;">전체 포함</button>
+                    </div>
+                </div>
+            `;
+            
+            setModalBody(html);
+            
+            // 검색/필터 이벤트
+            document.getElementById('excludeSearchInput').addEventListener('input', filterExcludeList);
+            document.getElementById('excludeGuildFilter').addEventListener('change', filterExcludeList);
+            document.getElementById('excludeStatusFilter').addEventListener('change', filterExcludeList);
+            
+            // 체크박스 변경 이벤트
+            document.querySelectorAll('.exclude-checkbox').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const name = this.dataset.name;
+                    const row = this.closest('tr');
+                    if (this.checked) {
+                        if (!syncExcludeList.includes(name)) {
+                            syncExcludeList.push(name);
+                        }
+                        row.dataset.excluded = 'true';
+                    } else {
+                        syncExcludeList = syncExcludeList.filter(n => n !== name);
+                        row.dataset.excluded = 'false';
+                    }
+                    updateExcludeCount();
+                });
+            });
+            
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-primary" onclick="saveExcludeList()">💾 저장</button>
+                <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+            `;
+        }
+
+        function filterExcludeList() {
+            const search = document.getElementById('excludeSearchInput').value.toLowerCase();
+            const guild = document.getElementById('excludeGuildFilter').value;
+            const status = document.getElementById('excludeStatusFilter').value;
+            
+            let visibleCount = 0;
+            document.querySelectorAll('.exclude-row').forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const rowGuild = row.dataset.guild;
+                const isExcluded = row.dataset.excluded === 'true';
+                
+                let show = true;
+                if (search && !name.includes(search)) show = false;
+                if (guild && rowGuild !== guild) show = false;
+                if (status === 'excluded' && !isExcluded) show = false;
+                if (status === 'included' && isExcluded) show = false;
+                
+                row.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+            
+            document.getElementById('excludeCount').textContent = `표시: ${visibleCount}명 / 전체: ${allGuildData.length}명`;
+        }
+
+        function updateExcludeCount() {
+            const infoBox = document.querySelector('.openSyncExcludeModal-info');
+            // 헤더의 제외 인원 업데이트는 저장 후에 반영
+        }
+
+        window.selectAllExclude = function(exclude) {
+            const visibleRows = document.querySelectorAll('.exclude-row:not([style*="display: none"])');
+            visibleRows.forEach(row => {
+                const checkbox = row.querySelector('.exclude-checkbox');
+                const name = checkbox.dataset.name;
+                checkbox.checked = exclude;
+                row.dataset.excluded = exclude ? 'true' : 'false';
+                
+                if (exclude) {
+                    if (!syncExcludeList.includes(name)) {
+                        syncExcludeList.push(name);
+                    }
+                } else {
+                    syncExcludeList = syncExcludeList.filter(n => n !== name);
+                }
+            });
+        };
+
+        window.saveExcludeList = async function() {
+            try {
+                const config = spreadsheetConfig || {};
+                config.excludeList = syncExcludeList;
+                
+                await setDoc(doc(db, "config", "spreadsheet"), config);
+                spreadsheetConfig = config;
+                
+                showAlert(`연동 제외 목록이 저장되었습니다 (${syncExcludeList.length}명 제외)`, 'success');
+                closeModal();
+            } catch(e) {
+                console.error(e);
+                showAlert('저장 중 오류가 발생했습니다', 'error');
+            }
+        };
+
         async function openSpreadsheetSettingsModal() {
             const currentConfig = spreadsheetConfig || {};
             const sheetId = currentConfig.sheetId || '1ySgXwqwDGSW3c9gh8LVYPDBmdkh27q9JmVKId8gQ6uI';
@@ -2704,10 +2880,13 @@
                 return { success: false, error: '스프레드시트 설정이 없습니다' };
             }
 
+            // 제외 목록 필터링
+            const filteredUsers = users.filter(u => !syncExcludeList.includes(u.name));
+
             const payload = {
                 sheetId: spreadsheetConfig.sheetId,
                 sheetName: sheetName,
-                users: users.map(u => ({
+                users: filteredUsers.map(u => ({
                     guild: u.guild,
                     name: u.name,
                     power: u.power,
@@ -2727,7 +2906,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                               return { success: true, message: `${users.length}개 데이터 전송` };
+                               return { success: true, message: `${filteredUsers.length}개 데이터 전송 (${users.length - filteredUsers.length}명 제외)` };
 
             } catch (e) {
                 console.error('Sync error:', e);
