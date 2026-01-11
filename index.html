@@ -2,13 +2,28 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#fff9f9">
     <title>🐴 길드 전투력 현황판 2027</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; background: #ffffff; color: #1a1a1a; line-height: 1.6; user-select: none; -webkit-user-select: none; caret-color: transparent; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; 
+            background: #ffffff; 
+            color: #1a1a1a; 
+            line-height: 1.6; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            caret-color: transparent;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: contain;
+        }
         input, textarea, select { user-select: text; -webkit-user-select: text; caret-color: auto; }
         
         
@@ -17,16 +32,30 @@
             align-items: center;
             position: relative;
             padding: 8px 12px;
-            background: linear-gradient(135deg, #fff9f9 0%, #fff5f5 50%, #fff9f9 100%);
+            background: linear-gradient(135deg, #fff9f9 0%, #ffe4e6 25%, #fff1f2 50%, #ffe4e6 75%, #fff9f9 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 4s ease-in-out infinite;
             border-radius: 14px;
             box-shadow: 
-                0 4px 15px rgba(198, 40, 40, 0.15),
-                inset 0 0 20px rgba(255,255,255,0.8);
+                0 0 15px rgba(244, 114, 182, 0.3),
+                0 0 30px rgba(251, 113, 133, 0.15),
+                0 4px 20px rgba(198, 40, 40, 0.2),
+                inset 0 0 20px rgba(255,255,255,0.9);
             overflow: hidden;
-            border: 2px solid #f8b4b4;
+            border: 2px solid transparent;
             user-select: none;
             -webkit-user-select: none;
             caret-color: transparent;
+        }
+        .newyear-title::after {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, #f472b6, #fb7185, #fda4af, #fb7185, #f472b6);
+            background-size: 300% 300%;
+            animation: borderGlow 3s ease-in-out infinite;
+            border-radius: 16px;
+            z-index: -1;
         }
         .newyear-title * {
             user-select: none;
@@ -38,34 +67,50 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-image: 
-                radial-gradient(circle at 10% 30%, rgba(255,182,193,0.5) 2px, transparent 2px),
-                radial-gradient(circle at 30% 70%, rgba(255,192,203,0.4) 1.5px, transparent 1.5px),
-                radial-gradient(circle at 70% 25%, rgba(255,182,193,0.45) 2px, transparent 2px),
-                radial-gradient(circle at 90% 65%, rgba(255,192,203,0.4) 1.5px, transparent 1.5px);
-            animation: petalFloat 5s ease-in-out infinite;
+                radial-gradient(circle at 10% 30%, rgba(255,182,193,0.6) 2px, transparent 2px),
+                radial-gradient(circle at 30% 70%, rgba(255,192,203,0.5) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 70% 25%, rgba(255,182,193,0.55) 2px, transparent 2px),
+                radial-gradient(circle at 90% 65%, rgba(255,192,203,0.5) 1.5px, transparent 1.5px);
+            animation: petalFloat 3s ease-in-out infinite;
             pointer-events: none;
         }
+        /* 상단 타이틀 반짝이 */
+        .newyear-title .title-sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #fff, 0 0 12px #ffc0cb;
+            animation: sparkle 2s ease-in-out infinite;
+            z-index: 3;
+        }
+        .newyear-title .title-sparkle:nth-child(1) { top: 15%; left: 8%; animation-delay: 0s; }
+        .newyear-title .title-sparkle:nth-child(2) { top: 70%; left: 25%; animation-delay: 0.7s; }
+        .newyear-title .title-sparkle:nth-child(3) { top: 25%; right: 15%; animation-delay: 1.4s; }
         @keyframes sparkle {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
         }
         .newyear-title .title-svg {
             height: 36px;
             width: auto;
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
         .newyear-title .title-svg .plum-left,
         .newyear-title .title-svg .plum-right {
-            animation: plumSway 3s ease-in-out infinite;
+            animation: plumSway 2.5s ease-in-out infinite;
             transform-origin: left bottom;
         }
         .newyear-title .title-svg .plum-right {
             animation-delay: 0.5s;
+            transform-origin: right bottom;
         }
         @keyframes plumSway {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(2deg); }
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-2deg) scale(1.02); }
+            75% { transform: rotate(2deg) scale(1.02); }
         }
         
         
@@ -77,17 +122,40 @@
             display: inline-flex;
             align-items: center;
             padding: 16px 24px;
-            background: linear-gradient(135deg, #fff9f9 0%, #fff5f5 50%, #fff9f9 100%);
+            background: linear-gradient(135deg, #fff9f9 0%, #ffe4e6 25%, #fff1f2 50%, #ffe4e6 75%, #fff9f9 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 4s ease-in-out infinite;
             border-radius: 20px;
             box-shadow: 
-                0 8px 25px rgba(198, 40, 40, 0.15),
-                inset 0 0 30px rgba(255,255,255,0.8);
+                0 0 20px rgba(244, 114, 182, 0.4),
+                0 0 40px rgba(251, 113, 133, 0.2),
+                0 8px 32px rgba(198, 40, 40, 0.2),
+                inset 0 0 30px rgba(255,255,255,0.9);
             position: relative;
             overflow: hidden;
-            border: 2px solid #f8b4b4;
+            border: 2px solid transparent;
+            background-clip: padding-box;
             user-select: none;
             -webkit-user-select: none;
             caret-color: transparent;
+        }
+        .guild-select-title .newyear-box::after {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, #f472b6, #fb7185, #fda4af, #fb7185, #f472b6);
+            background-size: 300% 300%;
+            animation: borderGlow 3s ease-in-out infinite;
+            border-radius: 22px;
+            z-index: -1;
+        }
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; opacity: 0.7; }
+            50% { background-position: 100% 50%; opacity: 1; }
         }
         .guild-select-title .newyear-box * {
             user-select: none;
@@ -99,34 +167,87 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255,182,193,0.4) 4px, transparent 4px),
-                radial-gradient(circle at 25% 70%, rgba(255,192,203,0.3) 3px, transparent 3px),
-                radial-gradient(circle at 75% 25%, rgba(255,182,193,0.35) 3.5px, transparent 3.5px),
-                radial-gradient(circle at 90% 75%, rgba(255,192,203,0.3) 3px, transparent 3px);
-            animation: petalFloat 6s ease-in-out infinite;
+                radial-gradient(circle at 10% 20%, rgba(255,182,193,0.6) 4px, transparent 4px),
+                radial-gradient(circle at 25% 70%, rgba(255,192,203,0.5) 3px, transparent 3px),
+                radial-gradient(circle at 75% 25%, rgba(255,182,193,0.55) 3.5px, transparent 3.5px),
+                radial-gradient(circle at 90% 75%, rgba(255,192,203,0.5) 3px, transparent 3px),
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8) 2px, transparent 2px);
+            animation: petalFloat 3s ease-in-out infinite;
             pointer-events: none;
         }
         @keyframes petalFloat {
-            0%, 100% { opacity: 0.7; transform: translateY(0); }
-            50% { opacity: 1; transform: translateY(-3px); }
+            0%, 100% { opacity: 0.6; transform: translateY(0) scale(1); }
+            50% { opacity: 1; transform: translateY(-5px) scale(1.1); }
         }
+        
+        /* 떨어지는 꽃잎 컨테이너 */
+        .guild-select-title .petal-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .guild-select-title .falling-petal {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(ellipse at center, #ffc0cb 0%, #ffb6c1 50%, transparent 70%);
+            border-radius: 50% 0 50% 50%;
+            opacity: 0;
+            animation: petalFall 4s ease-in-out infinite;
+        }
+        .guild-select-title .falling-petal:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .guild-select-title .falling-petal:nth-child(2) { left: 25%; animation-delay: 0.8s; }
+        .guild-select-title .falling-petal:nth-child(3) { left: 40%; animation-delay: 1.6s; }
+        .guild-select-title .falling-petal:nth-child(4) { left: 55%; animation-delay: 2.4s; }
+        .guild-select-title .falling-petal:nth-child(5) { left: 70%; animation-delay: 3.2s; }
+        .guild-select-title .falling-petal:nth-child(6) { left: 85%; animation-delay: 0.4s; }
+        @keyframes petalFall {
+            0% { top: -10px; opacity: 0; transform: rotate(0deg) translateX(0); }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { top: 100%; opacity: 0; transform: rotate(360deg) translateX(20px); }
+        }
+        
+        /* 반짝이 효과 */
+        .guild-select-title .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff, 0 0 20px #ffc0cb, 0 0 30px #ff69b4;
+            animation: sparkle 2s ease-in-out infinite;
+        }
+        .guild-select-title .sparkle:nth-child(1) { top: 20%; left: 15%; animation-delay: 0s; }
+        .guild-select-title .sparkle:nth-child(2) { top: 70%; left: 30%; animation-delay: 0.5s; }
+        .guild-select-title .sparkle:nth-child(3) { top: 30%; right: 20%; animation-delay: 1s; }
+        .guild-select-title .sparkle:nth-child(4) { top: 60%; right: 10%; animation-delay: 1.5s; }
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
         .guild-select-title .select-title-svg {
             height: 60px;
             width: auto;
             position: relative;
-            z-index: 1;
+            z-index: 2;
         }
         .guild-select-title .select-title-svg .plum-left,
         .guild-select-title .select-title-svg .plum-right {
-            animation: plumBlossom 4s ease-in-out infinite;
+            animation: plumBlossom 3s ease-in-out infinite;
             transform-origin: left bottom;
         }
         .guild-select-title .select-title-svg .plum-right {
-            animation-delay: 1s;
+            animation-delay: 0.5s;
+            transform-origin: right bottom;
         }
         @keyframes plumBlossom {
             0%, 100% { transform: rotate(0deg) scale(1); }
-            50% { transform: rotate(1.5deg) scale(1.02); }
+            25% { transform: rotate(-2deg) scale(1.03); }
+            75% { transform: rotate(2deg) scale(1.03); }
         }
         
         .lock-banner { background: #ef4444; color: white; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; display: none; animation: slideDown 0.3s ease; }
@@ -190,7 +311,8 @@
             transition: all 0.2s; white-space: nowrap;
         }
         .admin-dropdown-btn::after { content: '▼'; font-size: 10px; margin-left: 4px; transition: transform 0.2s; }
-        .admin-dropdown:hover .admin-dropdown-btn::after { transform: rotate(180deg); }
+        .admin-dropdown:hover .admin-dropdown-btn::after, 
+        .admin-dropdown:focus-within .admin-dropdown-btn::after { transform: rotate(180deg); }
         .admin-dropdown-menu {
             position: absolute; top: 100%; left: 0; margin-top: 4px;
             background: white; border: 1px solid #e5e7eb; border-radius: 12px;
@@ -198,7 +320,8 @@
             opacity: 0; visibility: hidden; transform: translateY(-10px);
             transition: all 0.2s; z-index: 100;
         }
-        .admin-dropdown:hover .admin-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .admin-dropdown:hover .admin-dropdown-menu,
+        .admin-dropdown:focus-within .admin-dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
         .admin-dropdown-item {
             display: flex; align-items: center; gap: 10px;
             padding: 12px 16px; cursor: pointer; transition: background 0.15s;
@@ -301,7 +424,7 @@
         
         .spec-icons { font-size: 11px; margin-left: 2px; color: #666; display: inline-block; cursor: pointer; vertical-align: middle; flex-shrink: 0; white-space: nowrap; }
         
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; animation: fadeIn 0.2s ease; padding: 20px; overflow-y: auto; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1000; animation: fadeIn 0.2s ease; padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
         .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -313,11 +436,12 @@
         .modal-header h3 { font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 4px; }
         .modal-header p { font-size: 14px; color: #6b7280; margin: 0; }
         .modal-body { padding: 24px; overflow-y: auto; flex: 1; min-height: 0; }
-        .table-scroll-container { max-height: 500px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e5e7eb; border-radius: 8px; }
-        .common-table { width: 100%; font-size: 13px; table-layout: fixed; border-collapse: collapse; }
-        .common-table th { position: sticky; top: 0; background: #f3f4f6; text-align: center; padding: 12px 8px; font-weight: 600; border-bottom: 2px solid #e5e7eb; word-wrap: break-word; }
-        .common-table td { text-align: center; padding: 10px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; word-wrap: break-word; }
+        .table-scroll-container { max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; -webkit-overflow-scrolling: touch; }
+        .common-table { width: 100%; font-size: 13px; table-layout: auto; border-collapse: collapse; min-width: 400px; }
+        .common-table th { position: sticky; top: 0; background: #f3f4f6; text-align: center; padding: 12px 8px; font-weight: 600; border-bottom: 2px solid #e5e7eb; white-space: nowrap; }
+        .common-table td { text-align: center; padding: 10px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; white-space: nowrap; }
         .common-table tbody tr:hover { background: #f9fafb; }
+        .common-table tbody tr:active { background: #f3f4f6; }
         .form-group { margin-bottom: 20px; }
         .form-label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px; }
         .form-input { width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 15px; color: #111827; transition: all 0.15s ease; }
@@ -478,8 +602,134 @@
                 grid-template-columns: 1fr; 
             }
         }
+        
+        /* 작은 스마트폰 (480px 이하) */
+        @media (max-width: 480px) {
+            .top-bar { padding: 12px; }
+            .top-actions { gap: 8px; }
+            .btn-user-add { padding: 8px 12px; font-size: 12px; }
+            .search-input { font-size: 14px; padding: 8px 12px; min-width: 0; }
+            
+            .newyear-title { padding: 6px 10px; }
+            .newyear-title .title-svg { height: 26px; }
+            
+            .guild-select-container { padding: 20px 12px; }
+            .guild-select-title .newyear-box { padding: 8px 12px; }
+            .guild-select-title .select-title-svg { height: 35px; }
+            .guild-buttons { gap: 10px; }
+            .guild-btn { padding: 16px 12px; }
+            .guild-btn-name { font-size: 14px; }
+            
+            .modal { width: 98%; margin: 5px auto; }
+            .modal-header { padding: 16px 12px 10px; }
+            .modal-header h3 { font-size: 15px; }
+            .modal-body { padding: 12px; }
+            .modal-footer { padding: 10px 12px; }
+            
+            .common-table th, .common-table td { padding: 8px 6px; font-size: 12px; }
+            .player-name { font-size: 12px; }
+            .power-value { font-size: 12px; padding: 3px 6px; }
+            .rank-number { width: 20px; height: 20px; font-size: 10px; }
+            
+            .alert { max-width: 90%; min-width: 200px; padding: 12px 30px 12px 16px; }
+            .alert-title { font-size: 13px; }
+            .alert-message { font-size: 12px; }
+            
+            /* 작은 화면에서 꽃잎 효과 줄이기 */
+            .guild-select-title .falling-petal:nth-child(n+4) { display: none; }
+            .guild-select-title .sparkle:nth-child(n+3) { display: none; }
+        }
+        
+        /* 폴드 접힘 / 소형 태블릿 (768px ~ 1024px) */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .top-bar { padding: 16px 20px; flex-direction: row; }
+            .top-actions { width: auto; }
+            .container { grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 30px 20px; }
+            
+            .guild-select-container { padding: 50px 30px; }
+            .guild-select-title .newyear-box { padding: 14px 20px; }
+            .guild-select-title .select-title-svg { height: 50px; }
+            .guild-buttons { grid-template-columns: repeat(2, 1fr); }
+            
+            .modal.modal-lg { max-width: 90%; }
+            .modal-body { max-height: calc(100vh - 200px); }
+        }
+        
+        /* 폴드 펼침 / 중형 태블릿 (1024px ~ 1440px) */
+        @media (min-width: 1024px) and (max-width: 1440px) {
+            .container { grid-template-columns: repeat(3, 1fr); max-width: 1200px; }
+            .guild-buttons { grid-template-columns: repeat(3, 1fr); }
+        }
+        
+        /* 대형 화면 */
         @media (min-width: 1024px) { .container { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1440px) { .container { grid-template-columns: repeat(4, 1fr); max-width: 1440px; } }
+        
+        /* 터치 디바이스 최적화 */
+        @media (hover: none) and (pointer: coarse) {
+            .btn, .guild-btn, .admin-dropdown-item { 
+                min-height: 44px; /* iOS 권장 터치 타겟 */
+            }
+            .form-input, .form-select {
+                min-height: 44px;
+                font-size: 16px; /* iOS 줌 방지 */
+            }
+            .modal-close-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 24px;
+            }
+            /* 호버 효과 비활성화 */
+            .btn:hover, .guild-btn:hover { transform: none; }
+            .admin-dropdown-item:hover { background: transparent; }
+            /* 터치 시 효과 */
+            .btn:active, .guild-btn:active { 
+                transform: scale(0.98); 
+                opacity: 0.9;
+            }
+        }
+        
+        /* 가로 모드 (Landscape) */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .modal { max-height: 95vh; }
+            .modal-body { max-height: calc(95vh - 120px); }
+            .guild-select-container { padding: 20px 24px; }
+            .guild-select-title { margin-bottom: 20px; }
+        }
+        
+        /* 애니메이션 성능 최적화 */
+        .newyear-title, .newyear-box, .plum-left, .plum-right, .falling-petal, .sparkle {
+            will-change: transform, opacity;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        
+        /* 모션 감소 선호 시 */
+        @media (prefers-reduced-motion: reduce) {
+            .plum-left, .plum-right, .falling-petal, .sparkle, .newyear-title, .newyear-box {
+                animation: none !important;
+            }
+            .newyear-title::after, .newyear-box::after {
+                animation: none !important;
+            }
+        }
+        
+        /* 폴드 화면 전환 대응 */
+        @media (horizontal-viewport-segments: 2) {
+            /* 폴드 펼침 시 2단 레이아웃 */
+            .container { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        /* 세이프 에어리어 (노치/펀치홀 대응) */
+        @supports (padding: max(0px)) {
+            .top-bar {
+                padding-left: max(16px, env(safe-area-inset-left));
+                padding-right: max(16px, env(safe-area-inset-right));
+            }
+            .modal {
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+            }
+        }
     </style>
 </head>
 <body>
@@ -487,7 +737,12 @@
 
     <div class="top-bar">
         <h1 id="mainTitle" class="newyear-title" style="cursor: pointer;" onclick="showGuildSelect()">
-            <svg class="title-svg" viewBox="0 0 380 50" xmlns="http://www.w3.org/2000/svg">
+            <!-- 반짝이 -->
+            <div class="title-sparkle"></div>
+            <div class="title-sparkle"></div>
+            <div class="title-sparkle"></div>
+            
+            <svg class="title-svg" viewBox="0 0 500 50" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <radialGradient id="petalGradMain" cx="50%" cy="50%" r="50%">
                         <stop offset="0%" stop-color="#fff0f3"/>
@@ -510,14 +765,14 @@
                     <circle cx="28" cy="35" r="3" fill="#ffb6c1"/>
                     <circle cx="18" cy="40" r="2.5" fill="#ffc0cb"/>
                 </g>
-                <text x="190" y="33" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="22" font-weight="700" fill="#c62828">
+                <text x="250" y="33" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="22" font-weight="700" fill="#c62828">
                     길드 전투력 현황판
                 </text>
-                <!-- 오른쪽 매화 -->
-                <g class="plum-right" transform="translate(380, 0) scale(-1, 1)">
-                    <path d="M5 42 Q15 35 25 38 Q35 36 42 28" stroke="#5d4037" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                    <path d="M25 38 Q28 30 32 24" stroke="#5d4037" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                    <g transform="translate(40, 26) scale(0.8)">
+                <!-- 오른쪽 매화 (직접 그리기) -->
+                <g class="plum-right">
+                    <path d="M495 42 Q485 35 475 38 Q465 36 458 28" stroke="#5d4037" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <path d="M475 38 Q472 30 468 24" stroke="#5d4037" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <g transform="translate(460, 26) scale(0.8)">
                         <ellipse cx="0" cy="-6" rx="3" ry="5" fill="url(#petalGradMain)"/>
                         <ellipse cx="5.7" cy="-1.8" rx="3" ry="5" fill="url(#petalGradMain)" transform="rotate(72)"/>
                         <ellipse cx="3.5" cy="4.8" rx="3" ry="5" fill="url(#petalGradMain)" transform="rotate(144)"/>
@@ -525,8 +780,8 @@
                         <ellipse cx="-5.7" cy="-1.8" rx="3" ry="5" fill="url(#petalGradMain)" transform="rotate(288)"/>
                         <circle cx="0" cy="0" r="2.5" fill="#ffeb3b"/>
                     </g>
-                    <circle cx="28" cy="35" r="3" fill="#ffb6c1"/>
-                    <circle cx="18" cy="40" r="2.5" fill="#ffc0cb"/>
+                    <circle cx="472" cy="35" r="3" fill="#ffb6c1"/>
+                    <circle cx="482" cy="40" r="2.5" fill="#ffc0cb"/>
                 </g>
             </svg>
         </h1>
@@ -565,7 +820,7 @@
                 <button class="admin-dropdown-btn dropdown-data">📊 데이터</button>
                 <div class="admin-dropdown-menu">
                     <button class="admin-dropdown-item" id="spreadsheetBtn">📋 스프레드시트 연동</button>
-                    <button class="admin-dropdown-item" id="syncExcludeBtn">🚫 연동 제외 관리</button>
+                    <button class="admin-dropdown-item" id="syncExcludeBtn">🚫 분배 제외 관리</button>
                     <button class="admin-dropdown-item" id="excelBtn">📥 엑셀 다운로드</button>
                     <button class="admin-dropdown-item" id="backupManageBtn">📦 주간 백업</button>
                 </div>
@@ -608,7 +863,22 @@
     <div class="guild-select-container" id="guildSelectContainer">
         <div class="guild-select-title">
             <div class="newyear-box">
-                <svg class="select-title-svg" viewBox="0 0 420 70" xmlns="http://www.w3.org/2000/svg">
+                <!-- 떨어지는 꽃잎 -->
+                <div class="petal-container">
+                    <div class="falling-petal"></div>
+                    <div class="falling-petal"></div>
+                    <div class="falling-petal"></div>
+                    <div class="falling-petal"></div>
+                    <div class="falling-petal"></div>
+                    <div class="falling-petal"></div>
+                </div>
+                <!-- 반짝이 -->
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                <div class="sparkle"></div>
+                
+                <svg class="select-title-svg" viewBox="0 0 500 70" xmlns="http://www.w3.org/2000/svg">
                     <!-- 한지 텍스처 배경 패턴 -->
                     <defs>
                         <pattern id="hanji" patternUnits="userSpaceOnUse" width="100" height="100">
@@ -665,22 +935,22 @@
                     </g>
                     
                     <!-- 가운데 텍스트 -->
-                    <text x="210" y="42" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="26" font-weight="700" fill="#c62828">
+                    <text x="250" y="42" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="26" font-weight="700" fill="#c62828">
                         길드를 선택하세요
                     </text>
-                    <text x="210" y="58" text-anchor="middle" font-family="serif" font-size="11" fill="#d32f2f" opacity="0.7">
+                    <text x="250" y="58" text-anchor="middle" font-family="serif" font-size="11" fill="#d32f2f" opacity="0.7">
                         新年福多 · 새해 복 많이 받으세요
                     </text>
                     
-                    <!-- 오른쪽 매화 가지 (반전) -->
-                    <g class="plum-right" transform="translate(420, 0) scale(-1, 1)">
+                    <!-- 오른쪽 매화 가지 (직접 그리기) -->
+                    <g class="plum-right">
                         <!-- 가지 -->
-                        <path d="M5 55 Q20 45 35 50 Q50 48 60 35" stroke="#5d4037" stroke-width="3" fill="none" stroke-linecap="round"/>
-                        <path d="M35 50 Q38 40 45 30" stroke="#5d4037" stroke-width="2" fill="none" stroke-linecap="round"/>
-                        <path d="M50 42 Q55 35 52 25" stroke="#5d4037" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <path d="M495 55 Q480 45 465 50 Q450 48 440 35" stroke="#5d4037" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M465 50 Q462 40 455 30" stroke="#5d4037" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M450 42 Q445 35 448 25" stroke="#5d4037" stroke-width="1.5" fill="none" stroke-linecap="round"/>
                         
                         <!-- 매화꽃 1 -->
-                        <g transform="translate(55, 32)">
+                        <g transform="translate(445, 32)">
                             <ellipse cx="0" cy="-8" rx="4" ry="6" fill="url(#petalGrad)"/>
                             <ellipse cx="7.6" cy="-2.5" rx="4" ry="6" fill="url(#petalGrad)" transform="rotate(72)"/>
                             <ellipse cx="4.7" cy="6.5" rx="4" ry="6" fill="url(#petalGrad)" transform="rotate(144)"/>
@@ -693,7 +963,7 @@
                         </g>
                         
                         <!-- 매화꽃 2 -->
-                        <g transform="translate(38, 45) scale(0.7)">
+                        <g transform="translate(462, 45) scale(0.7)">
                             <ellipse cx="0" cy="-8" rx="4" ry="6" fill="url(#petalGrad)"/>
                             <ellipse cx="7.6" cy="-2.5" rx="4" ry="6" fill="url(#petalGrad)" transform="rotate(72)"/>
                             <ellipse cx="4.7" cy="6.5" rx="4" ry="6" fill="url(#petalGrad)" transform="rotate(144)"/>
@@ -703,8 +973,8 @@
                         </g>
                         
                         <!-- 매화꽃 봉오리 -->
-                        <circle cx="48" cy="26" r="4" fill="#ffb6c1"/>
-                        <circle cx="25" cy="48" r="3" fill="#ffc0cb"/>
+                        <circle cx="452" cy="26" r="4" fill="#ffb6c1"/>
+                        <circle cx="475" cy="48" r="3" fill="#ffc0cb"/>
                     </g>
                 </svg>
             </div>
@@ -759,7 +1029,7 @@
         let lockEndTime = 0;
         let biweeklyBaseTime = 0; // 2주 반복 기준 시간
         let spreadsheetConfig = null;
-        let syncExcludeList = []; // 스프레드시트 연동 제외 목록
+        let syncExcludeList = []; // 분배 제외 목록
         const _0x = { a: "dGpkYWxzOTMyOA==", b: "dG5hbHM5MzI4QEA=" };
         
        
@@ -2456,21 +2726,21 @@
             openSpreadsheetSettingsModal();
         });
 
-        // 연동 제외 관리 버튼
+        // 분배 제외 관리 버튼
         document.getElementById('syncExcludeBtn').addEventListener('click', () => {
             if (!isAdmin) return;
             openSyncExcludeModal();
         });
 
         async function openSyncExcludeModal() {
-            openLargeModal('🚫 연동 제외 관리', '스프레드시트에 연동하지 않을 유저를 선택합니다');
+            openLargeModal('🚫 분배 제외 관리', '분배금 계산에서 제외할 유저를 선택합니다');
             
             // 검색 및 필터 UI
             let html = `
                 <div style="margin-bottom:16px;">
                     <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
                         <p style="color:#92400e; font-size:13px; margin:0;">
-                            ⚠️ 체크된 유저는 스프레드시트 연동에서 제외됩니다.<br>
+                            ⚠️ 체크된 유저는 분배금 계산에서 제외됩니다.<br>
                             현재 <b>${syncExcludeList.length}명</b>이 제외 목록에 있습니다.
                         </p>
                     </div>
@@ -2616,12 +2886,34 @@
         window.saveExcludeList = async function() {
             try {
                 const config = spreadsheetConfig || {};
+                const prevList = config.excludeList || [];
                 config.excludeList = syncExcludeList;
                 
                 await setDoc(doc(db, "config", "spreadsheet"), config);
                 spreadsheetConfig = config;
                 
-                showAlert(`연동 제외 목록이 저장되었습니다 (${syncExcludeList.length}명 제외)`, 'success');
+                // 변경 내역 계산
+                const added = syncExcludeList.filter(n => !prevList.includes(n));
+                const removed = prevList.filter(n => !syncExcludeList.includes(n));
+                
+                // 로그 기록
+                let logDetail = '';
+                if (added.length > 0) logDetail += `제외 추가: ${added.join(', ')}`;
+                if (removed.length > 0) logDetail += (logDetail ? ' / ' : '') + `제외 해제: ${removed.join(', ')}`;
+                if (!logDetail) logDetail = '변경 없음';
+                
+                await setDoc(doc(collection(db, "logs")), {
+                    who: 'Admin',
+                    type: 'exclude_update',
+                    old_value: `${prevList.length}명 제외`,
+                    new_value: `${syncExcludeList.length}명 제외 (${logDetail})`,
+                    editedBy: loggedInAdminId || '아이디미기록',
+                    createdAt: Date.now(),
+                    ip: await getIp(),
+                    device: navigator.userAgent
+                });
+                
+                showAlert(`분배 제외 목록이 저장되었습니다 (${syncExcludeList.length}명 제외)`, 'success');
                 closeModal();
             } catch(e) {
                 console.error(e);
@@ -3356,6 +3648,7 @@
                     'bulk_update': '📋 일괄 처리',
                     'guild_move': '🚀 길드 이동',
                     'guild_delete': '🏚️ 길드 삭제',
+                    'exclude_update': '🚫 분배 제외 변경',
                     'spreadsheet_sync': '📊 스프레드시트 동기화',
                     'google_sheet_sync': '📊 구글시트 동기화'
                 };
@@ -4061,6 +4354,7 @@
             document.getElementById('modalFooter').style.display = 'none'; 
             document.getElementById('modalBody').innerHTML = '로딩중...'; 
             document.getElementById('modalOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
         }
 
         function openSmallModal(t, s, b) {
@@ -4074,13 +4368,17 @@
             `;
             document.getElementById('modalFooter').style.display = 'flex'; 
             document.getElementById('modalOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
         }
 
         function setModalBody(h) { 
             document.getElementById('modalBody').innerHTML = h + `<div style="text-align:right;margin-top:10px"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>`; 
         }
 
-        window.closeModal = () => document.getElementById('modalOverlay').classList.remove('active');
+        window.closeModal = () => {
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.body.style.overflow = ''; // 스크롤 복원
+        };
         
        
                window.showConfirm = (title, message, keepOpen = false) => {
@@ -4148,7 +4446,7 @@
                 justify-content: center; z-index: 10000;
             `;
             modal.innerHTML = `
-                <div style="background: white; border-radius: 16px; padding: 30px 40px; min-width: 350px; max-width: 450px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div style="background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
                     <h3 style="margin: 0 0 8px; color: #374151; font-size: 18px;">${title}</h3>
                     <p id="progressMessage" style="margin: 0 0 20px; color: #6b7280; font-size: 14px;">${message}</p>
                     <div style="background: #e5e7eb; border-radius: 10px; height: 20px; overflow: hidden; margin-bottom: 12px;">
