@@ -1848,9 +1848,13 @@
             const btn = event.target;
             btn.innerText = "처리 중...";
             btn.disabled = true;
+            
+            // 진행률 모달 표시
+            const progress = showProgress('📝 일괄 등록 중', `${names.length}명 처리 중...`);
 
             try {
-                for(const name of names) {
+                for(let i = 0; i < names.length; i++) {
+                    const name = names[i];
                     const docRef = doc(db, "users", name);
                     const docSnap = await getDoc(docRef);
 
@@ -1870,7 +1874,12 @@
                         });
                         newCount++;
                     }
+                    
+                    // 진행률 업데이트
+                    progress.update(((i + 1) / names.length) * 100, `${i + 1}/${names.length} 처리 중... (${name})`);
                 }
+                
+                progress.close();
                 
                 await setDoc(doc(collection(db, "logs")), { 
                     who: 'Admin', 
@@ -1891,6 +1900,7 @@
                 }, 500);
 
             } catch(e) {
+                progress.close();
                 console.error(e);
                 showAlert('오류 발생', 'error');
                 btn.innerText = "일괄 적용 실행";
@@ -1965,13 +1975,17 @@
             const btn = event.target;
             btn.innerText = "처리 중...";
             btn.disabled = true;
+            
+            // 진행률 모달 표시
+            const progress = showProgress('🚀 길드 이동 중', `${names.length}명 처리 중...`);
 
             let movedCount = 0;                 let skippedCount = 0;               let notFoundCount = 0;              const movedUsers = [];
             const skippedUsers = [];
             const notFoundUsers = [];
 
             try {
-                for(const name of names) {
+                for(let i = 0; i < names.length; i++) {
+                    const name = names[i];
                     const docRef = doc(db, "users", name);
                     const docSnap = await getDoc(docRef);
 
@@ -1995,7 +2009,12 @@
                                                notFoundCount++;
                         notFoundUsers.push(name);
                     }
+                    
+                    // 진행률 업데이트
+                    progress.update(((i + 1) / names.length) * 100, `${i + 1}/${names.length} 처리 중... (${name})`);
                 }
+                
+                progress.close();
                 
                                await setDoc(doc(collection(db, "logs")), { 
                     who: 'Admin', 
@@ -2016,6 +2035,7 @@
                 }, 500);
 
             } catch(e) {
+                progress.close();
                 console.error(e);
                 showAlert('오류 발생', 'error');
                 btn.innerText = "길드 이동 실행";
@@ -4080,6 +4100,81 @@
             });
         };
 
+        // 커스텀 프롬프트 (입력창)
+        window.showPrompt = (title, message, defaultValue = '') => {
+            return new Promise((resolve) => {
+                openSmallModal(title, '', `
+                    <p style="text-align:center; padding:10px 0 20px; font-size:14px; color:#374151;">${message}</p>
+                    <input type="text" id="promptInput" class="form-input" value="${defaultValue}" style="text-align:center; font-size:15px;" autofocus>
+                `);
+                document.getElementById('modalFooter').innerHTML = `
+                    <button class="btn btn-cancel" onclick="window.promptResolve(null)">취소</button>
+                    <button class="btn btn-primary" onclick="window.promptResolve(document.getElementById('promptInput').value)">확인</button>
+                `;
+                
+                // 포커스 및 엔터키 처리
+                setTimeout(() => {
+                    const input = document.getElementById('promptInput');
+                    if (input) {
+                        input.focus();
+                        input.select();
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                window.promptResolve(input.value);
+                            }
+                        });
+                    }
+                }, 100);
+                
+                window.promptResolve = (result) => {
+                    closeModal();
+                    resolve(result);
+                    delete window.promptResolve;
+                };
+            });
+        };
+
+        // 진행률 표시 모달
+        window.showProgress = (title, message = '') => {
+            // 기존 진행률 모달 제거
+            const existing = document.getElementById('progressModal');
+            if (existing) existing.remove();
+            
+            const modal = document.createElement('div');
+            modal.id = 'progressModal';
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 10000;
+            `;
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 16px; padding: 30px 40px; min-width: 350px; max-width: 450px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                    <h3 style="margin: 0 0 8px; color: #374151; font-size: 18px;">${title}</h3>
+                    <p id="progressMessage" style="margin: 0 0 20px; color: #6b7280; font-size: 14px;">${message}</p>
+                    <div style="background: #e5e7eb; border-radius: 10px; height: 20px; overflow: hidden; margin-bottom: 12px;">
+                        <div id="progressBar" style="background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 10px;"></div>
+                    </div>
+                    <p id="progressPercent" style="margin: 0; color: #374151; font-weight: 600; font-size: 16px;">0%</p>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            return {
+                update: (percent, msg = null) => {
+                    const bar = document.getElementById('progressBar');
+                    const pct = document.getElementById('progressPercent');
+                    const msgEl = document.getElementById('progressMessage');
+                    if (bar) bar.style.width = percent + '%';
+                    if (pct) pct.textContent = Math.round(percent) + '%';
+                    if (msg && msgEl) msgEl.textContent = msg;
+                },
+                close: () => {
+                    const m = document.getElementById('progressModal');
+                    if (m) m.remove();
+                }
+            };
+        };
+
                function performSearch() {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
             if (!searchText) {
@@ -4406,7 +4501,7 @@
         
         // 백업 이름 변경
         window.editBackupName = async function(backupId, currentName) {
-            const newName = prompt('새 백업 이름을 입력하세요:', currentName || '');
+            const newName = await showPrompt('백업 이름 변경', '새 백업 이름을 입력하세요:', currentName || '');
             if (newName === null) return; // 취소
             
             try {
