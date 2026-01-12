@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.8.2">
-    <meta name="build-date" content="2026-01-12 11:30">
+    <meta name="version" content="1.8.3">
+    <meta name="build-date" content="2026-01-12 11:40">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -1027,9 +1027,14 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.8.2';
-        const APP_BUILD_DATE = '2026-01-12 11:30';
+        const APP_VERSION = '1.8.3';
+        const APP_BUILD_DATE = '2026-01-12 11:40';
         const APP_CHANGELOG = [
+            { version: '1.8.3', date: '2026-01-12 11:40', changes: [
+                '📍 위치 한글 변환 전면 개선 (영어 섞임 완전 해결)',
+                '🗺️ 200개 이상 한국 지역 지원 (도, 시, 군, 구)',
+                '🔧 기존 로그 위치도 자동 한글 변환'
+            ]},
             { version: '1.8.2', date: '2026-01-12 11:30', changes: [
                 '🔧 버전 정보 최종관리자 전용으로 변경',
                 '✏️ 제작자 정보 변경',
@@ -1863,13 +1868,11 @@
         
         // 영어 위치 → 한글 변환 함수
         function translateLocation(loc) {
-            if (!loc || loc === '-') return loc;
+            if (!loc || loc === '-' || loc === '') return '-';
             
-            // 이미 한글이면 그대로 반환
-            if (/[가-힣]/.test(loc)) return loc;
-            
-            // 국가명 변환
-            const countryMap = {
+            // 모든 변환 맵 통합 (긴 문자열부터 변환하기 위해 정렬)
+            const translateMap = {
+                // 국가명
                 'South Korea': '대한민국', 'Korea': '대한민국',
                 'United States': '미국', 'USA': '미국',
                 'Japan': '일본', 'China': '중국', 'Taiwan': '대만',
@@ -1877,105 +1880,190 @@
                 'Singapore': '싱가포르', 'Malaysia': '말레이시아', 'Indonesia': '인도네시아',
                 'Australia': '호주', 'Canada': '캐나다', 'United Kingdom': '영국', 'UK': '영국',
                 'Germany': '독일', 'France': '프랑스', 'Italy': '이탈리아', 'Spain': '스페인',
-                'Russia': '러시아', 'India': '인도', 'Brazil': '브라질', 'Mexico': '멕시코'
-            };
-            
-            // 한국 지역명 변환
-            const regionMap = {
-                'Seoul': '서울특별시', 'Busan': '부산광역시', 'Incheon': '인천광역시',
-                'Daegu': '대구광역시', 'Daejeon': '대전광역시', 'Gwangju': '광주광역시',
-                'Ulsan': '울산광역시', 'Sejong': '세종특별자치시',
-                'Gyeonggi-do': '경기도', 'Gyeonggi': '경기도',
-                'Gangwon-do': '강원도', 'Gangwon': '강원도',
-                'North Chungcheong': '충청북도', 'Chungcheongbuk-do': '충청북도',
-                'South Chungcheong': '충청남도', 'Chungcheongnam-do': '충청남도',
-                'North Jeolla': '전라북도', 'Jeollabuk-do': '전라북도', 'Jeonbuk': '전북특별자치도',
-                'South Jeolla': '전라남도', 'Jeollanam-do': '전라남도',
-                'North Gyeongsang': '경상북도', 'Gyeongsangbuk-do': '경상북도',
-                'South Gyeongsang': '경상남도', 'Gyeongsangnam-do': '경상남도',
-                'Jeju': '제주특별자치도', 'Jeju-do': '제주특별자치도'
-            };
-            
-            // 한국 도시명 변환
-            const cityMap = {
-                'Suwon': '수원', 'Suwon-si': '수원시', 'Seongnam': '성남', 'Seongnam-si': '성남시',
-                'Goyang': '고양', 'Goyang-si': '고양시', 'Yongin': '용인', 'Yongin-si': '용인시',
-                'Bucheon': '부천', 'Bucheon-si': '부천시', 'Ansan': '안산', 'Ansan-si': '안산시',
-                'Anyang': '안양', 'Anyang-si': '안양시', 'Namyangju': '남양주', 'Namyangju-si': '남양주시',
-                'Hwaseong': '화성', 'Hwaseong-si': '화성시', 'Pyeongtaek': '평택', 'Pyeongtaek-si': '평택시',
-                'Siheung': '시흥', 'Siheung-si': '시흥시', 'Gimpo': '김포', 'Gimpo-si': '김포시',
-                'Gwangmyeong': '광명', 'Gwangmyeong-si': '광명시', 'Gwangju': '광주', 'Gwangju-si': '광주시',
-                'Hanam': '하남', 'Hanam-si': '하남시', 'Osan': '오산', 'Osan-si': '오산시',
-                'Icheon': '이천', 'Icheon-si': '이천시', 'Anseong': '안성', 'Anseong-si': '안성시',
-                'Uijeongbu': '의정부', 'Uijeongbu-si': '의정부시', 'Paju': '파주', 'Paju-si': '파주시',
-                'Yangju': '양주', 'Yangju-si': '양주시', 'Pocheon': '포천', 'Pocheon-si': '포천시',
-                'Dongducheon': '동두천', 'Dongducheon-si': '동두천시', 'Guri': '구리', 'Guri-si': '구리시',
-                'Changwon': '창원', 'Changwon-si': '창원시', 'Gimhae': '김해', 'Gimhae-si': '김해시',
-                'Jinju': '진주', 'Jinju-si': '진주시', 'Yangsan': '양산', 'Yangsan-si': '양산시',
-                'Geoje': '거제', 'Geoje-si': '거제시', 'Sacheon': '사천', 'Sacheon-si': '사천시',
-                'Pohang': '포항', 'Pohang-si': '포항시', 'Gumi': '구미', 'Gumi-si': '구미시',
-                'Gyeongju': '경주', 'Gyeongju-si': '경주시', 'Andong': '안동', 'Andong-si': '안동시',
-                'Yeongju': '영주', 'Yeongju-si': '영주시', 'Sangju': '상주', 'Sangju-si': '상주시',
-                'Cheonan': '천안', 'Cheonan-si': '천안시', 'Asan': '아산', 'Asan-si': '아산시',
-                'Seosan': '서산', 'Seosan-si': '서산시', 'Dangjin': '당진', 'Dangjin-si': '당진시',
-                'Cheongju': '청주', 'Cheongju-si': '청주시', 'Chungju': '충주', 'Chungju-si': '충주시',
-                'Jecheon': '제천', 'Jecheon-si': '제천시',
-                'Jeonju': '전주', 'Jeonju-si': '전주시', 'Gunsan': '군산', 'Gunsan-si': '군산시',
-                'Iksan': '익산', 'Iksan-si': '익산시', 'Namwon': '남원', 'Namwon-si': '남원시',
-                'Yeosu': '여수', 'Yeosu-si': '여수시', 'Suncheon': '순천', 'Suncheon-si': '순천시',
-                'Mokpo': '목포', 'Mokpo-si': '목포시', 'Gwangyang': '광양', 'Gwangyang-si': '광양시',
-                'Chuncheon': '춘천', 'Chuncheon-si': '춘천시', 'Wonju': '원주', 'Wonju-si': '원주시',
-                'Gangneung': '강릉', 'Gangneung-si': '강릉시', 'Donghae': '동해', 'Donghae-si': '동해시',
-                'Sokcho': '속초', 'Sokcho-si': '속초시', 'Samcheok': '삼척', 'Samcheok-si': '삼척시',
-                'Jeju City': '제주시', 'Jeju-si': '제주시', 'Seogwipo': '서귀포', 'Seogwipo-si': '서귀포시',
+                'Russia': '러시아', 'India': '인도', 'Brazil': '브라질', 'Mexico': '멕시코',
+                
+                // 광역시/특별시
+                'Seoul': '서울', 'Busan': '부산', 'Incheon': '인천',
+                'Daegu': '대구', 'Daejeon': '대전', 'Gwangju-si': '광주', 
+                'Ulsan': '울산', 'Sejong': '세종',
+                
+                // 도 (긴 것부터)
+                'Gyeongsangnam-do': '경남', 'Gyeongsangbuk-do': '경북',
+                'Chungcheongnam-do': '충남', 'Chungcheongbuk-do': '충북',
+                'Jeollanam-do': '전남', 'Jeollabuk-do': '전북',
+                'Gyeonggi-do': '경기', 'Gangwon-do': '강원', 'Jeju-do': '제주',
+                'South Gyeongsang': '경남', 'North Gyeongsang': '경북',
+                'South Chungcheong': '충남', 'North Chungcheong': '충북',
+                'South Jeolla': '전남', 'North Jeolla': '전북',
+                'Gyeonggi': '경기', 'Gangwon': '강원', 'Jeju': '제주',
+                'Jeonbuk': '전북',
+                
+                // 경기도 도시
+                'Suwon-si': '수원', 'Suwon': '수원',
+                'Seongnam-si': '성남', 'Seongnam': '성남',
+                'Goyang-si': '고양', 'Goyang': '고양',
+                'Yongin-si': '용인', 'Yongin': '용인',
+                'Bucheon-si': '부천', 'Bucheon': '부천',
+                'Ansan-si': '안산', 'Ansan': '안산',
+                'Anyang-si': '안양', 'Anyang': '안양',
+                'Namyangju-si': '남양주', 'Namyangju': '남양주',
+                'Hwaseong-si': '화성', 'Hwaseong': '화성',
+                'Pyeongtaek-si': '평택', 'Pyeongtaek': '평택',
+                'Siheung-si': '시흥', 'Siheung': '시흥',
+                'Gimpo-si': '김포', 'Gimpo': '김포',
+                'Gwangmyeong-si': '광명', 'Gwangmyeong': '광명',
+                'Gwangju-si': '광주시', 'Gwangju': '광주',
+                'Hanam-si': '하남', 'Hanam': '하남',
+                'Osan-si': '오산', 'Osan': '오산',
+                'Icheon-si': '이천', 'Icheon': '이천',
+                'Anseong-si': '안성', 'Anseong': '안성',
+                'Uijeongbu-si': '의정부', 'Uijeongbu': '의정부',
+                'Paju-si': '파주', 'Paju': '파주',
+                'Yangju-si': '양주', 'Yangju': '양주',
+                'Pocheon-si': '포천', 'Pocheon': '포천',
+                'Dongducheon-si': '동두천', 'Dongducheon': '동두천',
+                'Guri-si': '구리', 'Guri': '구리',
+                'Gunpo-si': '군포', 'Gunpo': '군포',
+                'Uiwang-si': '의왕', 'Uiwang': '의왕',
+                'Yeoju-si': '여주', 'Yeoju': '여주',
+                
+                // 경상남도 도시
+                'Changwon-si': '창원', 'Changwon': '창원',
+                'Gimhae-si': '김해', 'Gimhae': '김해',
+                'Jinju-si': '진주', 'Jinju': '진주',
+                'Yangsan-si': '양산', 'Yangsan': '양산',
+                'Geoje-si': '거제', 'Geoje': '거제',
+                'Sacheon-si': '사천', 'Sacheon': '사천',
+                'Tongyeong-si': '통영', 'Tongyeong': '통영',
+                'Miryang-si': '밀양', 'Miryang': '밀양',
+                
+                // 경상북도 도시
+                'Pohang-si': '포항', 'Pohang': '포항',
+                'Gumi-si': '구미', 'Gumi': '구미',
+                'Gyeongju-si': '경주', 'Gyeongju': '경주',
+                'Andong-si': '안동', 'Andong': '안동',
+                'Yeongju-si': '영주', 'Yeongju': '영주',
+                'Sangju-si': '상주', 'Sangju': '상주',
+                'Gimcheon-si': '김천', 'Gimcheon': '김천',
+                'Yeongcheon-si': '영천', 'Yeongcheon': '영천',
+                'Mungyeong-si': '문경', 'Mungyeong': '문경',
+                
+                // 충청남도 도시
+                'Cheonan-si': '천안', 'Cheonan': '천안',
+                'Asan-si': '아산', 'Asan': '아산',
+                'Seosan-si': '서산', 'Seosan': '서산',
+                'Dangjin-si': '당진', 'Dangjin': '당진',
+                'Nonsan-si': '논산', 'Nonsan': '논산',
+                'Gongju-si': '공주', 'Gongju': '공주',
+                'Boryeong-si': '보령', 'Boryeong': '보령',
+                
+                // 충청북도 도시
+                'Cheongju-si': '청주', 'Cheongju': '청주',
+                'Chungju-si': '충주', 'Chungju': '충주',
+                'Jecheon-si': '제천', 'Jecheon': '제천',
+                
+                // 전라북도 도시
+                'Jeonju-si': '전주', 'Jeonju': '전주',
+                'Gunsan-si': '군산', 'Gunsan': '군산',
+                'Iksan-si': '익산', 'Iksan': '익산',
+                'Namwon-si': '남원', 'Namwon': '남원',
+                'Gimje-si': '김제', 'Gimje': '김제',
+                'Jeongeup-si': '정읍', 'Jeongeup': '정읍',
+                
+                // 전라남도 도시
+                'Yeosu-si': '여수', 'Yeosu': '여수',
+                'Suncheon-si': '순천', 'Suncheon': '순천',
+                'Mokpo-si': '목포', 'Mokpo': '목포',
+                'Gwangyang-si': '광양', 'Gwangyang': '광양',
+                'Naju-si': '나주', 'Naju': '나주',
+                
+                // 강원도 도시
+                'Chuncheon-si': '춘천', 'Chuncheon': '춘천',
+                'Wonju-si': '원주', 'Wonju': '원주',
+                'Gangneung-si': '강릉', 'Gangneung': '강릉',
+                'Donghae-si': '동해', 'Donghae': '동해',
+                'Sokcho-si': '속초', 'Sokcho': '속초',
+                'Samcheok-si': '삼척', 'Samcheok': '삼척',
+                'Taebaek-si': '태백', 'Taebaek': '태백',
+                
+                // 제주도 도시
+                'Jeju City': '제주시', 'Jeju-si': '제주시',
+                'Seogwipo-si': '서귀포', 'Seogwipo': '서귀포',
+                
                 // 서울 구
-                'Gangnam': '강남구', 'Gangnam-gu': '강남구', 'Seocho': '서초구', 'Seocho-gu': '서초구',
-                'Songpa': '송파구', 'Songpa-gu': '송파구', 'Gangdong': '강동구', 'Gangdong-gu': '강동구',
-                'Gwanak': '관악구', 'Gwanak-gu': '관악구', 'Dongjak': '동작구', 'Dongjak-gu': '동작구',
-                'Yeongdeungpo': '영등포구', 'Yeongdeungpo-gu': '영등포구', 'Guro': '구로구', 'Guro-gu': '구로구',
-                'Geumcheon': '금천구', 'Geumcheon-gu': '금천구', 'Yangcheon': '양천구', 'Yangcheon-gu': '양천구',
-                'Gangseo': '강서구', 'Gangseo-gu': '강서구', 'Mapo': '마포구', 'Mapo-gu': '마포구',
-                'Seodaemun': '서대문구', 'Seodaemun-gu': '서대문구', 'Eunpyeong': '은평구', 'Eunpyeong-gu': '은평구',
-                'Jongno': '종로구', 'Jongno-gu': '종로구', 'Jung': '중구', 'Jung-gu': '중구',
-                'Yongsan': '용산구', 'Yongsan-gu': '용산구', 'Seongbuk': '성북구', 'Seongbuk-gu': '성북구',
-                'Gangbuk': '강북구', 'Gangbuk-gu': '강북구', 'Dobong': '도봉구', 'Dobong-gu': '도봉구',
-                'Nowon': '노원구', 'Nowon-gu': '노원구', 'Jungnang': '중랑구', 'Jungnang-gu': '중랑구',
-                'Dongdaemun': '동대문구', 'Dongdaemun-gu': '동대문구', 'Seongdong': '성동구', 'Seongdong-gu': '성동구',
-                'Gwangjin': '광진구', 'Gwangjin-gu': '광진구',
+                'Gangnam-gu': '강남구', 'Gangnam': '강남',
+                'Seocho-gu': '서초구', 'Seocho': '서초',
+                'Songpa-gu': '송파구', 'Songpa': '송파',
+                'Gangdong-gu': '강동구', 'Gangdong': '강동',
+                'Gwanak-gu': '관악구', 'Gwanak': '관악',
+                'Dongjak-gu': '동작구', 'Dongjak': '동작',
+                'Yeongdeungpo-gu': '영등포구', 'Yeongdeungpo': '영등포',
+                'Guro-gu': '구로구', 'Guro': '구로',
+                'Geumcheon-gu': '금천구', 'Geumcheon': '금천',
+                'Yangcheon-gu': '양천구', 'Yangcheon': '양천',
+                'Gangseo-gu': '강서구', 'Gangseo': '강서',
+                'Mapo-gu': '마포구', 'Mapo': '마포',
+                'Seodaemun-gu': '서대문구', 'Seodaemun': '서대문',
+                'Eunpyeong-gu': '은평구', 'Eunpyeong': '은평',
+                'Jongno-gu': '종로구', 'Jongno': '종로',
+                'Jung-gu': '중구', 'Jung': '중',
+                'Yongsan-gu': '용산구', 'Yongsan': '용산',
+                'Seongbuk-gu': '성북구', 'Seongbuk': '성북',
+                'Gangbuk-gu': '강북구', 'Gangbuk': '강북',
+                'Dobong-gu': '도봉구', 'Dobong': '도봉',
+                'Nowon-gu': '노원구', 'Nowon': '노원',
+                'Jungnang-gu': '중랑구', 'Jungnang': '중랑',
+                'Dongdaemun-gu': '동대문구', 'Dongdaemun': '동대문',
+                'Seongdong-gu': '성동구', 'Seongdong': '성동',
+                'Gwangjin-gu': '광진구', 'Gwangjin': '광진',
+                
                 // 부산 구
-                'Dongnae': '동래구', 'Dongnae-gu': '동래구', 'Haeundae': '해운대구', 'Haeundae-gu': '해운대구',
-                'Suyeong': '수영구', 'Suyeong-gu': '수영구', 'Nam': '남구', 'Nam-gu': '남구',
-                'Busanjin': '부산진구', 'Busanjin-gu': '부산진구', 'Saha': '사하구', 'Saha-gu': '사하구',
-                'Sasang': '사상구', 'Sasang-gu': '사상구', 'Buk': '북구', 'Buk-gu': '북구',
-                'Geumjeong': '금정구', 'Geumjeong-gu': '금정구', 'Yeonje': '연제구', 'Yeonje-gu': '연제구',
-                'Seo': '서구', 'Seo-gu': '서구', 'Dong': '동구', 'Dong-gu': '동구',
-                'Yeongdo': '영도구', 'Yeongdo-gu': '영도구', 'Gijang': '기장군', 'Gijang-gun': '기장군'
+                'Dongnae-gu': '동래구', 'Dongnae': '동래',
+                'Haeundae-gu': '해운대구', 'Haeundae': '해운대',
+                'Suyeong-gu': '수영구', 'Suyeong': '수영',
+                'Nam-gu': '남구',
+                'Busanjin-gu': '부산진구', 'Busanjin': '부산진',
+                'Saha-gu': '사하구', 'Saha': '사하',
+                'Sasang-gu': '사상구', 'Sasang': '사상',
+                'Buk-gu': '북구',
+                'Geumjeong-gu': '금정구', 'Geumjeong': '금정',
+                'Yeonje-gu': '연제구', 'Yeonje': '연제',
+                'Seo-gu': '서구',
+                'Dong-gu': '동구',
+                'Yeongdo-gu': '영도구', 'Yeongdo': '영도',
+                'Gijang-gun': '기장군', 'Gijang': '기장',
+                
+                // 인천 구
+                'Namdong-gu': '남동구', 'Namdong': '남동',
+                'Bupyeong-gu': '부평구', 'Bupyeong': '부평',
+                'Gyeyang-gu': '계양구', 'Gyeyang': '계양',
+                'Yeonsu-gu': '연수구', 'Yeonsu': '연수',
+                'Michuhol-gu': '미추홀구', 'Michuhol': '미추홀',
+                
+                // 대구 구
+                'Suseong-gu': '수성구', 'Suseong': '수성',
+                'Dalseo-gu': '달서구', 'Dalseo': '달서',
+                'Dalseong-gun': '달성군', 'Dalseong': '달성'
             };
             
             let result = loc;
             
-            // 국가 변환
-            for (const [eng, kor] of Object.entries(countryMap)) {
+            // 긴 문자열부터 변환 (정확한 매칭을 위해)
+            const sortedKeys = Object.keys(translateMap).sort((a, b) => b.length - a.length);
+            
+            for (const eng of sortedKeys) {
                 if (result.includes(eng)) {
-                    result = result.replace(eng, kor);
+                    result = result.replace(new RegExp(eng, 'g'), translateMap[eng]);
                 }
             }
             
-            // 지역 변환
-            for (const [eng, kor] of Object.entries(regionMap)) {
-                if (result.includes(eng)) {
-                    result = result.replace(eng, kor);
-                }
-            }
+            // 남은 영어가 있으면 제거하고 정리
+            result = result.trim();
             
-            // 도시/구 변환
-            for (const [eng, kor] of Object.entries(cityMap)) {
-                if (result.includes(eng)) {
-                    result = result.replace(eng, kor);
-                }
-            }
+            // 공백 정리 (연속 공백 제거)
+            result = result.replace(/\s+/g, ' ');
             
-            return result;
+            return result || '-';
         }
         
         // 위치 정보 조회 함수 (캐시 사용)
