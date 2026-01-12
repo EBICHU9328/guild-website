@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.6.11">
-    <meta name="build-date" content="2026-01-12 21:40 KST">
+    <meta name="version" content="1.6.12">
+    <meta name="build-date" content="2026-01-12 22:00 KST">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -839,6 +839,7 @@
                     <button class="admin-dropdown-item" id="deletedUsersBtn">🗑️ 삭제된 사용자</button>
                     <div class="admin-dropdown-divider super-admin-only" style="display:none;"></div>
                     <button class="admin-dropdown-item super-admin-only" id="logViewBtn" style="display:none;">📝 로그 확인</button>
+                    <button class="admin-dropdown-item super-admin-only" id="statsViewBtn" style="display:none;">📊 접속 통계</button>
                     <button class="admin-dropdown-item super-admin-only" id="adminManageBtn" style="display:none;">👑 관리자 관리</button>
                     <div style="border-top: 1px solid #e5e7eb; margin: 8px 0;"></div>
                     <button class="admin-dropdown-item" id="versionInfoBtn">ℹ️ 버전 정보</button>
@@ -1026,9 +1027,15 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.6.11';
-        const APP_BUILD_DATE = '2026-01-12 21:40 KST';
+        const APP_VERSION = '1.6.12';
+        const APP_BUILD_DATE = '2026-01-12 22:00 KST';
         const APP_CHANGELOG = [
+            { version: '1.6.12', date: '2026-01-12 22:00', changes: [
+                '📍 위치 한글 변환 (Busan Dongnae → 부산광역시 동래구)',
+                '📊 접속 통계 기능 추가 (제조사/기기/브라우저/지역별)',
+                '🔍 통계 검색 기능 (지역, 기기명으로 검색)',
+                '📱 기기 정보 세분화 (갤럭시폴드6, 갤럭시플립5, 갤럭시S24울트라 등)'
+            ]},
             { version: '1.6.11', date: '2026-01-12 21:40', changes: [
                 '📍 위치 정보 개선: 국가 포함 (대한민국 서울특별시 / 미국 샌프란시스코)',
                 '📱 기기 정보 변환: 기존 로그도 간략하게 표시 (PC-크롬, 아이폰16-사파리 등)'
@@ -1687,34 +1694,88 @@
             let device = '';
             let browser = '';
             
-            // 기기 감지
+            // 기기 감지 - 더 세분화
             if (/iPhone/.test(ua)) {
-                const match = ua.match(/iPhone\s*(\d+)?/i);
-                device = match && match[1] ? `아이폰${match[1]}` : '아이폰';
                 // iPhone 모델 세부 정보 (iOS 버전으로 추정)
                 if (/iPhone.*OS\s*(\d+)/.test(ua)) {
-                    const ver = ua.match(/iPhone.*OS\s*(\d+)/)[1];
+                    const ver = parseInt(ua.match(/iPhone.*OS\s*(\d+)/)[1]);
                     if (ver >= 18) device = '아이폰16';
                     else if (ver >= 17) device = '아이폰15';
                     else if (ver >= 16) device = '아이폰14';
                     else if (ver >= 15) device = '아이폰13';
+                    else if (ver >= 14) device = '아이폰12';
+                    else device = '아이폰';
+                } else {
+                    device = '아이폰';
                 }
             } else if (/iPad/.test(ua)) {
                 device = '아이패드';
-            } else if (/SM-S9\d+/i.test(ua)) {
+            // 갤럭시 S 시리즈 세분화
+            } else if (/SM-S93[89]/i.test(ua)) {
+                device = '갤럭시S24울트라';
+            } else if (/SM-S92[16]/i.test(ua)) {
+                device = '갤럭시S24+';
+            } else if (/SM-S92[01]/i.test(ua)) {
                 device = '갤럭시S24';
-            } else if (/SM-S91\d/i.test(ua)) {
+            } else if (/SM-S91[89]/i.test(ua)) {
+                device = '갤럭시S23울트라';
+            } else if (/SM-S91[16]/i.test(ua)) {
+                device = '갤럭시S23+';
+            } else if (/SM-S91[01]/i.test(ua)) {
                 device = '갤럭시S23';
-            } else if (/SM-S90\d/i.test(ua)) {
+            } else if (/SM-S90[89]/i.test(ua)) {
+                device = '갤럭시S22울트라';
+            } else if (/SM-S90[16]/i.test(ua)) {
+                device = '갤럭시S22+';
+            } else if (/SM-S90[01]/i.test(ua)) {
                 device = '갤럭시S22';
-            } else if (/SM-G99\d/i.test(ua)) {
+            } else if (/SM-G99[89]/i.test(ua)) {
+                device = '갤럭시S21울트라';
+            } else if (/SM-G99[16]/i.test(ua)) {
+                device = '갤럭시S21+';
+            } else if (/SM-G99[01]/i.test(ua)) {
                 device = '갤럭시S21';
-            } else if (/SM-N9\d+/i.test(ua)) {
-                device = '갤럭시노트';
+            // 갤럭시 폴드 시리즈 세분화
+            } else if (/SM-F956/i.test(ua)) {
+                device = '갤럭시폴드6';
+            } else if (/SM-F946/i.test(ua)) {
+                device = '갤럭시폴드5';
+            } else if (/SM-F936/i.test(ua)) {
+                device = '갤럭시폴드4';
+            } else if (/SM-F926/i.test(ua)) {
+                device = '갤럭시폴드3';
+            } else if (/SM-F916/i.test(ua)) {
+                device = '갤럭시폴드2';
             } else if (/SM-F9\d+/i.test(ua)) {
                 device = '갤럭시폴드';
+            // 갤럭시 플립 시리즈 세분화
+            } else if (/SM-F756/i.test(ua)) {
+                device = '갤럭시플립6';
+            } else if (/SM-F731/i.test(ua)) {
+                device = '갤럭시플립5';
+            } else if (/SM-F721/i.test(ua)) {
+                device = '갤럭시플립4';
+            } else if (/SM-F711/i.test(ua)) {
+                device = '갤럭시플립3';
+            } else if (/SM-F700/i.test(ua)) {
+                device = '갤럭시플립';
             } else if (/SM-F7\d+/i.test(ua)) {
                 device = '갤럭시플립';
+            // 갤럭시 노트 시리즈
+            } else if (/SM-N98\d/i.test(ua)) {
+                device = '갤럭시노트20';
+            } else if (/SM-N97\d/i.test(ua)) {
+                device = '갤럭시노트10';
+            } else if (/SM-N9\d+/i.test(ua)) {
+                device = '갤럭시노트';
+            // 갤럭시 A 시리즈
+            } else if (/SM-A\d+/i.test(ua)) {
+                const match = ua.match(/SM-A(\d)\d+/i);
+                if (match) {
+                    device = `갤럭시A${match[1]}0시리즈`;
+                } else {
+                    device = '갤럭시A시리즈';
+                }
             } else if (/Samsung|SM-/i.test(ua)) {
                 device = '갤럭시';
             } else if (/Android/.test(ua)) {
@@ -1749,6 +1810,123 @@
             }
             
             return `${device}-${browser}`;
+        }
+        
+        // 영어 위치 → 한글 변환 함수
+        function translateLocation(loc) {
+            if (!loc || loc === '-') return loc;
+            
+            // 이미 한글이면 그대로 반환
+            if (/[가-힣]/.test(loc)) return loc;
+            
+            // 국가명 변환
+            const countryMap = {
+                'South Korea': '대한민국', 'Korea': '대한민국',
+                'United States': '미국', 'USA': '미국',
+                'Japan': '일본', 'China': '중국', 'Taiwan': '대만',
+                'Vietnam': '베트남', 'Thailand': '태국', 'Philippines': '필리핀',
+                'Singapore': '싱가포르', 'Malaysia': '말레이시아', 'Indonesia': '인도네시아',
+                'Australia': '호주', 'Canada': '캐나다', 'United Kingdom': '영국', 'UK': '영국',
+                'Germany': '독일', 'France': '프랑스', 'Italy': '이탈리아', 'Spain': '스페인',
+                'Russia': '러시아', 'India': '인도', 'Brazil': '브라질', 'Mexico': '멕시코'
+            };
+            
+            // 한국 지역명 변환
+            const regionMap = {
+                'Seoul': '서울특별시', 'Busan': '부산광역시', 'Incheon': '인천광역시',
+                'Daegu': '대구광역시', 'Daejeon': '대전광역시', 'Gwangju': '광주광역시',
+                'Ulsan': '울산광역시', 'Sejong': '세종특별자치시',
+                'Gyeonggi-do': '경기도', 'Gyeonggi': '경기도',
+                'Gangwon-do': '강원도', 'Gangwon': '강원도',
+                'North Chungcheong': '충청북도', 'Chungcheongbuk-do': '충청북도',
+                'South Chungcheong': '충청남도', 'Chungcheongnam-do': '충청남도',
+                'North Jeolla': '전라북도', 'Jeollabuk-do': '전라북도', 'Jeonbuk': '전북특별자치도',
+                'South Jeolla': '전라남도', 'Jeollanam-do': '전라남도',
+                'North Gyeongsang': '경상북도', 'Gyeongsangbuk-do': '경상북도',
+                'South Gyeongsang': '경상남도', 'Gyeongsangnam-do': '경상남도',
+                'Jeju': '제주특별자치도', 'Jeju-do': '제주특별자치도'
+            };
+            
+            // 한국 도시명 변환
+            const cityMap = {
+                'Suwon': '수원', 'Suwon-si': '수원시', 'Seongnam': '성남', 'Seongnam-si': '성남시',
+                'Goyang': '고양', 'Goyang-si': '고양시', 'Yongin': '용인', 'Yongin-si': '용인시',
+                'Bucheon': '부천', 'Bucheon-si': '부천시', 'Ansan': '안산', 'Ansan-si': '안산시',
+                'Anyang': '안양', 'Anyang-si': '안양시', 'Namyangju': '남양주', 'Namyangju-si': '남양주시',
+                'Hwaseong': '화성', 'Hwaseong-si': '화성시', 'Pyeongtaek': '평택', 'Pyeongtaek-si': '평택시',
+                'Siheung': '시흥', 'Siheung-si': '시흥시', 'Gimpo': '김포', 'Gimpo-si': '김포시',
+                'Gwangmyeong': '광명', 'Gwangmyeong-si': '광명시', 'Gwangju': '광주', 'Gwangju-si': '광주시',
+                'Hanam': '하남', 'Hanam-si': '하남시', 'Osan': '오산', 'Osan-si': '오산시',
+                'Icheon': '이천', 'Icheon-si': '이천시', 'Anseong': '안성', 'Anseong-si': '안성시',
+                'Uijeongbu': '의정부', 'Uijeongbu-si': '의정부시', 'Paju': '파주', 'Paju-si': '파주시',
+                'Yangju': '양주', 'Yangju-si': '양주시', 'Pocheon': '포천', 'Pocheon-si': '포천시',
+                'Dongducheon': '동두천', 'Dongducheon-si': '동두천시', 'Guri': '구리', 'Guri-si': '구리시',
+                'Changwon': '창원', 'Changwon-si': '창원시', 'Gimhae': '김해', 'Gimhae-si': '김해시',
+                'Jinju': '진주', 'Jinju-si': '진주시', 'Yangsan': '양산', 'Yangsan-si': '양산시',
+                'Geoje': '거제', 'Geoje-si': '거제시', 'Sacheon': '사천', 'Sacheon-si': '사천시',
+                'Pohang': '포항', 'Pohang-si': '포항시', 'Gumi': '구미', 'Gumi-si': '구미시',
+                'Gyeongju': '경주', 'Gyeongju-si': '경주시', 'Andong': '안동', 'Andong-si': '안동시',
+                'Yeongju': '영주', 'Yeongju-si': '영주시', 'Sangju': '상주', 'Sangju-si': '상주시',
+                'Cheonan': '천안', 'Cheonan-si': '천안시', 'Asan': '아산', 'Asan-si': '아산시',
+                'Seosan': '서산', 'Seosan-si': '서산시', 'Dangjin': '당진', 'Dangjin-si': '당진시',
+                'Cheongju': '청주', 'Cheongju-si': '청주시', 'Chungju': '충주', 'Chungju-si': '충주시',
+                'Jecheon': '제천', 'Jecheon-si': '제천시',
+                'Jeonju': '전주', 'Jeonju-si': '전주시', 'Gunsan': '군산', 'Gunsan-si': '군산시',
+                'Iksan': '익산', 'Iksan-si': '익산시', 'Namwon': '남원', 'Namwon-si': '남원시',
+                'Yeosu': '여수', 'Yeosu-si': '여수시', 'Suncheon': '순천', 'Suncheon-si': '순천시',
+                'Mokpo': '목포', 'Mokpo-si': '목포시', 'Gwangyang': '광양', 'Gwangyang-si': '광양시',
+                'Chuncheon': '춘천', 'Chuncheon-si': '춘천시', 'Wonju': '원주', 'Wonju-si': '원주시',
+                'Gangneung': '강릉', 'Gangneung-si': '강릉시', 'Donghae': '동해', 'Donghae-si': '동해시',
+                'Sokcho': '속초', 'Sokcho-si': '속초시', 'Samcheok': '삼척', 'Samcheok-si': '삼척시',
+                'Jeju City': '제주시', 'Jeju-si': '제주시', 'Seogwipo': '서귀포', 'Seogwipo-si': '서귀포시',
+                // 서울 구
+                'Gangnam': '강남구', 'Gangnam-gu': '강남구', 'Seocho': '서초구', 'Seocho-gu': '서초구',
+                'Songpa': '송파구', 'Songpa-gu': '송파구', 'Gangdong': '강동구', 'Gangdong-gu': '강동구',
+                'Gwanak': '관악구', 'Gwanak-gu': '관악구', 'Dongjak': '동작구', 'Dongjak-gu': '동작구',
+                'Yeongdeungpo': '영등포구', 'Yeongdeungpo-gu': '영등포구', 'Guro': '구로구', 'Guro-gu': '구로구',
+                'Geumcheon': '금천구', 'Geumcheon-gu': '금천구', 'Yangcheon': '양천구', 'Yangcheon-gu': '양천구',
+                'Gangseo': '강서구', 'Gangseo-gu': '강서구', 'Mapo': '마포구', 'Mapo-gu': '마포구',
+                'Seodaemun': '서대문구', 'Seodaemun-gu': '서대문구', 'Eunpyeong': '은평구', 'Eunpyeong-gu': '은평구',
+                'Jongno': '종로구', 'Jongno-gu': '종로구', 'Jung': '중구', 'Jung-gu': '중구',
+                'Yongsan': '용산구', 'Yongsan-gu': '용산구', 'Seongbuk': '성북구', 'Seongbuk-gu': '성북구',
+                'Gangbuk': '강북구', 'Gangbuk-gu': '강북구', 'Dobong': '도봉구', 'Dobong-gu': '도봉구',
+                'Nowon': '노원구', 'Nowon-gu': '노원구', 'Jungnang': '중랑구', 'Jungnang-gu': '중랑구',
+                'Dongdaemun': '동대문구', 'Dongdaemun-gu': '동대문구', 'Seongdong': '성동구', 'Seongdong-gu': '성동구',
+                'Gwangjin': '광진구', 'Gwangjin-gu': '광진구',
+                // 부산 구
+                'Dongnae': '동래구', 'Dongnae-gu': '동래구', 'Haeundae': '해운대구', 'Haeundae-gu': '해운대구',
+                'Suyeong': '수영구', 'Suyeong-gu': '수영구', 'Nam': '남구', 'Nam-gu': '남구',
+                'Busanjin': '부산진구', 'Busanjin-gu': '부산진구', 'Saha': '사하구', 'Saha-gu': '사하구',
+                'Sasang': '사상구', 'Sasang-gu': '사상구', 'Buk': '북구', 'Buk-gu': '북구',
+                'Geumjeong': '금정구', 'Geumjeong-gu': '금정구', 'Yeonje': '연제구', 'Yeonje-gu': '연제구',
+                'Seo': '서구', 'Seo-gu': '서구', 'Dong': '동구', 'Dong-gu': '동구',
+                'Yeongdo': '영도구', 'Yeongdo-gu': '영도구', 'Gijang': '기장군', 'Gijang-gun': '기장군'
+            };
+            
+            let result = loc;
+            
+            // 국가 변환
+            for (const [eng, kor] of Object.entries(countryMap)) {
+                if (result.includes(eng)) {
+                    result = result.replace(eng, kor);
+                }
+            }
+            
+            // 지역 변환
+            for (const [eng, kor] of Object.entries(regionMap)) {
+                if (result.includes(eng)) {
+                    result = result.replace(eng, kor);
+                }
+            }
+            
+            // 도시/구 변환
+            for (const [eng, kor] of Object.entries(cityMap)) {
+                if (result.includes(eng)) {
+                    result = result.replace(eng, kor);
+                }
+            }
+            
+            return result;
         }
         
         // 위치 정보 조회 함수 (캐시 사용)
@@ -4284,6 +4462,9 @@
                     deviceDisplay = parseUserAgent(deviceDisplay);
                 }
                 
+                // 위치 정보: 영어면 한글로 변환
+                let locationDisplay = translateLocation(l.location || '');
+                
                 logs.push({
                     time: formatDateTime(l.createdAt),
                     who: l.who || '-',
@@ -4294,7 +4475,7 @@
                     editedBy: l.editedBy || '-',
                     ip: l.ip || '-',
                     device: deviceDisplay,
-                    location: l.location || ''
+                    location: locationDisplay
                 });
             });
             
@@ -6649,6 +6830,339 @@
         
         setTimeout(checkAutoBackup, 3000);
 
+        // 접속 통계 기능
+        document.getElementById('statsViewBtn').addEventListener('click', async () => {
+            if (!isSuperAdmin) {
+                showAlert('최종 관리자만 접근할 수 있습니다', 'error');
+                return;
+            }
+            
+            openLargeModal('📊 접속 통계', '닉네임별 위치, 기기, 브라우저 통계');
+            setModalBody('<p style="text-align:center; padding:40px;">📊 통계 데이터 수집 중...</p>');
+            
+            try {
+                // 로그 데이터 수집
+                const logsSnap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
+                
+                // 유저별 통계 수집
+                const userStats = {};
+                
+                logsSnap.forEach(d => {
+                    const l = d.data();
+                    const who = l.who;
+                    if (!who || who === '-' || who === 'Admin') return;
+                    
+                    // 여러 명이 포함된 경우 (쉼표로 구분) - 스킵
+                    if (who.includes(',') || who.includes('외')) return;
+                    
+                    // 기기 정보 파싱
+                    let deviceRaw = l.device || '';
+                    if (deviceRaw.length > 30 || deviceRaw.includes('Mozilla')) {
+                        deviceRaw = parseUserAgent(deviceRaw);
+                    }
+                    
+                    // 위치 정보 한글 변환
+                    let locationRaw = translateLocation(l.location || '');
+                    
+                    if (!userStats[who]) {
+                        userStats[who] = {
+                            locations: new Set(),
+                            devices: new Set(),
+                            browsers: new Set(),
+                            manufacturers: new Set(),
+                            lastAccess: l.createdAt,
+                            accessCount: 0
+                        };
+                    }
+                    
+                    // 위치 추가
+                    if (locationRaw && locationRaw !== '-') {
+                        userStats[who].locations.add(locationRaw);
+                    }
+                    
+                    // 기기 및 브라우저 파싱
+                    if (deviceRaw && deviceRaw !== '-' && deviceRaw !== '알 수 없음') {
+                        const parts = deviceRaw.split('-');
+                        const device = parts[0] || '';
+                        const browser = parts[1] || '';
+                        
+                        if (device) {
+                            userStats[who].devices.add(device);
+                            
+                            // 제조사 분류
+                            if (device.includes('아이폰') || device.includes('아이패드') || device.includes('맥')) {
+                                userStats[who].manufacturers.add('애플');
+                            } else if (device.includes('갤럭시') || device.includes('삼성')) {
+                                userStats[who].manufacturers.add('삼성');
+                            } else if (device === 'PC') {
+                                userStats[who].manufacturers.add('PC');
+                            } else if (device.includes('안드로이드')) {
+                                userStats[who].manufacturers.add('기타안드로이드');
+                            }
+                        }
+                        
+                        if (browser) {
+                            userStats[who].browsers.add(browser);
+                        }
+                    }
+                    
+                    userStats[who].accessCount++;
+                    if (l.createdAt > userStats[who].lastAccess) {
+                        userStats[who].lastAccess = l.createdAt;
+                    }
+                });
+                
+                // 배열로 변환
+                const statsArray = Object.entries(userStats).map(([name, stats]) => ({
+                    name,
+                    locations: Array.from(stats.locations),
+                    devices: Array.from(stats.devices),
+                    browsers: Array.from(stats.browsers),
+                    manufacturers: Array.from(stats.manufacturers),
+                    lastAccess: formatDateTime(stats.lastAccess),
+                    accessCount: stats.accessCount
+                }));
+                
+                // 전역 저장
+                window.allUserStats = statsArray;
+                
+                // 통계 요약
+                const totalUsers = statsArray.length;
+                const samsungUsers = statsArray.filter(s => s.manufacturers.includes('삼성')).length;
+                const appleUsers = statsArray.filter(s => s.manufacturers.includes('애플')).length;
+                const pcUsers = statsArray.filter(s => s.manufacturers.includes('PC')).length;
+                
+                // 브라우저별 사용자 수
+                const browserCounts = {};
+                statsArray.forEach(s => {
+                    s.browsers.forEach(b => {
+                        browserCounts[b] = (browserCounts[b] || 0) + 1;
+                    });
+                });
+                
+                // 지역별 사용자 수
+                const locationCounts = {};
+                statsArray.forEach(s => {
+                    s.locations.forEach(loc => {
+                        // 시/도 단위로 추출
+                        const parts = loc.split(' ');
+                        let region = parts.length >= 2 ? parts[1] : parts[0];
+                        if (region) {
+                            locationCounts[region] = (locationCounts[region] || 0) + 1;
+                        }
+                    });
+                });
+                
+                // 기기별 사용자 수
+                const deviceCounts = {};
+                statsArray.forEach(s => {
+                    s.devices.forEach(dev => {
+                        deviceCounts[dev] = (deviceCounts[dev] || 0) + 1;
+                    });
+                });
+                
+                // 정렬된 통계
+                const sortedBrowsers = Object.entries(browserCounts).sort((a,b) => b[1] - a[1]);
+                const sortedLocations = Object.entries(locationCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+                const sortedDevices = Object.entries(deviceCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
+                
+                const html = `
+                    <div style="margin-bottom:20px;">
+                        <!-- 요약 카드 -->
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:20px;">
+                            <div style="background:#f0f9ff; padding:16px; border-radius:12px; text-align:center;">
+                                <p style="color:#0891b2; font-size:24px; font-weight:700; margin:0;">${totalUsers}</p>
+                                <p style="color:#0e7490; font-size:12px; margin:4px 0 0;">전체 유저</p>
+                            </div>
+                            <div style="background:#fef3c7; padding:16px; border-radius:12px; text-align:center;">
+                                <p style="color:#d97706; font-size:24px; font-weight:700; margin:0;">${samsungUsers}</p>
+                                <p style="color:#92400e; font-size:12px; margin:4px 0 0;">📱 삼성</p>
+                            </div>
+                            <div style="background:#f3e8ff; padding:16px; border-radius:12px; text-align:center;">
+                                <p style="color:#7c3aed; font-size:24px; font-weight:700; margin:0;">${appleUsers}</p>
+                                <p style="color:#5b21b6; font-size:12px; margin:4px 0 0;">🍎 애플</p>
+                            </div>
+                            <div style="background:#ecfdf5; padding:16px; border-radius:12px; text-align:center;">
+                                <p style="color:#059669; font-size:24px; font-weight:700; margin:0;">${pcUsers}</p>
+                                <p style="color:#047857; font-size:12px; margin:4px 0 0;">💻 PC</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 통계 그리드 -->
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+                            <div style="background:#f9fafb; padding:12px; border-radius:8px;">
+                                <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">🌐 브라우저 통계</p>
+                                ${sortedBrowsers.map(([b, c]) => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;"><span>${b}</span><span style="color:#6b7280;">${c}명</span></div>`).join('')}
+                            </div>
+                            <div style="background:#f9fafb; padding:12px; border-radius:8px;">
+                                <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">📍 지역 통계 (Top 10)</p>
+                                ${sortedLocations.map(([l, c]) => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;"><span>${l}</span><span style="color:#6b7280;">${c}명</span></div>`).join('')}
+                            </div>
+                            <div style="background:#f9fafb; padding:12px; border-radius:8px;">
+                                <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">📱 기기 통계 (Top 10)</p>
+                                ${sortedDevices.map(([d, c]) => `<div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0;"><span>${d}</span><span style="color:#6b7280;">${c}명</span></div>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- 검색 및 필터 -->
+                        <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px;">
+                            <p style="font-weight:600; font-size:14px; margin:0 0 12px; color:#374151;">🔍 유저별 상세 검색</p>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                                <input type="text" id="statsSearchInput" class="form-input" placeholder="닉네임, 지역, 기기 검색..." style="flex:2; min-width:150px;">
+                                <select id="statsManufFilter" class="form-input" style="flex:1; min-width:100px;">
+                                    <option value="">전체 제조사</option>
+                                    <option value="삼성">📱 삼성</option>
+                                    <option value="애플">🍎 애플</option>
+                                    <option value="PC">💻 PC</option>
+                                </select>
+                                <select id="statsBrowserFilter" class="form-input" style="flex:1; min-width:100px;">
+                                    <option value="">전체 브라우저</option>
+                                    ${sortedBrowsers.map(([b]) => `<option value="${b}">${b}</option>`).join('')}
+                                </select>
+                            </div>
+                            <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">검색 결과: <span id="statsResultCount">${statsArray.length}</span>명</p>
+                            <div class="table-scroll-container" style="max-height:300px;">
+                                <table class="common-table" id="statsTable" style="font-size:12px;">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:15%;">닉네임</th>
+                                            <th style="width:25%;">위치</th>
+                                            <th style="width:12%;">제조사</th>
+                                            <th style="width:20%;">기기</th>
+                                            <th style="width:15%;">브라우저</th>
+                                            <th style="width:13%;">접속수</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="statsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                setModalBody(html);
+                document.getElementById('modalFooter').innerHTML = '<button class="btn btn-primary" onclick="closeModal()">닫기</button>';
+                
+                // 테이블 데이터 렌더링 함수
+                function renderStatsTable(data) {
+                    const tbody = document.getElementById('statsTableBody');
+                    tbody.innerHTML = data.map(s => {
+                        const locDisplay = s.locations.slice(0, 2).join(', ') + (s.locations.length > 2 ? ` 외 ${s.locations.length - 2}` : '');
+                        const devDisplay = s.devices.slice(0, 2).join(', ') + (s.devices.length > 2 ? ` 외 ${s.devices.length - 2}` : '');
+                        const browDisplay = s.browsers.join(', ');
+                        const manufDisplay = s.manufacturers.join('/');
+                        
+                        return `<tr style="cursor:pointer;" onclick="showUserStatsDetail('${s.name}')">
+                            <td><strong>${s.name}</strong></td>
+                            <td style="font-size:11px;" title="${s.locations.join(', ')}">${locDisplay || '-'}</td>
+                            <td>${manufDisplay || '-'}</td>
+                            <td style="font-size:11px;" title="${s.devices.join(', ')}">${devDisplay || '-'}</td>
+                            <td>${browDisplay || '-'}</td>
+                            <td style="text-align:center;">${s.accessCount}</td>
+                        </tr>`;
+                    }).join('');
+                    
+                    document.getElementById('statsResultCount').textContent = data.length;
+                }
+                
+                // 초기 렌더링
+                renderStatsTable(statsArray);
+                
+                // 필터 함수
+                function applyStatsFilters() {
+                    const searchText = document.getElementById('statsSearchInput').value.toLowerCase();
+                    const manufFilter = document.getElementById('statsManufFilter').value;
+                    const browserFilter = document.getElementById('statsBrowserFilter').value;
+                    
+                    const filtered = window.allUserStats.filter(s => {
+                        // 검색어 체크 (닉네임, 위치, 기기)
+                        const matchSearch = !searchText || 
+                            s.name.toLowerCase().includes(searchText) ||
+                            s.locations.some(l => l.toLowerCase().includes(searchText)) ||
+                            s.devices.some(d => d.toLowerCase().includes(searchText));
+                        
+                        // 제조사 체크
+                        const matchManuf = !manufFilter || s.manufacturers.includes(manufFilter);
+                        
+                        // 브라우저 체크
+                        const matchBrowser = !browserFilter || s.browsers.includes(browserFilter);
+                        
+                        return matchSearch && matchManuf && matchBrowser;
+                    });
+                    
+                    renderStatsTable(filtered);
+                }
+                
+                document.getElementById('statsSearchInput').addEventListener('input', applyStatsFilters);
+                document.getElementById('statsManufFilter').addEventListener('change', applyStatsFilters);
+                document.getElementById('statsBrowserFilter').addEventListener('change', applyStatsFilters);
+                
+            } catch(e) {
+                console.error('통계 로드 실패:', e);
+                setModalBody('<p style="color:#ef4444; text-align:center; padding:40px;">통계 데이터를 불러오는 중 오류가 발생했습니다</p>');
+            }
+        });
+        
+        // 유저 통계 상세보기
+        window.showUserStatsDetail = function(userName) {
+            const stats = window.allUserStats.find(s => s.name === userName);
+            if (!stats) return;
+            
+            const html = `
+                <div style="padding:10px 0;">
+                    <div style="margin-bottom:16px; padding:12px; background:#f9fafb; border-radius:8px;">
+                        <p style="margin:0 0 4px; font-size:13px;"><strong>닉네임:</strong> ${stats.name}</p>
+                        <p style="margin:0 0 4px; font-size:13px;"><strong>총 접속:</strong> ${stats.accessCount}회</p>
+                        <p style="margin:0; font-size:13px;"><strong>마지막 접속:</strong> ${stats.lastAccess}</p>
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">📍 접속 위치</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            ${stats.locations.length > 0 ? stats.locations.map(l => 
+                                `<span style="padding:4px 10px; background:#e0f2fe; color:#0369a1; border-radius:16px; font-size:12px;">${l}</span>`
+                            ).join('') : '<span style="color:#9ca3af;">기록 없음</span>'}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">📱 사용 기기</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            ${stats.devices.length > 0 ? stats.devices.map(d => 
+                                `<span style="padding:4px 10px; background:#fef3c7; color:#92400e; border-radius:16px; font-size:12px;">${d}</span>`
+                            ).join('') : '<span style="color:#9ca3af;">기록 없음</span>'}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">🌐 사용 브라우저</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            ${stats.browsers.length > 0 ? stats.browsers.map(b => 
+                                `<span style="padding:4px 10px; background:#f3e8ff; color:#7c3aed; border-radius:16px; font-size:12px;">${b}</span>`
+                            ).join('') : '<span style="color:#9ca3af;">기록 없음</span>'}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p style="font-weight:600; font-size:13px; margin:0 0 8px; color:#374151;">🏭 제조사</p>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            ${stats.manufacturers.length > 0 ? stats.manufacturers.map(m => {
+                                let bg = '#f3f4f6', color = '#374151';
+                                if (m === '삼성') { bg = '#fef3c7'; color = '#92400e'; }
+                                else if (m === '애플') { bg = '#f3e8ff'; color = '#7c3aed'; }
+                                else if (m === 'PC') { bg = '#ecfdf5'; color = '#047857'; }
+                                return `<span style="padding:4px 10px; background:${bg}; color:${color}; border-radius:16px; font-size:12px;">${m}</span>`;
+                            }).join('') : '<span style="color:#9ca3af;">기록 없음</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            openSmallModal('📊 유저 통계 상세', stats.name, html);
+            document.getElementById('modalFooter').innerHTML = '<button class="btn btn-primary" onclick="closeModal()">닫기</button>';
+        };
+
                document.getElementById('adminManageBtn').addEventListener('click', async () => {
             if (!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
@@ -6737,11 +7251,14 @@
                         deviceDisplay = parseUserAgent(deviceDisplay);
                     }
                     
+                    // 위치 정보: 영어면 한글로 변환
+                    let locationDisplay = translateLocation(l.location || '-');
+                    
                     logs.push({
                         time: formatDateTime(l.loginAt),
                         ip: l.ip || '-',
                         device: deviceDisplay,
-                        location: l.location || '-',
+                        location: locationDisplay,
                         type: l.loginType || '수동'
                     });
                 }
