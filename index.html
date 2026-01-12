@@ -4007,53 +4007,114 @@
             let whoDisplay = log.who;
             if (log.who && log.who.includes(',')) {
                 const names = log.who.split(',').map(n => n.trim()).filter(n => n);
-                whoDisplay = names.join('<br>');
+                whoDisplay = names.map(n => `<span style="display:inline-block; background:#f3f4f6; padding:2px 8px; margin:2px; border-radius:4px;">${n}</span>`).join(' ');
+            }
+            
+            // 수정전/수정후 값 파싱
+            let oldDisplay = log.oldValue || '-';
+            let newDisplay = log.newValue || '-';
+            let contentDisplay = log.changes || '-';
+            
+            // JSON 형태인 경우 파싱
+            if (log.type === 'info_edit' || log.type === 'power') {
+                try {
+                    if (log.oldValue && log.oldValue.startsWith('{')) {
+                        const oldData = JSON.parse(log.oldValue);
+                        oldDisplay = oldData.power ? Number(oldData.power).toLocaleString() : '-';
+                    } else if (log.oldValue && !isNaN(log.oldValue)) {
+                        oldDisplay = Number(log.oldValue).toLocaleString();
+                    }
+                } catch(e) { }
+                
+                try {
+                    if (log.newValue && log.newValue.startsWith('{')) {
+                        const newData = JSON.parse(log.newValue);
+                        newDisplay = newData.power ? Number(newData.power).toLocaleString() : '-';
+                    } else if (log.newValue && !isNaN(log.newValue)) {
+                        newDisplay = Number(log.newValue).toLocaleString();
+                    }
+                } catch(e) { }
+                
+                if (oldDisplay !== '-' && newDisplay !== '-') {
+                    contentDisplay = `전투력: ${oldDisplay} → ${newDisplay}`;
+                }
+            }
+            
+            // 길드 이동인 경우
+            if (log.type === 'guild_move') {
+                oldDisplay = '-';
+                // newValue에서 길드명 추출 (예: "사신으로 1명 이동")
+                const match = log.newValue ? log.newValue.match(/(.+?)으로/) : null;
+                const targetGuild = match ? match[1] : '-';
+                
+                // who 필드에 이동된 유저 이름들이 있음
+                if (log.who && log.who !== 'Admin' && log.who !== '-') {
+                    const names = log.who.split(',').map(n => n.trim()).filter(n => n);
+                    newDisplay = `${targetGuild} 길드로 이동`;
+                    contentDisplay = `이동 인원: ${names.length}명<br><br>${names.map(n => `<span style="display:inline-block; background:#dbeafe; padding:2px 8px; margin:2px; border-radius:4px;">${n}</span>`).join(' ')}`;
+                } else {
+                    newDisplay = log.newValue || '-';
+                }
+            }
+            
+            // 닉네임 변경인 경우
+            if (log.type === 'nickname_change') {
+                contentDisplay = `${log.oldValue} → ${log.newValue}`;
+            }
+            
+            // 사용자 삭제인 경우
+            if (log.type === 'user_deleted') {
+                oldDisplay = '등록됨';
+                newDisplay = '삭제됨';
+                contentDisplay = log.newValue || '등록 해제';
             }
             
             const html = `
-                <div style="padding: 10px 0;">
+                <div style="padding: 10px 0; max-height: 60vh; overflow-y: auto;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; width: 100px;">시간</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; width: 80px; white-space: nowrap;">시간</td>
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${log.time}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">대상</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">대상</td>
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-weight: 600;">${whoDisplay}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">작업</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">작업</td>
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${logType}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">수정 전</td>
-                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #ef4444;">${log.oldValue || '-'}</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">수정 전</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #ef4444; font-weight: 500;">${oldDisplay}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">수정 후</td>
-                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #10b981;">${log.newValue || '-'}</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">수정 후</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #10b981; font-weight: 500;">${newDisplay}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">내용</td>
-                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${log.changes || '-'}</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">내용</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${contentDisplay}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">작업자</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">작업자</td>
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #8b5cf6; font-weight: 600;">${workerDisplay}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">IP</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">IP</td>
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${log.ip || '-'}</td>
                         </tr>
                         <tr>
-                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">기기</td>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">기기</td>
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 11px; color: #6b7280; word-break: break-all;">${log.device || '-'}</td>
                         </tr>
                     </table>
                 </div>
             `;
             
-            openSmallModal('📋 로그 상세', log.who, html);
+            // 모달 열기 (큰 사이즈)
+            openSmallModal('📋 로그 상세', log.who.length > 20 ? log.who.substring(0, 20) + '...' : log.who, html);
+            document.getElementById('modalContent').style.maxWidth = '500px';
             document.getElementById('modalFooter').innerHTML = `
                 <button class="btn btn-primary" onclick="closeModal()">닫기</button>
             `;
