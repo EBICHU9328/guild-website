@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.6.12">
-    <meta name="build-date" content="2026-01-12 22:00 KST">
+    <meta name="version" content="1.8.2">
+    <meta name="build-date" content="2026-01-12 11:30">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -1027,90 +1027,119 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.6.12';
-        const APP_BUILD_DATE = '2026-01-12 22:00 KST';
+        const APP_VERSION = '1.8.2';
+        const APP_BUILD_DATE = '2026-01-12 11:30';
         const APP_CHANGELOG = [
-            { version: '1.6.12', date: '2026-01-12 22:00', changes: [
+            { version: '1.8.2', date: '2026-01-12 11:30', changes: [
+                '🔧 버전 정보 최종관리자 전용으로 변경',
+                '✏️ 제작자 정보 변경',
+                '⏰ 시간대 표시 수정'
+            ]},
+            { version: '1.8.1', date: '2026-01-12 11:20', changes: [
+                '📋 유저 로그 버튼 최종관리자 전용',
+                '📋 유저 로그 상세보기 (IP/위치/기기 포함)',
+                '🔧 IP 조회 API 개선 (unknown 버그 수정)'
+            ]},
+            { version: '1.8.0', date: '2026-01-12 11:00', changes: [
+                '📊 접속 통계 기능 추가',
+                '🔍 통계 검색 (닉네임/지역/기기)',
+                '📱 제조사별 필터 (삼성/애플/PC)'
+            ]},
+            { version: '1.7.2', date: '2026-01-12 10:50', changes: [
                 '📍 위치 한글 변환 (Busan Dongnae → 부산광역시 동래구)',
-                '📊 접속 통계 기능 추가 (제조사/기기/브라우저/지역별)',
-                '🔍 통계 검색 기능 (지역, 기기명으로 검색)',
-                '📱 기기 정보 세분화 (갤럭시폴드6, 갤럭시플립5, 갤럭시S24울트라 등)'
+                '🗺️ 150개 이상 한국 지역 지원'
             ]},
-            { version: '1.6.11', date: '2026-01-12 21:40', changes: [
-                '📍 위치 정보 개선: 국가 포함 (대한민국 서울특별시 / 미국 샌프란시스코)',
-                '📱 기기 정보 변환: 기존 로그도 간략하게 표시 (PC-크롬, 아이폰16-사파리 등)'
+            { version: '1.7.1', date: '2026-01-12 10:40', changes: [
+                '📱 기기 세분화 (갤럭시폴드6, 플립5, S24울트라 등)',
+                '📱 갤럭시 A시리즈 지원'
             ]},
-            { version: '1.6.10', date: '2026-01-12 21:30', changes: [
+            { version: '1.7.0', date: '2026-01-12 10:30', changes: [
+                '📍 위치 정보 국가 포함 표시',
+                '📱 기기 정보 자동 변환 (기존 로그도 적용)'
+            ]},
+            { version: '1.6.3', date: '2026-01-12 10:20', changes: [
                 '🐛 정보 수정 시 변경 없으면 로그 저장 안 함',
-                '🐛 더블클릭 방지 추가 (중복 로그 방지)'
+                '🐛 더블클릭 방지 (중복 로그 방지)'
             ]},
-            { version: '1.6.9', date: '2026-01-12 21:15', changes: [
-                '📋 상세 정보에 로그 보기 버튼 추가 (관리자용)',
-                '📋 유저별 로그 조회 기능 추가'
+            { version: '1.6.2', date: '2026-01-12 10:10', changes: [
+                '📋 상세 정보에 로그 보기 버튼 추가',
+                '📋 유저별 로그 조회 기능'
             ]},
-            { version: '1.6.8', date: '2026-01-12 21:00', changes: [
-                '📋 삭제된 사용자: 필터 추가 (길드/사유/삭제자)',
-                '📋 삭제된 사용자: 클릭 시 상세 정보 팝업',
-                '👑 관리자 관리: 버튼 크기 통일',
-                '👑 관리자 관리: 아이디 클릭 시 접속 로그 확인',
-                '📊 접속 로그 기록 (수동/자동 로그인)',
-                '🔒 스프레드시트 연동: 민감 정보 마스킹 (최종관리자 외)',
-                '📦 백업 생성: 최종관리자 전용 (조회는 모든 관리자)',
-                '🔧 닫기 버튼 중복 수정'
+            { version: '1.6.1', date: '2026-01-12 10:00', changes: [
+                '📋 삭제된 사용자 필터 (길드/사유/삭제자)',
+                '📋 삭제된 사용자 클릭 시 상세 정보 팝업'
             ]},
-            { version: '1.6.7', date: '2026-01-12 20:30', changes: [
-                '📱 기기 정보 간략화 (PC-크롬, 아이폰-사파리 등)',
-                '📍 접속 위치 표시 (서울특별시, 경기도 등)',
-                '🔒 잠금 설정/해제 최종관리자 전용으로 변경',
-                '🔒 잠금 시 최종관리자만 수정 가능',
-                '📅 2주 반복 잠금 시작/종료 직접 지정 가능'
+            { version: '1.6.0', date: '2026-01-12 09:50', changes: [
+                '👑 관리자 접속 로그 기록 (수동/자동)',
+                '👑 관리자 아이디 클릭 시 접속 로그 확인'
             ]},
-            { version: '1.6.6', date: '2026-01-12 20:15', changes: [
+            { version: '1.5.4', date: '2026-01-12 09:40', changes: [
+                '🔒 스프레드시트 연동 민감 정보 마스킹',
+                '📦 백업 생성 최종관리자 전용'
+            ]},
+            { version: '1.5.3', date: '2026-01-12 09:30', changes: [
+                '📱 기기 정보 간략화 (PC-크롬, 아이폰-사파리)',
+                '📍 접속 위치 표시 기능'
+            ]},
+            { version: '1.5.2', date: '2026-01-12 09:20', changes: [
+                '🔒 잠금 설정/해제 최종관리자 전용',
+                '📅 2주 반복 잠금 시작/종료 직접 지정'
+            ]},
+            { version: '1.5.1', date: '2026-01-12 09:10', changes: [
                 '🏠 길드 변경/전투력 수정/스펙 수정 로그 타입 분리',
-                '⭐ 스펙 수정 로그 독립 표시',
+                '⭐ 스펙 수정 로그 독립 표시'
+            ]},
+            { version: '1.5.0', date: '2026-01-12 09:00', changes: [
+                '🔍 로그에 IP 검색 필터 추가',
                 '👑 관리자 필터: 작업 없는 관리자도 표시'
             ]},
-            { version: '1.6.5', date: '2026-01-12 20:05', changes: [
-                '🔍 로그에 IP 검색 필터 추가'
-            ]},
-            { version: '1.6.4', date: '2026-01-12 19:55', changes: [
+            { version: '1.4.3', date: '2026-01-12 08:50', changes: [
                 '🔧 모달 뒤로가기 버튼 상태 복원 버그 수정',
-                '✅ 길드 이동/닉네임 변경 후 "처리 중" 상태 해결'
+                '✅ 길드 이동/닉변 후 "처리 중" 상태 해결'
             ]},
-            { version: '1.6.3', date: '2026-01-12 19:45', changes: [
+            { version: '1.4.2', date: '2026-01-12 08:40', changes: [
                 '🔗 백업 공유 링크 생성 기능',
-                '📥 엑셀 다운로드 개선 (3시트: 정보/길드통계/명단)',
-                '👤 백업 생성자 이름 입력 기능',
+                '📥 엑셀 다운로드 3시트 (정보/통계/명단)'
+            ]},
+            { version: '1.4.1', date: '2026-01-12 08:30', changes: [
+                '👤 백업 생성자 이름 입력',
                 '⚙️ 전투력 커스텀 필터 (범위 직접 설정)',
                 '📊 전투력 필터 150만까지 확장'
             ]},
-            { version: '1.6.2', date: '2026-01-12 19:30', changes: [
-                '🔍 백업 상세 필터 기능 추가',
+            { version: '1.4.0', date: '2026-01-12 08:20', changes: [
+                '🔍 백업 상세 필터 기능',
                 '📊 전투력 증감별/길드별/전투력대별 필터',
-                '🔤 이름순/전투력순 정렬 옵션',
+                '🔤 이름순/전투력순 정렬 옵션'
+            ]},
+            { version: '1.3.2', date: '2026-01-12 08:10', changes: [
                 '☑️ 체크박스 행 클릭 토글 지원',
                 '💾 일괄 등록 해제 선택 상태 유지'
             ]},
-            { version: '1.6.1', date: '2026-01-12 18:00', changes: [
+            { version: '1.3.1', date: '2026-01-12 08:00', changes: [
                 '📋 로그 상세 수정전/후 파싱 개선',
-                '🚀 길드 이동 로그에 닉네임 전체 표시',
-                '🔄 모달 스택 시스템 버그 수정'
+                '🚀 길드 이동 로그에 닉네임 전체 표시'
             ]},
-            { version: '1.6.0', date: '2026-01-12 17:00', changes: [
+            { version: '1.3.0', date: '2026-01-12 07:50', changes: [
                 '📝 로그 필터 기능 (대상/작업유형/작업자)',
                 '👆 로그 행 클릭 시 상세보기',
                 '✏️ 정보 수정 → 전투력 수정 명칭 변경'
             ]},
-            { version: '1.5.0', date: '2026-01-12 15:00', changes: [
+            { version: '1.2.1', date: '2026-01-12 07:30', changes: [
+                '🔧 로그 테이블 최적화',
+                '💬 툴팁 기능 추가'
+            ]},
+            { version: '1.2.0', date: '2026-01-12 07:00', changes: [
                 '📱 모바일/태블릿 반응형 최적화',
                 '🎨 UI 전면 개선'
             ]},
+            { version: '1.1.0', date: '2026-01-12 05:00', changes: [
+                '💾 백업 관리 시스템',
+                '🔒 시간대별 잠금 설정',
+                '🔄 모달 스택 시스템'
+            ]},
             { version: '1.0.0', date: '2026-01-12 00:00', changes: [
                 '🎉 오스카2 전투력 현황판 출시',
-                '🔄 모달 스택 시스템 (뒤로가기 지원)',
-                '🌸 설날 테마 (매화꽃 디자인)',
-                '💾 백업 관리 시스템',
-                '🔒 시간대별 잠금 설정'
+                '🌸 설날 테마 (매화꽃 디자인)'
             ]}
         ];
 
@@ -1419,7 +1448,7 @@
                             
                             <!-- 푸터 -->
                             <div style="text-align: center; padding: 30px; color: #9ca3af; font-size: 12px;">
-                                <p>Made with ❤️ by 오스카2 연합</p>
+                                <p>Made with ❤️ by 에비츄</p>
                             </div>
                         </div>
                     </div>
@@ -1685,7 +1714,27 @@
                    `${String(date.getUTCHours()).padStart(2,'0')}:${String(date.getUTCMinutes()).padStart(2,'0')}:${String(date.getUTCSeconds()).padStart(2,'0')}`;
         };
 
-        async function getIp() { try { const res = await fetch('https://api.ipify.org?format=json'); return (await res.json()).ip; } catch (e) { return 'unknown'; } }
+        async function getIp() { 
+            try { 
+                // 첫 번째 시도: ipify
+                const res = await fetch('https://api.ipify.org?format=json', { timeout: 3000 }); 
+                return (await res.json()).ip; 
+            } catch (e) { 
+                try {
+                    // 두 번째 시도: ipapi.co
+                    const res2 = await fetch('https://ipapi.co/ip/', { timeout: 3000 });
+                    return await res2.text();
+                } catch (e2) {
+                    try {
+                        // 세 번째 시도: ifconfig.me
+                        const res3 = await fetch('https://ifconfig.me/ip', { timeout: 3000 });
+                        return await res3.text();
+                    } catch (e3) {
+                        return '-';
+                    }
+                }
+            } 
+        }
         
         // User Agent 파싱 함수
         function parseUserAgent(ua) {
@@ -2145,8 +2194,8 @@
 
                        const renameButton = isAdmin ? `<button class="btn btn-rename" onclick="window.openRenameModal('${name}')" style="flex:1">🔄 닉네임 변경</button>` : '';
             
-            // 관리자용 로그 보기 버튼
-            const logButton = isAdmin ? `<button class="btn" onclick="window.showUserLogs('${name}')" style="flex:1; background:#6366f1; color:white;">📋 로그 보기</button>` : '';
+            // 최종관리자용 로그 보기 버튼
+            const logButton = isSuperAdmin ? `<button class="btn" onclick="window.showUserLogs('${name}')" style="flex:1; background:#6366f1; color:white;">📋 로그 보기</button>` : '';
 
             const content = `
                 <div class="info-grid">
@@ -2179,7 +2228,14 @@
 
         // 특정 유저의 로그 보기
         window.showUserLogs = async function(userName) {
-            openSmallModal('📋 유저 로그', userName, '<p style="text-align:center; padding:20px;">로딩 중...</p>');
+            // 최종관리자만 접근 가능
+            if (!isSuperAdmin) {
+                showAlert('최종 관리자만 접근할 수 있습니다', 'error');
+                return;
+            }
+            
+            openLargeModal('📋 유저 로그', `${userName}의 활동 기록`);
+            setModalBody('<p style="text-align:center; padding:40px;">로딩 중...</p>');
             
             try {
                 const logsSnap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
@@ -2190,27 +2246,42 @@
                     // who 필드에서 유저 이름 검색 (닉네임 변경의 경우 old→new 형태도 체크)
                     const who = l.who || '';
                     if (who.includes(userName) || who === userName) {
+                        // 기기 정보 파싱
+                        let deviceDisplay = l.device || '-';
+                        if (deviceDisplay.length > 30 || deviceDisplay.includes('Mozilla')) {
+                            deviceDisplay = parseUserAgent(deviceDisplay);
+                        }
+                        
+                        // 위치 한글 변환
+                        let locationDisplay = translateLocation(l.location || '-');
+                        
                         userLogs.push({
                             time: formatDateTime(l.createdAt),
                             type: l.type,
                             oldValue: l.old_value || '-',
                             newValue: l.new_value || '-',
                             changes: l.changes || '',
-                            editedBy: l.editedBy || '-'
+                            editedBy: l.editedBy || '-',
+                            ip: l.ip || '-',
+                            location: locationDisplay,
+                            device: deviceDisplay
                         });
                     }
                 });
                 
+                // 전역 저장 (상세보기용)
+                window.currentUserLogs = userLogs;
+                
                 const typeMap = {
-                    'power': '✏️ 전투력 수정',
-                    'info_edit': '📝 정보 수정',
-                    'guild_change': '🏠 길드 변경',
-                    'spec_edit': '⭐ 스펙 수정',
-                    'nickname_change': '🔄 닉네임 변경',
+                    'power': '✏️ 전투력',
+                    'info_edit': '📝 정보',
+                    'guild_change': '🏠 길드',
+                    'spec_edit': '⭐ 스펙',
+                    'nickname_change': '🔄 닉변',
                     'user_approved': '✅ 승인',
                     'user_deleted': '🗑️ 삭제',
-                    'user_request': '📝 등록 요청',
-                    'guild_move': '🚀 길드 이동'
+                    'user_request': '📝 요청',
+                    'guild_move': '🚀 이동'
                 };
                 
                 let logsHtml = '';
@@ -2218,20 +2289,23 @@
                     logsHtml = '<p style="text-align:center; color:#9ca3af; padding:20px;">로그 기록이 없습니다</p>';
                 } else {
                     logsHtml = `
-                        <div style="max-height:350px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px;">
-                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <div class="table-scroll-container" style="max-height:400px;">
+                            <table class="common-table" style="font-size:12px;">
                                 <thead>
-                                    <tr style="background:#f9fafb; position:sticky; top:0;">
-                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left; white-space:nowrap;">시간</th>
-                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">작업</th>
-                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">내용</th>
-                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">작업자</th>
+                                    <tr>
+                                        <th style="width:14%;">시간</th>
+                                        <th style="width:8%;">작업</th>
+                                        <th style="width:20%;">내용</th>
+                                        <th style="width:8%;">작업자</th>
+                                        <th style="width:12%;">IP</th>
+                                        <th style="width:20%;">위치</th>
+                                        <th style="width:18%;">기기</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                     `;
                     
-                    userLogs.slice(0, 100).forEach(l => {
+                    userLogs.slice(0, 100).forEach((l, idx) => {
                         const typeDisplay = typeMap[l.type] || l.type;
                         let contentDisplay = l.changes || '';
                         
@@ -2248,11 +2322,14 @@
                         
                         const workerDisplay = l.editedBy === 'self' ? '본인' : (l.editedBy === 'admin' || l.editedBy === '아이디미기록' ? '관리자' : l.editedBy);
                         
-                        logsHtml += `<tr>
-                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; white-space:nowrap; font-size:11px;">${l.time}</td>
-                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; white-space:nowrap;">${typeDisplay}</td>
-                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${contentDisplay}">${contentDisplay}</td>
-                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; color:#8b5cf6;">${workerDisplay}</td>
+                        logsHtml += `<tr style="cursor:pointer;" onclick="showUserLogDetail(${idx})">
+                            <td style="font-size:11px;">${l.time}</td>
+                            <td>${typeDisplay}</td>
+                            <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${contentDisplay}">${contentDisplay || '-'}</td>
+                            <td style="color:#8b5cf6;">${workerDisplay}</td>
+                            <td style="font-size:11px; color:#6b7280;">${l.ip}</td>
+                            <td style="font-size:11px;">${l.location}</td>
+                            <td style="font-size:11px;">${l.device}</td>
                         </tr>`;
                     });
                     
@@ -2262,18 +2339,78 @@
                     }
                 }
                 
-                document.getElementById('modalBody').innerHTML = `
-                    <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">총 ${userLogs.length}건의 로그</p>
+                setModalBody(`
+                    <p style="font-size:13px; color:#374151; margin-bottom:12px;">총 <strong>${userLogs.length}건</strong>의 로그 (행 클릭 시 상세보기)</p>
                     ${logsHtml}
-                `;
+                `);
                 document.getElementById('modalFooter').innerHTML = `
                     <button class="btn btn-primary" onclick="closeModal()">닫기</button>
                 `;
-                document.getElementById('modalFooter').style.display = '';
             } catch(e) {
                 console.error(e);
-                document.getElementById('modalBody').innerHTML = '<p style="color:#ef4444; text-align:center;">로그를 불러오는 중 오류가 발생했습니다</p>';
+                setModalBody('<p style="color:#ef4444; text-align:center; padding:40px;">로그를 불러오는 중 오류가 발생했습니다</p>');
             }
+        };
+        
+        // 유저 로그 상세보기
+        window.showUserLogDetail = function(index) {
+            const l = window.currentUserLogs[index];
+            if (!l) return;
+            
+            const typeMap = {
+                'power': '✏️ 전투력 수정',
+                'info_edit': '📝 정보 수정',
+                'guild_change': '🏠 길드 변경',
+                'spec_edit': '⭐ 스펙 수정',
+                'nickname_change': '🔄 닉네임 변경',
+                'user_approved': '✅ 승인',
+                'user_deleted': '🗑️ 삭제',
+                'user_request': '📝 등록 요청',
+                'guild_move': '🚀 길드 이동'
+            };
+            
+            const typeDisplay = typeMap[l.type] || l.type;
+            const workerDisplay = l.editedBy === 'self' ? '👤 본인' : (l.editedBy === 'admin' || l.editedBy === '아이디미기록' ? '👑 관리자' : `👑 ${l.editedBy}`);
+            
+            const html = `
+                <div style="padding: 10px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; width: 80px;">시간</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${l.time}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">작업</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${typeDisplay}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">내용</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${l.changes || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">작업자</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #8b5cf6;">${workerDisplay}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">IP</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-family: monospace;">${l.ip}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">위치</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${l.location}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">기기</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${l.device}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            openSmallModal('📋 로그 상세', l.time.split(' ')[0], html);
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-primary" onclick="closeModal()">닫기</button>
+            `;
         };
 
                window.openRenameModal = async function(oldName) {
@@ -7424,8 +7561,13 @@
             };
         };
 
-        // 버전 정보 모달
+        // 버전 정보 모달 (최종관리자 전용)
         document.getElementById('versionInfoBtn').addEventListener('click', () => {
+            if (!isSuperAdmin) {
+                showAlert('최종 관리자만 접근할 수 있습니다', 'error');
+                return;
+            }
+            
             let changelogHtml = '';
             APP_CHANGELOG.forEach(release => {
                 changelogHtml += `
@@ -7457,7 +7599,7 @@
                 </div>
                 
                 <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center;">
-                    <p style="font-size: 12px; color: #9ca3af;">Made with ❤️ for 오스카2 연합</p>
+                    <p style="font-size: 12px; color: #9ca3af;">Made with ❤️ by 에비츄</p>
                 </div>
             `;
             
