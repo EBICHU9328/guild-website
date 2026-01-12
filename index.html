@@ -3705,16 +3705,16 @@
                     <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">총 ${logs.length}개 로그</p>
                 </div>
                 <div style="max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; -webkit-overflow-scrolling: touch;">
-                    <table class="common-table table-wide" id="logTable">
+                    <table class="common-table" id="logTable" style="width: 100%; table-layout: fixed;">
                         <thead>
                             <tr>
-                                <th>시간</th>
-                                <th>대상</th>
-                                <th>작업</th>
-                                <th>수정전</th>
-                                <th>수정후</th>
-                                <th>내용</th>
-                                <th>작업자</th>
+                                <th style="width: 15%;">시간</th>
+                                <th style="width: 12%;">대상</th>
+                                <th style="width: 13%;">작업</th>
+                                <th style="width: 12%;">수정전</th>
+                                <th style="width: 12%;">수정후</th>
+                                <th style="width: 26%;">내용</th>
+                                <th style="width: 10%;">작업자</th>
                             </tr>
                         </thead>
                         <tbody>`;
@@ -3838,13 +3838,13 @@
                 }
                 
                 html += `<tr>
-                    <td style="font-size:12px;">${l.time}</td>
-                    <td><strong>${l.who}</strong></td>
-                    <td>${logType}</td>
-                    <td style="color:#ef4444;">${oldDisplay}</td>
-                    <td style="color:#10b981;">${newDisplay}</td>
-                    <td style="font-size:12px;">${contentDisplay}</td>
-                    <td style="font-size:12px;">${workerDisplay}</td>
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l.time}</td>
+                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong>${l.who}</strong></td>
+                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${logType}</td>
+                    <td style="color:#ef4444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${oldDisplay}</td>
+                    <td style="color:#10b981; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${newDisplay}</td>
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contentDisplay}</td>
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${workerDisplay}</td>
                 </tr>`; 
             });
             
