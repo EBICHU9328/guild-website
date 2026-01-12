@@ -2289,8 +2289,11 @@
                 
                 progress.close();
                 
+                // 이동된 유저 이름 목록
+                const movedNames = movedUsers.map(u => u.name).join(', ');
+                
                                await setDoc(doc(collection(db, "logs")), { 
-                    who: 'Admin', 
+                    who: movedNames || 'Admin', 
                     type: 'guild_move', 
                     old_value: '-', 
                     new_value: `${targetGuild}으로 ${movedCount}명 이동`, 
@@ -2784,7 +2787,7 @@
             sortedUsers.forEach(user => {
                 const isExcluded = syncExcludeList.includes(user.name);
                 html += `
-                    <tr class="exclude-row" data-name="${user.name}" data-guild="${user.guild}" data-excluded="${isExcluded}">
+                    <tr class="exclude-row" data-name="${user.name}" data-guild="${user.guild}" data-excluded="${isExcluded}" style="cursor:pointer;">
                         <td style="text-align:center;">
                             <input type="checkbox" class="exclude-checkbox" data-name="${user.name}" ${isExcluded ? 'checked' : ''}>
                         </td>
@@ -2830,6 +2833,18 @@
                         row.dataset.excluded = 'false';
                     }
                     updateExcludeCount();
+                });
+            });
+            
+            // 행 클릭 시 체크박스 토글
+            document.querySelectorAll('.exclude-row').forEach(row => {
+                row.addEventListener('click', function(e) {
+                    // 체크박스 직접 클릭은 제외 (이미 처리됨)
+                    if (e.target.type === 'checkbox') return;
+                    
+                    const checkbox = this.querySelector('.exclude-checkbox');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
                 });
             });
             
@@ -3639,6 +3654,9 @@
                 });
             });
             
+            // 전역 로그 데이터 저장 (상세보기용)
+            window.currentLogs = logs;
+            
             // 관리자 목록 추출 (self, admin, 아이디미기록, - 제외)
             const adminSet = new Set();
             logs.forEach(l => {
@@ -3648,10 +3666,21 @@
             });
             const adminList = Array.from(adminSet).sort();
             
+            // 대상이 여러 명인지 확인하고 표시용 텍스트 생성
+            function formatWho(who) {
+                if (!who || who === '-') return '-';
+                // 쉼표나 공백으로 여러 명 구분
+                const names = who.split(/[,\s]+/).filter(n => n.trim());
+                if (names.length > 2) {
+                    return `${names[0]} 외 ${names.length - 1}명`;
+                }
+                return who;
+            }
+            
                        function formatLogType(type) {
                 const typeMap = {
-                    'power': '✏️ 정보 수정',
-                    'info_edit': '✏️ 정보 수정',
+                    'power': '✏️ 전투력 수정',
+                    'info_edit': '✏️ 전투력 수정',
                     'nickname_change': '🔄 닉네임 변경',
                     'user_approved': '✅ 사용자 승인',
                     'user_rejected': '❌ 사용자 거부',
@@ -3719,7 +3748,7 @@
                         <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="flex:1; min-width:150px;">
                         <select id="logTypeFilter" class="form-input" style="flex:1; min-width:130px;">
                             <option value="">전체 작업</option>
-                            <option value="info_edit,power">✏️ 정보 수정</option>
+                            <option value="info_edit,power">✏️ 전투력 수정</option>
                             <option value="nickname_change">🔄 닉네임 변경</option>
                             <option value="user_approved">✅ 사용자 승인</option>
                             <option value="user_rejected">❌ 사용자 거부</option>
@@ -3780,11 +3809,11 @@
                             const newData = JSON.parse(l.newValue);
                             oldDisplay = oldData.power ? oldData.power.toLocaleString() : '-';
                             newDisplay = newData.power ? newData.power.toLocaleString() : '-';
-                            contentDisplay = l.changes || '정보 수정됨';
+                            contentDisplay = l.changes || '전투력 수정됨';
                         } catch(e) {
                             oldDisplay = '-';
                             newDisplay = '-';
-                            contentDisplay = '정보 수정됨';
+                            contentDisplay = '전투력 수정됨';
                         }
                         break;
                     
@@ -3878,14 +3907,17 @@
                     workerDisplay = '<span style="color:#9ca3af;">-</span>';
                 }
                 
-                html += `<tr data-type="${l.type}" data-worker="${workerType}" data-admin-id="${l.editedBy}">
+                const whoDisplay = formatWho(l.who);
+                const logIndex = logs.indexOf(l);
+                
+                html += `<tr data-type="${l.type}" data-worker="${workerType}" data-admin-id="${l.editedBy}" data-index="${logIndex}" style="cursor:pointer;" onclick="showLogDetail(${logIndex})">
                     <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.time}">${l.time}</td>
-                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.who}"><strong>${l.who}</strong></td>
+                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.who}"><strong>${whoDisplay}</strong></td>
                     <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${logType}</td>
                     <td style="color:#ef4444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${oldDisplay}">${oldDisplay}</td>
                     <td style="color:#10b981; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${newDisplay}">${newDisplay}</td>
                     <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${contentDisplay}">${contentDisplay}</td>
-                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;" title="${workerTitle}">${workerDisplay}</td>
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${workerTitle}">${workerDisplay}</td>
                 </tr>`; 
             });
             
@@ -3937,6 +3969,95 @@
             document.getElementById('logTypeFilter').addEventListener('change', applyLogFilters);
             document.getElementById('logWorkerFilter').addEventListener('change', applyLogFilters);
         });
+        
+        // 로그 상세보기 함수
+        window.showLogDetail = function(index) {
+            const log = window.currentLogs[index];
+            if (!log) return;
+            
+            const typeMap = {
+                'power': '✏️ 전투력 수정',
+                'info_edit': '✏️ 전투력 수정',
+                'nickname_change': '🔄 닉네임 변경',
+                'user_approved': '✅ 사용자 승인',
+                'user_rejected': '❌ 사용자 거부',
+                'user_deleted': '🗑️ 사용자 삭제',
+                'user_request': '📝 등록 요청',
+                'bulk_update': '📋 일괄 처리',
+                'guild_move': '🚀 길드 이동',
+                'guild_delete': '🏚️ 길드 삭제',
+                'exclude_update': '🚫 분배 제외 변경',
+                'spreadsheet_sync': '📊 스프레드시트 동기화',
+                'google_sheet_sync': '📊 구글시트 동기화'
+            };
+            
+            const logType = typeMap[log.type] || log.type;
+            
+            // 작업자 표시
+            let workerDisplay = '-';
+            if (log.editedBy === 'self') {
+                workerDisplay = '👤 본인';
+            } else if (log.editedBy === 'admin' || log.editedBy === '아이디미기록') {
+                workerDisplay = '👑 관리자';
+            } else if (log.editedBy && log.editedBy !== '-') {
+                workerDisplay = `👑 ${log.editedBy}`;
+            }
+            
+            // 대상 목록 (여러 명인 경우 줄바꿈으로 표시)
+            let whoDisplay = log.who;
+            if (log.who && log.who.includes(',')) {
+                const names = log.who.split(',').map(n => n.trim()).filter(n => n);
+                whoDisplay = names.join('<br>');
+            }
+            
+            const html = `
+                <div style="padding: 10px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; width: 100px;">시간</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${log.time}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">대상</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-weight: 600;">${whoDisplay}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">작업</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${logType}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">수정 전</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #ef4444;">${log.oldValue || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">수정 후</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #10b981;">${log.newValue || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">내용</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${log.changes || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">작업자</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #8b5cf6; font-weight: 600;">${workerDisplay}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">IP</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${log.ip || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">기기</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 11px; color: #6b7280; word-break: break-all;">${log.device || '-'}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+            
+            openSmallModal('📋 로그 상세', log.who, html);
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-primary" onclick="closeModal()">닫기</button>
+            `;
+        };
 
                document.getElementById('deletedUsersBtn').addEventListener('click', async () => {
             if(!isAdmin) return;
@@ -4428,17 +4549,46 @@
             };
         }
 
-               function openLargeModal(t, s) {
+               // 모달 스택 (중첩 모달 지원)
+        let modalStack = [];
+        
+        function openLargeModal(t, s) {
+            // 현재 모달 상태 저장
+            const currentContent = document.getElementById('modalBody').innerHTML;
+            const currentTitle = document.getElementById('modalTitle').textContent;
+            const currentSubtitle = document.getElementById('modalSubtitle').textContent;
+            const currentFooter = document.getElementById('modalFooter').innerHTML;
+            const currentFooterDisplay = document.getElementById('modalFooter').style.display;
+            const isLarge = document.getElementById('modalContent').classList.contains('modal-lg');
+            const isActive = document.getElementById('modalOverlay').classList.contains('active');
+            
+            if (isActive) {
+                modalStack.push({ title: currentTitle, subtitle: currentSubtitle, body: currentContent, footer: currentFooter, footerDisplay: currentFooterDisplay, isLarge });
+            }
+            
             document.getElementById('modalContent').classList.add('modal-lg'); 
             document.getElementById('modalTitle').textContent = t; 
             document.getElementById('modalSubtitle').textContent = s;
             document.getElementById('modalFooter').style.display = 'none'; 
             document.getElementById('modalBody').innerHTML = '로딩중...'; 
             document.getElementById('modalOverlay').classList.add('active');
-            document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
+            document.body.style.overflow = 'hidden';
         }
 
         function openSmallModal(t, s, b) {
+            // 현재 모달 상태 저장
+            const currentContent = document.getElementById('modalBody').innerHTML;
+            const currentTitle = document.getElementById('modalTitle').textContent;
+            const currentSubtitle = document.getElementById('modalSubtitle').textContent;
+            const currentFooter = document.getElementById('modalFooter').innerHTML;
+            const currentFooterDisplay = document.getElementById('modalFooter').style.display;
+            const isLarge = document.getElementById('modalContent').classList.contains('modal-lg');
+            const isActive = document.getElementById('modalOverlay').classList.contains('active');
+            
+            if (isActive) {
+                modalStack.push({ title: currentTitle, subtitle: currentSubtitle, body: currentContent, footer: currentFooter, footerDisplay: currentFooterDisplay, isLarge });
+            }
+            
             document.getElementById('modalContent').classList.remove('modal-lg'); 
             document.getElementById('modalTitle').textContent = t; 
             document.getElementById('modalSubtitle').textContent = s;
@@ -4449,7 +4599,7 @@
             `;
             document.getElementById('modalFooter').style.display = 'flex'; 
             document.getElementById('modalOverlay').classList.add('active');
-            document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
+            document.body.style.overflow = 'hidden';
         }
 
         function setModalBody(h) { 
@@ -4457,8 +4607,31 @@
         }
 
         window.closeModal = () => {
+            if (modalStack.length > 0) {
+                // 이전 모달로 복원
+                const prev = modalStack.pop();
+                document.getElementById('modalTitle').textContent = prev.title;
+                document.getElementById('modalSubtitle').textContent = prev.subtitle;
+                document.getElementById('modalBody').innerHTML = prev.body;
+                document.getElementById('modalFooter').innerHTML = prev.footer;
+                document.getElementById('modalFooter').style.display = prev.footerDisplay;
+                if (prev.isLarge) {
+                    document.getElementById('modalContent').classList.add('modal-lg');
+                } else {
+                    document.getElementById('modalContent').classList.remove('modal-lg');
+                }
+            } else {
+                // 모달 닫기
+                document.getElementById('modalOverlay').classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        };
+        
+        // 모달 완전히 닫기 (스택 무시)
+        window.closeAllModals = () => {
+            modalStack = [];
             document.getElementById('modalOverlay').classList.remove('active');
-            document.body.style.overflow = ''; // 스크롤 복원
+            document.body.style.overflow = '';
         };
         
        
@@ -5193,8 +5366,8 @@
                 <div style="margin-top:20px; padding-top:20px; border-top:1px solid #e5e7eb;">
                     <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; color:#374151;">➕ 새 관리자 추가</h4>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <input type="text" id="newAdminId" class="form-input" placeholder="아이디" style="flex:1; min-width:120px;">
-                        <input type="password" id="newAdminPw" class="form-input" placeholder="비밀번호" style="flex:1; min-width:120px;">
+                        <input type="text" id="newAdminId" class="form-input" placeholder="아이디" style="flex:1 1 150px; min-width:120px; max-width:250px;">
+                        <input type="password" id="newAdminPw" class="form-input" placeholder="비밀번호" style="flex:1 1 150px; min-width:120px; max-width:250px;">
                         <button class="btn btn-primary" onclick="window.addNewAdmin()" style="white-space:nowrap;">추가</button>
                     </div>
                     <p style="font-size:11px; color:#9ca3af; margin-top:8px;">※ 일반 관리자는 관리자 관리 기능을 사용할 수 없습니다</p>
