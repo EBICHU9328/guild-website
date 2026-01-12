@@ -4253,6 +4253,9 @@
             
             setModalBody(html);
             
+            // 선택된 유저 목록 (검색해도 유지)
+            const selectedUsers = new Set();
+            
                        function renderTable() {
                 const tbody = document.getElementById('bulkDeleteTableBody');
                 const searchText = document.getElementById('bulkDeleteSearch').value.toLowerCase();
@@ -4266,27 +4269,51 @@
                 
                 tbody.innerHTML = '';
                 filtered.forEach(u => {
+                    const isChecked = selectedUsers.has(u.name);
                     const row = document.createElement('tr');
+                    row.style.cursor = 'pointer';
                     row.innerHTML = `
                         <td>
                             <input type="checkbox" class="user-checkbox" data-username="${u.name}" 
+                                   ${isChecked ? 'checked' : ''}
                                    style="width: 18px; height: 18px; cursor: pointer;">
                         </td>
                         <td><strong>${u.name}</strong></td>
                         <td>${u.guild}</td>
                         <td style="color: #3b82f6; font-weight: 600;">${u.power.toLocaleString()}</td>
                     `;
+                    
+                    // 행 클릭 시 체크박스 토글
+                    row.addEventListener('click', function(e) {
+                        if (e.target.type === 'checkbox') return;
+                        const checkbox = this.querySelector('.user-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        toggleSelection(checkbox.dataset.username, checkbox.checked);
+                    });
+                    
+                    // 체크박스 직접 클릭
+                    row.querySelector('.user-checkbox').addEventListener('change', function() {
+                        toggleSelection(this.dataset.username, this.checked);
+                    });
+                    
                     tbody.appendChild(row);
                 });
                 
                 updateSelectedCount();
             }
             
+            function toggleSelection(name, isSelected) {
+                if (isSelected) {
+                    selectedUsers.add(name);
+                } else {
+                    selectedUsers.delete(name);
+                }
+                updateSelectedCount();
+            }
+            
                        function updateSelectedCount() {
-                const checkboxes = document.querySelectorAll('.user-checkbox:checked');
-                const count = checkboxes.length;
                 document.getElementById('selectedCount').innerHTML = 
-                    `선택: <strong style="color: #ef4444;">${count}</strong>명`;
+                    `선택: <strong style="color: #ef4444;">${selectedUsers.size}</strong>명`;
             }
             
             renderTable();
@@ -4294,15 +4321,21 @@
                        document.getElementById('bulkDeleteSearch').addEventListener('input', renderTable);
             document.getElementById('bulkDeleteGuildFilter').addEventListener('change', renderTable);
             
-                       document.getElementById('bulkDeleteTableBody').addEventListener('change', updateSelectedCount);
-            
                        document.getElementById('selectAllBtn').addEventListener('click', () => {
-                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = true);
+                // 현재 보이는 항목만 선택
+                document.querySelectorAll('.user-checkbox').forEach(cb => {
+                    cb.checked = true;
+                    selectedUsers.add(cb.dataset.username);
+                });
                 updateSelectedCount();
             });
             
                        document.getElementById('deselectAllBtn').addEventListener('click', () => {
-                document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+                // 현재 보이는 항목만 해제
+                document.querySelectorAll('.user-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    selectedUsers.delete(cb.dataset.username);
+                });
                 updateSelectedCount();
             });
             
@@ -4311,8 +4344,7 @@
                 if (btn.disabled) return;
                 
                 try {
-                    const selected = Array.from(document.querySelectorAll('.user-checkbox:checked'))
-                        .map(cb => cb.dataset.username);
+                    const selected = Array.from(selectedUsers);
                     
                     if (selected.length === 0) {
                         showAlert('삭제할 사용자를 선택해주세요', 'error');
