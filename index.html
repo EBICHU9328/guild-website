@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
+    <meta name="version" content="1.6.9">
+    <meta name="build-date" content="2026-01-12 21:15 KST">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -838,6 +840,8 @@
                     <div class="admin-dropdown-divider super-admin-only" style="display:none;"></div>
                     <button class="admin-dropdown-item super-admin-only" id="logViewBtn" style="display:none;">📝 로그 확인</button>
                     <button class="admin-dropdown-item super-admin-only" id="adminManageBtn" style="display:none;">👑 관리자 관리</button>
+                    <div style="border-top: 1px solid #e5e7eb; margin: 8px 0;"></div>
+                    <button class="admin-dropdown-item" id="versionInfoBtn">ℹ️ 버전 정보</button>
                 </div>
             </div>
             
@@ -1021,6 +1025,80 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 앱 버전 정보
+        const APP_VERSION = '1.6.9';
+        const APP_BUILD_DATE = '2026-01-12 21:15 KST';
+        const APP_CHANGELOG = [
+            { version: '1.6.9', date: '2026-01-12 21:15', changes: [
+                '📋 상세 정보에 로그 보기 버튼 추가 (관리자용)',
+                '📋 유저별 로그 조회 기능 추가'
+            ]},
+            { version: '1.6.8', date: '2026-01-12 21:00', changes: [
+                '📋 삭제된 사용자: 필터 추가 (길드/사유/삭제자)',
+                '📋 삭제된 사용자: 클릭 시 상세 정보 팝업',
+                '👑 관리자 관리: 버튼 크기 통일',
+                '👑 관리자 관리: 아이디 클릭 시 접속 로그 확인',
+                '📊 접속 로그 기록 (수동/자동 로그인)',
+                '🔒 스프레드시트 연동: 민감 정보 마스킹 (최종관리자 외)',
+                '📦 백업 생성: 최종관리자 전용 (조회는 모든 관리자)',
+                '🔧 닫기 버튼 중복 수정'
+            ]},
+            { version: '1.6.7', date: '2026-01-12 20:30', changes: [
+                '📱 기기 정보 간략화 (PC-크롬, 아이폰-사파리 등)',
+                '📍 접속 위치 표시 (서울특별시, 경기도 등)',
+                '🔒 잠금 설정/해제 최종관리자 전용으로 변경',
+                '🔒 잠금 시 최종관리자만 수정 가능',
+                '📅 2주 반복 잠금 시작/종료 직접 지정 가능'
+            ]},
+            { version: '1.6.6', date: '2026-01-12 20:15', changes: [
+                '🏠 길드 변경/전투력 수정/스펙 수정 로그 타입 분리',
+                '⭐ 스펙 수정 로그 독립 표시',
+                '👑 관리자 필터: 작업 없는 관리자도 표시'
+            ]},
+            { version: '1.6.5', date: '2026-01-12 20:05', changes: [
+                '🔍 로그에 IP 검색 필터 추가'
+            ]},
+            { version: '1.6.4', date: '2026-01-12 19:55', changes: [
+                '🔧 모달 뒤로가기 버튼 상태 복원 버그 수정',
+                '✅ 길드 이동/닉네임 변경 후 "처리 중" 상태 해결'
+            ]},
+            { version: '1.6.3', date: '2026-01-12 19:45', changes: [
+                '🔗 백업 공유 링크 생성 기능',
+                '📥 엑셀 다운로드 개선 (3시트: 정보/길드통계/명단)',
+                '👤 백업 생성자 이름 입력 기능',
+                '⚙️ 전투력 커스텀 필터 (범위 직접 설정)',
+                '📊 전투력 필터 150만까지 확장'
+            ]},
+            { version: '1.6.2', date: '2026-01-12 19:30', changes: [
+                '🔍 백업 상세 필터 기능 추가',
+                '📊 전투력 증감별/길드별/전투력대별 필터',
+                '🔤 이름순/전투력순 정렬 옵션',
+                '☑️ 체크박스 행 클릭 토글 지원',
+                '💾 일괄 등록 해제 선택 상태 유지'
+            ]},
+            { version: '1.6.1', date: '2026-01-12 18:00', changes: [
+                '📋 로그 상세 수정전/후 파싱 개선',
+                '🚀 길드 이동 로그에 닉네임 전체 표시',
+                '🔄 모달 스택 시스템 버그 수정'
+            ]},
+            { version: '1.6.0', date: '2026-01-12 17:00', changes: [
+                '📝 로그 필터 기능 (대상/작업유형/작업자)',
+                '👆 로그 행 클릭 시 상세보기',
+                '✏️ 정보 수정 → 전투력 수정 명칭 변경'
+            ]},
+            { version: '1.5.0', date: '2026-01-12 15:00', changes: [
+                '📱 모바일/태블릿 반응형 최적화',
+                '🎨 UI 전면 개선'
+            ]},
+            { version: '1.0.0', date: '2026-01-12 00:00', changes: [
+                '🎉 오스카2 전투력 현황판 출시',
+                '🔄 모달 스택 시스템 (뒤로가기 지원)',
+                '🌸 설날 테마 (매화꽃 디자인)',
+                '💾 백업 관리 시스템',
+                '🔒 시간대별 잠금 설정'
+            ]}
+        ];
+
        
         let allGuildData = [];
         let guildList = []; 
@@ -1145,6 +1223,13 @@
 
        
         async function init() {
+            // 공유 링크 체크
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareId = urlParams.get('share');
+            if (shareId) {
+                await showSharedBackup(shareId);
+                return;
+            }
            
             if (sessionStorage.getItem('isAdmin') === 'true') { 
                 isAdmin = true;
@@ -1176,6 +1261,166 @@
             await checkLockStatus();
             await loadSpreadsheetConfig();
             await loadData();
+        }
+        
+        // 공유된 백업 표시
+        async function showSharedBackup(shareId) {
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%); padding: 20px;">
+                    <div style="max-width: 1200px; margin: 0 auto;">
+                        <div style="text-align: center; padding: 40px 20px;">
+                            <div class="loading-spinner" style="width:40px; height:40px; border:4px solid #f3f4f6; border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
+                            <p style="margin-top: 16px; color: #6b7280;">로딩 중...</p>
+                        </div>
+                    </div>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            `;
+            
+            try {
+                const shareDoc = await getDoc(doc(db, "sharedBackups", shareId));
+                if (!shareDoc.exists()) {
+                    document.body.innerHTML = `
+                        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f9fafb;">
+                            <div style="text-align: center; padding: 40px;">
+                                <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
+                                <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">공유 링크를 찾을 수 없습니다</h1>
+                                <p style="color: #6b7280;">링크가 만료되었거나 잘못된 링크입니다.</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const share = shareDoc.data();
+                const backup = share.backupData;
+                const users = backup.users || [];
+                const guildStats = backup.guildStats || {};
+                const backupTime = formatDateTime(backup.createdAt);
+                
+                // 길드별 통계 HTML
+                let guildStatsHtml = '';
+                Object.keys(guildStats).sort().forEach(guild => {
+                    const stats = guildStats[guild];
+                    const activeCount = stats.activeCount || stats.count;
+                    const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
+                    const diffSign = stats.totalDiff >= 0 ? '+' : '';
+                    const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
+                    guildStatsHtml += `<tr>
+                        <td style="padding: 12px; font-weight: 600;">${guild}</td>
+                        <td style="padding: 12px; text-align: center;">${stats.count}명</td>
+                        <td style="padding: 12px; text-align: right;">${avgPower}</td>
+                        <td style="padding: 12px; text-align: right; color: ${diffColor}; font-weight: 600;">${diffSign}${stats.totalDiff.toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                // 유저 목록 HTML
+                let usersHtml = '';
+                users.forEach((u, idx) => {
+                    const diffSign = u.diff >= 0 ? '+' : '';
+                    const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
+                    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                    usersHtml += `<tr>
+                        <td style="padding: 10px; text-align: center;">${medal}</td>
+                        <td style="padding: 10px; font-weight: 500;">${u.name}</td>
+                        <td style="padding: 10px; text-align: center;">${u.guild}</td>
+                        <td style="padding: 10px; text-align: right; font-weight: 600;">${u.power.toLocaleString()}</td>
+                        <td style="padding: 10px; text-align: right; color: ${diffColor}; font-weight: 500;">${diffSign}${u.diff.toLocaleString()}</td>
+                    </tr>`;
+                });
+                
+                const totalDiff = backup.totalDiff || 0;
+                const diffSign = totalDiff >= 0 ? '+' : '';
+                const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
+                
+                document.title = share.pageTitle;
+                document.body.innerHTML = `
+                    <div style="min-height: 100vh; background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%); padding: 20px;">
+                        <div style="max-width: 1000px; margin: 0 auto;">
+                            <!-- 헤더 -->
+                            <div style="text-align: center; padding: 30px 20px; margin-bottom: 24px;">
+                                <h1 style="font-size: 28px; font-weight: 700; color: #c62828; margin: 0 0 8px;">${share.headerName}</h1>
+                                <p style="color: #6b7280; font-size: 14px;">${share.description || ''}</p>
+                            </div>
+                            
+                            <!-- 백업 정보 -->
+                            <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
+                                <p style="color: #6b7280; font-size: 13px; margin: 0;">📅 백업 일시: <strong>${backupTime}</strong> (KST)</p>
+                                ${backup.createdBy ? `<p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">👤 생성자: <strong>${backup.createdBy}</strong></p>` : ''}
+                            </div>
+                            
+                            <!-- 요약 카드 -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                                <div style="background: #fef3c7; padding: 20px; border-radius: 12px; text-align: center;">
+                                    <p style="color: #92400e; font-size: 12px; margin: 0;">총 인원</p>
+                                    <p style="color: #b45309; font-size: 24px; font-weight: 700; margin: 8px 0 0;">${backup.totalUsers}명</p>
+                                </div>
+                                <div style="background: #d1fae5; padding: 20px; border-radius: 12px; text-align: center;">
+                                    <p style="color: #065f46; font-size: 12px; margin: 0;">총 전투력</p>
+                                    <p style="color: #047857; font-size: 24px; font-weight: 700; margin: 8px 0 0;">${backup.totalPower.toLocaleString()}</p>
+                                </div>
+                                <div style="background: #e0e7ff; padding: 20px; border-radius: 12px; text-align: center;">
+                                    <p style="color: #3730a3; font-size: 12px; margin: 0;">주간 증감</p>
+                                    <p style="color: ${diffColor}; font-size: 24px; font-weight: 700; margin: 8px 0 0;">${diffSign}${totalDiff.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 길드별 현황 -->
+                            <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
+                                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">📊 길드별 현황</h3>
+                                <div style="overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                                <th style="padding: 12px; text-align: left; font-weight: 600;">길드</th>
+                                                <th style="padding: 12px; text-align: center; font-weight: 600;">인원</th>
+                                                <th style="padding: 12px; text-align: right; font-weight: 600;">평균 전투력</th>
+                                                <th style="padding: 12px; text-align: right; font-weight: 600;">주간 증감</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${guildStatsHtml}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- 전체 명단 -->
+                            <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">👥 전체 명단 (${users.length}명)</h3>
+                                <div style="max-height: 600px; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead style="position: sticky; top: 0; background: white;">
+                                            <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                                                <th style="padding: 10px; text-align: center; font-weight: 600;">순위</th>
+                                                <th style="padding: 10px; text-align: left; font-weight: 600;">닉네임</th>
+                                                <th style="padding: 10px; text-align: center; font-weight: 600;">길드</th>
+                                                <th style="padding: 10px; text-align: right; font-weight: 600;">전투력</th>
+                                                <th style="padding: 10px; text-align: right; font-weight: 600;">증감</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${usersHtml}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- 푸터 -->
+                            <div style="text-align: center; padding: 30px; color: #9ca3af; font-size: 12px;">
+                                <p>Made with ❤️ by 오스카2 연합</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch(e) {
+                console.error(e);
+                document.body.innerHTML = `
+                    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f9fafb;">
+                        <div style="text-align: center; padding: 40px;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+                            <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">오류가 발생했습니다</h1>
+                            <p style="color: #6b7280;">잠시 후 다시 시도해주세요.</p>
+                        </div>
+                    </div>
+                `;
+            }
         }
         
        
@@ -1350,7 +1595,7 @@
         function updateLockUI() {
             const banner = document.getElementById('lockBanner');
             const addUserBtn = document.getElementById('addUserBtn');
-            if (isSystemLocked() && !isAdmin) {
+            if (isSystemLocked() && !isSuperAdmin) {
                 banner.classList.add('active');
                 addUserBtn.classList.add('disabled');
                 const remainMs = lockEndTime - Date.now();
@@ -1426,6 +1671,127 @@
         };
 
         async function getIp() { try { const res = await fetch('https://api.ipify.org?format=json'); return (await res.json()).ip; } catch (e) { return 'unknown'; } }
+        
+        // User Agent 파싱 함수
+        function parseUserAgent(ua) {
+            if (!ua) return '알 수 없음';
+            
+            let device = '';
+            let browser = '';
+            
+            // 기기 감지
+            if (/iPhone/.test(ua)) {
+                const match = ua.match(/iPhone\s*(\d+)?/i);
+                device = match && match[1] ? `아이폰${match[1]}` : '아이폰';
+                // iPhone 모델 세부 정보 (iOS 버전으로 추정)
+                if (/iPhone.*OS\s*(\d+)/.test(ua)) {
+                    const ver = ua.match(/iPhone.*OS\s*(\d+)/)[1];
+                    if (ver >= 18) device = '아이폰16';
+                    else if (ver >= 17) device = '아이폰15';
+                    else if (ver >= 16) device = '아이폰14';
+                    else if (ver >= 15) device = '아이폰13';
+                }
+            } else if (/iPad/.test(ua)) {
+                device = '아이패드';
+            } else if (/SM-S9\d+/i.test(ua)) {
+                device = '갤럭시S24';
+            } else if (/SM-S91\d/i.test(ua)) {
+                device = '갤럭시S23';
+            } else if (/SM-S90\d/i.test(ua)) {
+                device = '갤럭시S22';
+            } else if (/SM-G99\d/i.test(ua)) {
+                device = '갤럭시S21';
+            } else if (/SM-N9\d+/i.test(ua)) {
+                device = '갤럭시노트';
+            } else if (/SM-F9\d+/i.test(ua)) {
+                device = '갤럭시폴드';
+            } else if (/SM-F7\d+/i.test(ua)) {
+                device = '갤럭시플립';
+            } else if (/Samsung|SM-/i.test(ua)) {
+                device = '갤럭시';
+            } else if (/Android/.test(ua)) {
+                device = '안드로이드';
+            } else if (/Macintosh/.test(ua)) {
+                device = '맥';
+            } else if (/Windows/.test(ua)) {
+                device = 'PC';
+            } else if (/Linux/.test(ua)) {
+                device = '리눅스';
+            } else {
+                device = '기타';
+            }
+            
+            // 브라우저 감지
+            if (/Whale/.test(ua)) {
+                browser = '웨일';
+            } else if (/SamsungBrowser/.test(ua)) {
+                browser = '삼성브라우저';
+            } else if (/Edg/.test(ua)) {
+                browser = '엣지';
+            } else if (/Firefox/.test(ua)) {
+                browser = '파이어폭스';
+            } else if (/OPR|Opera/.test(ua)) {
+                browser = '오페라';
+            } else if (/Chrome/.test(ua) && !/Chromium/.test(ua)) {
+                browser = '크롬';
+            } else if (/Safari/.test(ua) && !/Chrome/.test(ua)) {
+                browser = '사파리';
+            } else {
+                browser = '기타';
+            }
+            
+            return `${device}-${browser}`;
+        }
+        
+        // 위치 정보 조회 함수 (캐시 사용)
+        let cachedLocation = null;
+        let cachedIp = null;
+        async function getIpAndLocation() {
+            try {
+                const ip = await getIp();
+                
+                // 같은 IP면 캐시된 위치 사용
+                if (cachedIp === ip && cachedLocation) {
+                    return { ip, location: cachedLocation };
+                }
+                
+                cachedIp = ip;
+                
+                // ipapi.co 무료 API 사용 (HTTPS 지원)
+                const res = await fetch(`https://ipapi.co/${ip}/json/`);
+                const data = await res.json();
+                
+                if (data && !data.error) {
+                    const region = data.region || '';
+                    const city = data.city || '';
+                    if (region && city) {
+                        cachedLocation = `${region} ${city}`;
+                    } else if (region) {
+                        cachedLocation = region;
+                    } else if (city) {
+                        cachedLocation = city;
+                    } else {
+                        cachedLocation = '';
+                    }
+                } else {
+                    cachedLocation = '';
+                }
+                
+                return { ip, location: cachedLocation };
+            } catch (e) {
+                return { ip: await getIp(), location: '' };
+            }
+        }
+        
+        // 로그 정보 헬퍼 (IP, 위치, 기기 정보)
+        async function getLogInfo() {
+            const { ip, location } = await getIpAndLocation();
+            return {
+                ip: ip,
+                location: location,
+                device: parseUserAgent(navigator.userAgent)
+            };
+        }
 
         async function fetchGuildList() {
             const docRef = doc(db, "config", "guilds");
@@ -1579,6 +1945,9 @@
             }
 
                        const renameButton = isAdmin ? `<button class="btn btn-rename" onclick="window.openRenameModal('${name}')" style="flex:1">🔄 닉네임 변경</button>` : '';
+            
+            // 관리자용 로그 보기 버튼
+            const logButton = isAdmin ? `<button class="btn" onclick="window.showUserLogs('${name}')" style="flex:1; background:#6366f1; color:white;">📋 로그 보기</button>` : '';
 
             const content = `
                 <div class="info-grid">
@@ -1602,11 +1971,111 @@
                     <button class="btn btn-primary" onclick="window.editUserFromInfo('${name}')" style="flex:1">✏️ 정보 수정</button>
                     ${renameButton}
                 </div>
+                ${isAdmin ? `<div style="display: flex; gap: 8px; margin-top: 8px;">${logButton}</div>` : ''}
             `;
             
             openSmallModal('상세 정보', u.name, content);
             document.getElementById('modalFooter').style.display = 'none';
         }
+
+        // 특정 유저의 로그 보기
+        window.showUserLogs = async function(userName) {
+            openSmallModal('📋 유저 로그', userName, '<p style="text-align:center; padding:20px;">로딩 중...</p>');
+            
+            try {
+                const logsSnap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
+                
+                const userLogs = [];
+                logsSnap.forEach(d => {
+                    const l = d.data();
+                    // who 필드에서 유저 이름 검색 (닉네임 변경의 경우 old→new 형태도 체크)
+                    const who = l.who || '';
+                    if (who.includes(userName) || who === userName) {
+                        userLogs.push({
+                            time: formatDateTime(l.createdAt),
+                            type: l.type,
+                            oldValue: l.old_value || '-',
+                            newValue: l.new_value || '-',
+                            changes: l.changes || '',
+                            editedBy: l.editedBy || '-'
+                        });
+                    }
+                });
+                
+                const typeMap = {
+                    'power': '✏️ 전투력 수정',
+                    'info_edit': '📝 정보 수정',
+                    'guild_change': '🏠 길드 변경',
+                    'spec_edit': '⭐ 스펙 수정',
+                    'nickname_change': '🔄 닉네임 변경',
+                    'user_approved': '✅ 승인',
+                    'user_deleted': '🗑️ 삭제',
+                    'user_request': '📝 등록 요청',
+                    'guild_move': '🚀 길드 이동'
+                };
+                
+                let logsHtml = '';
+                if (userLogs.length === 0) {
+                    logsHtml = '<p style="text-align:center; color:#9ca3af; padding:20px;">로그 기록이 없습니다</p>';
+                } else {
+                    logsHtml = `
+                        <div style="max-height:350px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px;">
+                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                                <thead>
+                                    <tr style="background:#f9fafb; position:sticky; top:0;">
+                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left; white-space:nowrap;">시간</th>
+                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">작업</th>
+                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">내용</th>
+                                        <th style="padding:10px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">작업자</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    userLogs.slice(0, 100).forEach(l => {
+                        const typeDisplay = typeMap[l.type] || l.type;
+                        let contentDisplay = l.changes || '';
+                        
+                        // 타입별 내용 표시
+                        if (l.type === 'power' || l.type === 'info_edit' || l.type === 'guild_change' || l.type === 'spec_edit') {
+                            contentDisplay = l.changes || '정보 수정';
+                        } else if (l.type === 'nickname_change') {
+                            contentDisplay = `${l.oldValue} → ${l.newValue}`;
+                        } else if (l.type === 'user_approved') {
+                            contentDisplay = '승인 완료';
+                        } else if (l.type === 'guild_move') {
+                            contentDisplay = l.newValue || '길드 이동';
+                        }
+                        
+                        const workerDisplay = l.editedBy === 'self' ? '본인' : (l.editedBy === 'admin' || l.editedBy === '아이디미기록' ? '관리자' : l.editedBy);
+                        
+                        logsHtml += `<tr>
+                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; white-space:nowrap; font-size:11px;">${l.time}</td>
+                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; white-space:nowrap;">${typeDisplay}</td>
+                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${contentDisplay}">${contentDisplay}</td>
+                            <td style="padding:8px; border-bottom:1px solid #f3f4f6; color:#8b5cf6;">${workerDisplay}</td>
+                        </tr>`;
+                    });
+                    
+                    logsHtml += '</tbody></table></div>';
+                    if (userLogs.length > 100) {
+                        logsHtml += `<p style="font-size:11px; color:#9ca3af; margin-top:8px; text-align:center;">최근 100건만 표시됩니다 (총 ${userLogs.length}건)</p>`;
+                    }
+                }
+                
+                document.getElementById('modalBody').innerHTML = `
+                    <p style="font-size:12px; color:#6b7280; margin-bottom:12px;">총 ${userLogs.length}건의 로그</p>
+                    ${logsHtml}
+                `;
+                document.getElementById('modalFooter').innerHTML = `
+                    <button class="btn btn-primary" onclick="closeModal()">닫기</button>
+                `;
+                document.getElementById('modalFooter').style.display = '';
+            } catch(e) {
+                console.error(e);
+                document.getElementById('modalBody').innerHTML = '<p style="color:#ef4444; text-align:center;">로그를 불러오는 중 오류가 발생했습니다</p>';
+            }
+        };
 
                window.openRenameModal = async function(oldName) {
             if (!isAdmin) {
@@ -1661,7 +2130,8 @@
                         editedBy: loggedInAdminId || '아이디미기록',
                         createdAt: Date.now(),
                         ip: await getIp(),
-                        device: navigator.userAgent,
+                        location: (await getIpAndLocation()).location,
+                        device: parseUserAgent(navigator.userAgent),
                         admin: true
                     });
 
@@ -1680,7 +2150,7 @@
 
        
         document.getElementById('addUserBtn').addEventListener('click', () => {
-            if (isSystemLocked() && !isAdmin) { 
+            if (isSystemLocked() && !isSuperAdmin) { 
                 const lockMsg = `관리자가 수정 잠금을 하여 수정이 불가능합니다.\n\n기간: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (KST)`;
                 showAlert(lockMsg, 'error'); 
                 return; 
@@ -1755,8 +2225,9 @@
                         old_value: '-', 
                         new_value: `등록요청(${guild})`, 
                         createdAt: Date.now(), 
-                        ip: await getIp(), 
-                        device: navigator.userAgent 
+                        ip: await getIp(),
+                        location: (await getIpAndLocation()).location,
+                        device: parseUserAgent(navigator.userAgent) 
                     });
                     
                     showAlert(`${name}님 등록이 요청되었습니다!\n관리자 승인 후 사용 가능합니다.`, 'success'); 
@@ -1827,7 +2298,8 @@
                     editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(),
                     ip: await getIp(),
-                    device: navigator.userAgent
+                    location: (await getIpAndLocation()).location,
+                    device: parseUserAgent(navigator.userAgent)
                 });
 
                 showAlert(`${name}님이 승인되었습니다`, 'success');
@@ -1858,7 +2330,8 @@
                     editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(),
                     ip: await getIp(),
-                    device: navigator.userAgent
+                    location: (await getIpAndLocation()).location,
+                    device: parseUserAgent(navigator.userAgent)
                 });
 
                 showAlert(`${name}님의 등록이 거부되었습니다`, 'success');
@@ -2026,16 +2499,38 @@
                 };
 
                 await updateDoc(doc(db, "users", u.name), newData);
+                
+                // 변경 내용에 따라 로그 타입 결정
+                let logType = 'info_edit';
+                const powerChanged = u.power !== nPower;
+                const guildChanged = u.guild !== nGuild;
+                const specChanged = isAdmin && (
+                    (u.shape_legend || 0) !== newSL ||
+                    (u.shape_myth || 0) !== newSM ||
+                    (u.mount_legend || 0) !== newML ||
+                    (u.mount_myth || 0) !== newMM
+                );
+                
+                if (guildChanged && !powerChanged && !specChanged) {
+                    logType = 'guild_change';  // 길드만 변경
+                } else if (powerChanged && !guildChanged && !specChanged) {
+                    logType = 'power';  // 전투력만 변경
+                } else if (specChanged && !powerChanged && !guildChanged) {
+                    logType = 'spec_edit';  // 스펙만 변경
+                }
+                // 여러 항목 변경 시 info_edit 유지
+                
                 await setDoc(doc(collection(db, "logs")), { 
                     who: u.name, 
-                    type: 'info_edit', 
+                    type: logType, 
                     old_value: JSON.stringify(oldValues), 
                     new_value: JSON.stringify(newValues),
                     changes: changes.length > 0 ? changes.join(', ') : '변경없음',
                     editedBy: isAdmin ? (loggedInAdminId || '아이디미기록') : 'self',
                     createdAt: Date.now(), 
                     ip: await getIp(),
-                    device: navigator.userAgent
+                    location: (await getIpAndLocation()).location,
+                    device: parseUserAgent(navigator.userAgent)
                 });
                 
                 showAlert('수정되었습니다', 'success');
@@ -2162,7 +2657,8 @@
                     editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(), 
                     ip: await getIp(),
-                    device: navigator.userAgent
+                    location: (await getIpAndLocation()).location,
+                    device: parseUserAgent(navigator.userAgent)
                 });
 
                 showAlert(`완료! (수정:${updateCount}, 신규:${newCount})`, 'success');
@@ -2300,7 +2796,8 @@
                     editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(), 
                     ip: await getIp(),
-                    device: navigator.userAgent
+                    location: (await getIpAndLocation()).location,
+                    device: parseUserAgent(navigator.userAgent)
                 });
 
                                showGuildMoveResult(targetGuild, movedUsers, skippedUsers, notFoundUsers);
@@ -2461,8 +2958,9 @@
                         old_value: u.power, 
                         new_value: val, 
                         editedBy: isAdmin ? (loggedInAdminId || '아이디미기록') : 'self',                        createdAt: Date.now(), 
-                        ip: await getIp(), 
-                        device: navigator.userAgent 
+                        ip: await getIp(),
+                        location: (await getIpAndLocation()).location,
+                        device: parseUserAgent(navigator.userAgent) 
                     });
                     closeModal(); 
                     showAlert('수정 완료', 'success'); 
@@ -2517,6 +3015,20 @@
                     if (autoLogin) {
                         localStorage.setItem('adminAutoLogin', btoa(JSON.stringify({id: inputId, pw: inputPw, type: 'super'})));
                     }
+                    
+                    // 접속 로그 기록
+                    try {
+                        const { ip, location } = await getIpAndLocation();
+                        await setDoc(doc(collection(db, "adminLogs")), {
+                            adminId: inputId,
+                            loginAt: Date.now(),
+                            ip: ip,
+                            location: location,
+                            device: parseUserAgent(navigator.userAgent),
+                            loginType: '수동'
+                        });
+                    } catch(e) { console.error('Admin log error:', e); }
+                    
                     resetAdminSessionTimer();
                     updateAdminUI(); 
                     closeModal(); 
@@ -2540,6 +3052,20 @@
                         if (autoLogin) {
                             localStorage.setItem('adminAutoLogin', btoa(JSON.stringify({id: inputId, pw: inputPw, type: 'normal'})));
                         }
+                        
+                        // 접속 로그 기록
+                        try {
+                            const { ip, location } = await getIpAndLocation();
+                            await setDoc(doc(collection(db, "adminLogs")), {
+                                adminId: inputId,
+                                loginAt: Date.now(),
+                                ip: ip,
+                                location: location,
+                                device: parseUserAgent(navigator.userAgent),
+                                loginType: '수동'
+                            });
+                        } catch(e) { console.error('Admin log error:', e); }
+                        
                         resetAdminSessionTimer();
                         updateAdminUI();
                         closeModal();
@@ -2576,6 +3102,20 @@
                         resetAdminSessionTimer();
                         updateAdminUI();
                         await checkPendingUsers();
+                        
+                        // 자동 로그인 접속 로그 기록
+                        try {
+                            const { ip, location } = await getIpAndLocation();
+                            await setDoc(doc(collection(db, "adminLogs")), {
+                                adminId: id,
+                                loginAt: Date.now(),
+                                ip: ip,
+                                location: location,
+                                device: parseUserAgent(navigator.userAgent),
+                                loginType: '자동'
+                            });
+                        } catch(e) { console.error('Admin log error:', e); }
+                        
                         return true;
                     }
                 } else {
@@ -2590,6 +3130,20 @@
                         resetAdminSessionTimer();
                         updateAdminUI();
                         await checkPendingUsers();
+                        
+                        // 자동 로그인 접속 로그 기록
+                        try {
+                            const { ip, location } = await getIpAndLocation();
+                            await setDoc(doc(collection(db, "adminLogs")), {
+                                adminId: id,
+                                loginAt: Date.now(),
+                                ip: ip,
+                                location: location,
+                                device: parseUserAgent(navigator.userAgent),
+                                loginType: '자동'
+                            });
+                        } catch(e) { console.error('Admin log error:', e); }
+                        
                         return true;
                     }
                 }
@@ -2928,7 +3482,8 @@
                     editedBy: loggedInAdminId || '아이디미기록',
                     createdAt: Date.now(),
                     ip: await getIp(),
-                    device: navigator.userAgent
+                    location: (await getIpAndLocation()).location,
+                    device: parseUserAgent(navigator.userAgent)
                 });
                 
                 showAlert(`분배 제외 목록이 저장되었습니다 (${syncExcludeList.length}명 제외)`, 'success');
@@ -2943,7 +3498,12 @@
             const currentConfig = spreadsheetConfig || {};
             const sheetId = currentConfig.sheetId || '1ySgXwqwDGSW3c9gh8LVYPDBmdkh27q9JmVKId8gQ6uI';
             const webAppUrl = currentConfig.webAppUrl || '';
-            const autoSync = currentConfig.autoSync !== false;            
+            const autoSync = currentConfig.autoSync !== false;
+            
+            // 최종관리자가 아니면 민감 정보 마스킹
+            const displaySheetId = isSuperAdmin ? sheetId : (sheetId ? sheetId.substring(0, 8) + '****' + sheetId.substring(sheetId.length - 4) : '');
+            const displayWebAppUrl = isSuperAdmin ? webAppUrl : (webAppUrl ? webAppUrl.substring(0, 40) + '****' : '');
+            
                        let sheetMappingHtml = '<div class="form-group"><label class="form-label">시트 탭 매핑 (길드명: 시트탭명)</label>';
             guildList.forEach(guild => {
                                let defaultSheet = '';
@@ -2955,7 +3515,7 @@
                     <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
                         <input type="text" class="form-input" value="${guild}" readonly style="flex:1; background:#f3f4f6;">
                         <span style="color:#6b7280;">→</span>
-                        <input type="text" class="form-input sheet-mapping" data-guild="${guild}" value="${mappedSheet}" placeholder="${guild === '사신' ? '전투력 점수제(사신)' : '(전체 시트에만 포함)'}" style="flex:2;">
+                        <input type="text" class="form-input sheet-mapping" data-guild="${guild}" value="${mappedSheet}" placeholder="${guild === '사신' ? '전투력 점수제(사신)' : '(전체 시트에만 포함)'}" style="flex:2;" ${!isSuperAdmin ? 'readonly' : ''}>
                     </div>
                 `;
             });
@@ -2966,26 +3526,34 @@
                 <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
                     <input type="text" class="form-input" value="전체" readonly style="flex:1; background:#f3f4f6;">
                     <span style="color:#6b7280;">→</span>
-                    <input type="text" class="form-input sheet-mapping" data-guild="전체" value="${allSheetName}" placeholder="전투력 점수제(전체)" style="flex:2;">
+                    <input type="text" class="form-input sheet-mapping" data-guild="전체" value="${allSheetName}" placeholder="전투력 점수제(전체)" style="flex:2;" ${!isSuperAdmin ? 'readonly' : ''}>
                 </div>
             `;
             sheetMappingHtml += '</div>';
+            
+            // 최종관리자 전용 안내
+            const notSuperAdminNotice = !isSuperAdmin ? `
+                <div style="margin-bottom:16px; padding:12px; background:#fef3c7; border-radius:8px; border-left:4px solid #f59e0b;">
+                    <p style="font-size:12px; color:#92400e; margin:0;">⚠️ 시트 ID와 웹앱 URL은 최종관리자만 확인/수정할 수 있습니다</p>
+                </div>
+            ` : '';
 
             const html = `
+                ${notSuperAdminNotice}
                 <div class="form-group">
                     <label class="form-label">스프레드시트 ID</label>
-                    <input type="text" id="sheetId" class="form-input" value="${sheetId}" placeholder="스프레드시트 URL의 /d/ 뒤 ID">
+                    <input type="text" id="sheetId" class="form-input" value="${displaySheetId}" placeholder="스프레드시트 URL의 /d/ 뒤 ID" ${!isSuperAdmin ? 'readonly style="background:#f3f4f6; color:#9ca3af;"' : ''}>
                     <p style="font-size:11px; color:#6b7280; margin-top:4px;">예: docs.google.com/spreadsheets/d/<b>여기ID부분</b>/edit</p>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Google Apps Script 웹앱 URL</label>
-                    <input type="text" id="webAppUrl" class="form-input" value="${webAppUrl}" placeholder="https://script.google.com/macros/s/.../exec">
+                    <input type="text" id="webAppUrl" class="form-input" value="${displayWebAppUrl}" placeholder="https://script.google.com/macros/s/.../exec" ${!isSuperAdmin ? 'readonly style="background:#f3f4f6; color:#9ca3af;"' : ''}>
                     <p style="font-size:11px; color:#6b7280; margin-top:4px;">Apps Script 배포 후 받은 웹앱 URL</p>
                 </div>
                 ${sheetMappingHtml}
                 <div class="form-group">
                     <label class="checkbox-label" style="background:none; padding:0;">
-                        <input type="checkbox" id="autoSync" ${autoSync ? 'checked' : ''}>
+                        <input type="checkbox" id="autoSync" ${autoSync ? 'checked' : ''} ${!isSuperAdmin ? 'disabled' : ''}>
                         데이터 변경 시 자동으로 스프레드시트 동기화
                     </label>
                 </div>
@@ -3004,7 +3572,8 @@
             `;
 
             openLargeModal('스프레드시트 연동 설정', '구글 스프레드시트 자동 동기화');
-            setModalBody(html);
+            // setModalBody 대신 직접 설정 (닫기 버튼 중복 방지)
+            document.getElementById('modalBody').innerHTML = html;
 
             const footerDiv = document.createElement('div');
             footerDiv.style.marginTop = "20px";
@@ -3017,13 +3586,18 @@
             closeBtn.innerText = "닫기";
             closeBtn.onclick = closeModal;
 
-            const saveBtn = document.createElement('button');
-            saveBtn.className = "btn btn-primary";
-            saveBtn.innerText = "💾 설정 저장";
-            saveBtn.onclick = saveSpreadsheetSettings;
-
-            footerDiv.appendChild(closeBtn);
-            footerDiv.appendChild(saveBtn);
+            if (isSuperAdmin) {
+                const saveBtn = document.createElement('button');
+                saveBtn.className = "btn btn-primary";
+                saveBtn.innerText = "💾 설정 저장";
+                saveBtn.onclick = saveSpreadsheetSettings;
+                
+                footerDiv.appendChild(closeBtn);
+                footerDiv.appendChild(saveBtn);
+            } else {
+                footerDiv.appendChild(closeBtn);
+            }
+            
             document.getElementById('modalBody').appendChild(footerDiv);
         }
 
@@ -3266,7 +3840,10 @@
 
        
         document.getElementById('lockManageBtn').addEventListener('click', () => {
-            if (!isAdmin) return;
+            if (!isSuperAdmin) {
+                showAlert('최종 관리자만 잠금 설정이 가능합니다', 'error');
+                return;
+            }
             
             let statusMsg = '';
             let biweeklyStatusMsg = '';
@@ -3286,6 +3863,15 @@
 
             const startValue = lockStartTime > 0 ? toDatetimeLocalValue(lockStartTime) : '';
             const endValue = lockEndTime > 0 ? toDatetimeLocalValue(lockEndTime) : '';
+            
+            // 2주 반복 기본값 계산 (다음 토요일~월요일)
+            const nowKst = toKST(Date.now());
+            const dayOfWeek = nowKst.getUTCDay();
+            let daysUntilSat = dayOfWeek === 6 ? 7 : (dayOfWeek === 0 ? 6 : 6 - dayOfWeek);
+            const defSatKst = new Date(Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth(), nowKst.getUTCDate() + daysUntilSat, 0, 0, 0));
+            const defMonKst = new Date(defSatKst.getTime() + 2 * 24 * 60 * 60 * 1000);
+            const defStart = toDatetimeLocalValue(defSatKst.getTime() - 9 * 60 * 60 * 1000);
+            const defEnd = toDatetimeLocalValue(defMonKst.getTime() - 9 * 60 * 60 * 1000);
 
             openSmallModal('잠금 설정 (KST 기준)', '', `
                 <div style="margin-bottom:15px; color:#374151; font-size:13px; padding:10px; background:#f9fafb; border-radius:8px;">${statusMsg}</div>
@@ -3293,9 +3879,19 @@
                 
                 <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
                     <p style="color:#92400e; font-weight:600; margin:0 0 8px; font-size:13px;">⏰ 2주 반복 잠금 (길드전용)</p>
-                    <p style="color:#a16207; font-size:12px; margin:0 0 10px;">최초 1회 설정하면 2주마다 자동 반복됩니다<br>토요일 0시 ~ 월요일 0시 (KST)</p>
+                    <p style="color:#a16207; font-size:12px; margin:0 0 10px;">최초 기간을 지정하면 2주마다 자동 반복됩니다</p>
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        <div style="flex:1;">
+                            <label style="font-size:11px; color:#92400e;">시작 (KST)</label>
+                            <input type="datetime-local" id="biweeklyStartInput" class="form-input" value="${defStart}" style="font-size:12px;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:11px; color:#92400e;">종료 (KST)</label>
+                            <input type="datetime-local" id="biweeklyEndInput" class="form-input" value="${defEnd}" style="font-size:12px;">
+                        </div>
+                    </div>
                     <div style="display:flex; gap:8px;">
-                        <button id="biweeklyLockBtn" class="btn btn-primary" style="flex:1; background:#f59e0b;">${biweeklyBaseTime > 0 ? '🔄 다음 기간 확인' : '🔄 2주 반복 시작'}</button>
+                        <button id="biweeklyLockBtn" class="btn btn-primary" style="flex:1; background:#f59e0b;">🔄 2주 반복 시작</button>
                         ${biweeklyBaseTime > 0 ? '<button id="biweeklyStopBtn" class="btn btn-cancel" style="flex:1;">⏹️ 반복 중지</button>' : ''}
                     </div>
                 </div>
@@ -3337,43 +3933,27 @@
 
             // 2주 반복 잠금 버튼 핸들러
             document.getElementById('biweeklyLockBtn').onclick = async () => {
-                // 다음 토요일 0시(KST) 찾기
-                const now = toKST(Date.now());
-                const dayOfWeek = now.getUTCDay(); // 0=일, 6=토
+                // 사용자가 입력한 시작/종료 시간 사용
+                const startVal = document.getElementById('biweeklyStartInput').value;
+                const endVal = document.getElementById('biweeklyEndInput').value;
                 
-                let daysUntilSaturday;
-                if (dayOfWeek === 6) {
-                    // 토요일이면 다음주 토요일
-                    daysUntilSaturday = 7;
-                } else if (dayOfWeek === 0) {
-                    // 일요일이면 다음주 토요일 (6일 후)
-                    daysUntilSaturday = 6;
-                } else {
-                    // 평일이면 이번주 토요일
-                    daysUntilSaturday = 6 - dayOfWeek;
+                if (!startVal || !endVal) {
+                    showAlert('시작 시간과 종료 시간을 선택하세요', 'error');
+                    return;
                 }
                 
-                // 다음 토요일 0시 KST
-                const nextSaturdayKST = new Date(Date.UTC(
-                    now.getUTCFullYear(),
-                    now.getUTCMonth(),
-                    now.getUTCDate() + daysUntilSaturday,
-                    0, 0, 0
-                ));
+                const startTime = fromKST(startVal);
+                const endTime = fromKST(endVal);
                 
-                // 월요일 0시 KST (토요일 + 2일)
-                const nextMondayKST = new Date(nextSaturdayKST.getTime() + 2 * 24 * 60 * 60 * 1000);
-                
-                // KST를 UTC timestamp로 변환 (KST = UTC+9)
-                const startTime = nextSaturdayKST.getTime() - 9 * 60 * 60 * 1000;
-                const endTime = nextMondayKST.getTime() - 9 * 60 * 60 * 1000;
+                if (endTime <= startTime) {
+                    showAlert('종료 시간이 시작 시간보다 빠릅니다', 'error');
+                    return;
+                }
                 
                 const startStr = formatKSTDateTime(startTime);
                 const endStr = formatKSTDateTime(endTime);
                 
-                const confirmMsg = biweeklyBaseTime > 0 
-                    ? `다음 잠금 기간:\\n${startStr} ~ ${endStr}\\n\\n(2주 반복 유지)`
-                    : `다음 잠금 기간:\\n${startStr} ~ ${endStr}\\n\\n이후 2주마다 자동 반복됩니다.\\n설정하시겠습니까?`;
+                const confirmMsg = `첫 잠금 기간:\n${startStr} ~ ${endStr}\n\n이후 2주마다 자동 반복됩니다.\n설정하시겠습니까?`;
                 
                 if (!await showConfirm('2주 반복 잠금 설정', confirmMsg)) return;
                 
@@ -3613,7 +4193,8 @@
                                 editedBy: loggedInAdminId || '아이디미기록',
                                 createdAt: Date.now(),
                                 ip: await getIp(),
-                                device: navigator.userAgent
+                                location: (await getIpAndLocation()).location,
+                                device: parseUserAgent(navigator.userAgent)
                             });
                             
                             showAlert('등록 해제 완료 (정보는 영구 보관됨)', 'success');
@@ -3636,6 +4217,14 @@
             }
             openLargeModal('로그', '전체 로그 (검색 가능)');
             
+            // 관리자 목록 먼저 가져오기
+            const adminsSnap = await getDocs(collection(db, "admins"));
+            const allAdmins = [];
+            adminsSnap.forEach(d => {
+                allAdmins.push(d.id);
+            });
+            allAdmins.sort();
+            
                        const snap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
             
             const logs = [];
@@ -3650,15 +4239,16 @@
                     changes: l.changes || '',
                     editedBy: l.editedBy || '-',
                     ip: l.ip || '-',
-                    device: l.device || '-'
+                    device: l.device || '-',
+                    location: l.location || ''
                 });
             });
             
             // 전역 로그 데이터 저장 (상세보기용)
             window.currentLogs = logs;
             
-            // 관리자 목록 추출 (self, admin, 아이디미기록, - 제외)
-            const adminSet = new Set();
+            // 관리자 목록: DB에서 가져온 목록 + 로그에 있는 관리자
+            const adminSet = new Set(allAdmins);
             logs.forEach(l => {
                 if (l.editedBy && l.editedBy !== 'self' && l.editedBy !== 'admin' && l.editedBy !== '아이디미기록' && l.editedBy !== '-') {
                     adminSet.add(l.editedBy);
@@ -3680,7 +4270,9 @@
                        function formatLogType(type) {
                 const typeMap = {
                     'power': '✏️ 전투력 수정',
-                    'info_edit': '✏️ 전투력 수정',
+                    'info_edit': '📝 정보 수정',
+                    'guild_change': '🏠 길드 변경',
+                    'spec_edit': '⭐ 스펙 수정',
                     'nickname_change': '🔄 닉네임 변경',
                     'user_approved': '✅ 사용자 승인',
                     'user_rejected': '❌ 사용자 거부',
@@ -3700,18 +4292,41 @@
                 const type = log.type;
                 const oldVal = log.oldValue;
                 const newVal = log.newValue;
+                const changes = log.changes;
                 
                 switch(type) {
                     case 'power':
+                        // JSON인지 확인
+                        if (oldVal && oldVal.startsWith('{')) {
+                            try {
+                                const oldData = JSON.parse(oldVal);
+                                const newData = JSON.parse(newVal);
+                                return `전투력: ${Number(oldData.power).toLocaleString()} → ${Number(newData.power).toLocaleString()}`;
+                            } catch(e) {}
+                        }
                         const oldPower = Number(oldVal).toLocaleString();
                         const newPower = Number(newVal).toLocaleString();
-                        return `${oldPower} → ${newPower}`;
+                        return `전투력: ${oldPower} → ${newPower}`;
+                    
+                    case 'guild_change':
+                        // JSON인지 확인
+                        if (oldVal && oldVal.startsWith('{')) {
+                            try {
+                                const oldData = JSON.parse(oldVal);
+                                const newData = JSON.parse(newVal);
+                                return `길드: ${oldData.guild} → ${newData.guild}`;
+                            } catch(e) {}
+                        }
+                        return changes || '길드 변경';
+                    
+                    case 'spec_edit':
+                        return changes || '스펙 수정';
                     
                     case 'nickname_change':
                         return `${oldVal} → ${newVal}`;
                     
                     case 'info_edit':
-                        return newVal === '관리자수정' ? '관리자가 수정함' : '본인이 수정함';
+                        return changes || '정보 수정';
                     
                     case 'user_approved':
                         return '승인 완료';
@@ -3733,7 +4348,7 @@
                         return newVal;
                     
                     default:
-                        return newVal;
+                        return changes || newVal;
                 }
             }
             
@@ -3745,17 +4360,21 @@
             let html = `
                 <div style="margin-bottom: 16px;">
                     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-                        <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="flex:1; min-width:150px;">
+                        <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="flex:1; min-width:120px;">
+                        <input type="text" id="logIpSearch" class="form-input" placeholder="IP 검색..." autocomplete="off" style="flex:1; min-width:120px;">
                         <select id="logTypeFilter" class="form-input" style="flex:1; min-width:130px;">
                             <option value="">전체 작업</option>
-                            <option value="info_edit,power">✏️ 전투력 수정</option>
+                            <option value="power">✏️ 전투력 수정</option>
+                            <option value="guild_change">🏠 길드 변경</option>
+                            <option value="spec_edit">⭐ 스펙 수정</option>
+                            <option value="info_edit">📝 정보 수정 (복합)</option>
                             <option value="nickname_change">🔄 닉네임 변경</option>
                             <option value="user_approved">✅ 사용자 승인</option>
                             <option value="user_rejected">❌ 사용자 거부</option>
                             <option value="user_deleted">🗑️ 사용자 삭제</option>
                             <option value="user_request">📝 등록 요청</option>
                             <option value="bulk_update">📋 일괄 처리</option>
-                            <option value="guild_move">🚀 길드 이동</option>
+                            <option value="guild_move">🚀 길드 이동 (일괄)</option>
                             <option value="exclude_update">🚫 분배 제외</option>
                             <option value="spreadsheet_sync,google_sheet_sync">📊 동기화</option>
                         </select>
@@ -3792,9 +4411,49 @@
                 
                 switch(l.type) {
                     case 'power':
-                        oldDisplay = Number(l.oldValue).toLocaleString();
-                        newDisplay = Number(l.newValue).toLocaleString();
+                        try {
+                            if (l.oldValue && l.oldValue.startsWith('{')) {
+                                const oldData = JSON.parse(l.oldValue);
+                                const newData = JSON.parse(l.newValue);
+                                oldDisplay = oldData.power ? oldData.power.toLocaleString() : '-';
+                                newDisplay = newData.power ? newData.power.toLocaleString() : '-';
+                            } else {
+                                oldDisplay = Number(l.oldValue).toLocaleString();
+                                newDisplay = Number(l.newValue).toLocaleString();
+                            }
+                        } catch(e) {
+                            oldDisplay = Number(l.oldValue).toLocaleString();
+                            newDisplay = Number(l.newValue).toLocaleString();
+                        }
                         contentDisplay = `전투력: ${oldDisplay} → ${newDisplay}`;
+                        break;
+                    
+                    case 'guild_change':
+                        try {
+                            const oldData = JSON.parse(l.oldValue);
+                            const newData = JSON.parse(l.newValue);
+                            oldDisplay = oldData.guild || '-';
+                            newDisplay = newData.guild || '-';
+                            contentDisplay = `길드: ${oldDisplay} → ${newDisplay}`;
+                        } catch(e) {
+                            oldDisplay = '-';
+                            newDisplay = '-';
+                            contentDisplay = l.changes || '길드 변경';
+                        }
+                        break;
+                    
+                    case 'spec_edit':
+                        try {
+                            const oldData = JSON.parse(l.oldValue);
+                            const newData = JSON.parse(l.newValue);
+                            oldDisplay = '-';
+                            newDisplay = '-';
+                            contentDisplay = l.changes || '스펙 수정';
+                        } catch(e) {
+                            oldDisplay = '-';
+                            newDisplay = '-';
+                            contentDisplay = l.changes || '스펙 수정';
+                        }
                         break;
                     
                     case 'nickname_change':
@@ -3809,11 +4468,11 @@
                             const newData = JSON.parse(l.newValue);
                             oldDisplay = oldData.power ? oldData.power.toLocaleString() : '-';
                             newDisplay = newData.power ? newData.power.toLocaleString() : '-';
-                            contentDisplay = l.changes || '전투력 수정됨';
+                            contentDisplay = l.changes || '정보 수정';
                         } catch(e) {
                             oldDisplay = '-';
                             newDisplay = '-';
-                            contentDisplay = '전투력 수정됨';
+                            contentDisplay = l.changes || '정보 수정';
                         }
                         break;
                     
@@ -3910,7 +4569,7 @@
                 const whoDisplay = formatWho(l.who);
                 const logIndex = logs.indexOf(l);
                 
-                html += `<tr data-type="${l.type}" data-worker="${workerType}" data-admin-id="${l.editedBy}" data-index="${logIndex}" style="cursor:pointer;" onclick="showLogDetail(${logIndex})">
+                html += `<tr data-type="${l.type}" data-worker="${workerType}" data-admin-id="${l.editedBy}" data-ip="${l.ip || ''}" data-index="${logIndex}" style="cursor:pointer;" onclick="showLogDetail(${logIndex})">
                     <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.time}">${l.time}</td>
                     <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.who}"><strong>${whoDisplay}</strong></td>
                     <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${logType}</td>
@@ -3927,6 +4586,7 @@
                        // 필터 함수
             function applyLogFilters() {
                 const searchText = document.getElementById('logSearchInput').value.toLowerCase();
+                const ipSearch = document.getElementById('logIpSearch').value.toLowerCase();
                 const typeFilter = document.getElementById('logTypeFilter').value;
                 const workerFilter = document.getElementById('logWorkerFilter').value;
                 const types = typeFilter ? typeFilter.split(',') : [];
@@ -3937,8 +4597,10 @@
                     const rowType = row.dataset.type;
                     const rowWorker = row.dataset.worker;
                     const rowAdminId = row.dataset.adminId;
+                    const rowIp = row.dataset.ip || '';
                     
                     const matchSearch = !searchText || who.includes(searchText);
+                    const matchIp = !ipSearch || rowIp.includes(ipSearch);
                     const matchType = types.length === 0 || types.includes(rowType);
                     
                     // 작업자 필터 로직
@@ -3955,7 +4617,7 @@
                         }
                     }
                     
-                    if (matchSearch && matchType && matchWorker) {
+                    if (matchSearch && matchIp && matchType && matchWorker) {
                         row.style.display = '';
                         visibleCount++;
                     } else {
@@ -3966,6 +4628,7 @@
             }
             
             document.getElementById('logSearchInput').addEventListener('input', applyLogFilters);
+            document.getElementById('logIpSearch').addEventListener('input', applyLogFilters);
             document.getElementById('logTypeFilter').addEventListener('change', applyLogFilters);
             document.getElementById('logWorkerFilter').addEventListener('change', applyLogFilters);
         });
@@ -3977,7 +4640,9 @@
             
             const typeMap = {
                 'power': '✏️ 전투력 수정',
-                'info_edit': '✏️ 전투력 수정',
+                'info_edit': '📝 정보 수정',
+                'guild_change': '🏠 길드 변경',
+                'spec_edit': '⭐ 스펙 수정',
                 'nickname_change': '🔄 닉네임 변경',
                 'user_approved': '✅ 사용자 승인',
                 'user_rejected': '❌ 사용자 거부',
@@ -4015,8 +4680,8 @@
             let newDisplay = log.newValue || '-';
             let contentDisplay = log.changes || '-';
             
-            // JSON 형태인 경우 파싱
-            if (log.type === 'info_edit' || log.type === 'power') {
+            // JSON 형태인 경우 파싱 (info_edit, guild_change, spec_edit, power)
+            if (log.type === 'info_edit' || log.type === 'power' || log.type === 'guild_change' || log.type === 'spec_edit') {
                 try {
                     if (log.oldValue && log.oldValue.startsWith('{')) {
                         const oldData = JSON.parse(log.oldValue);
@@ -4105,8 +4770,12 @@
                             <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${log.ip || '-'}</td>
                         </tr>
                         <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">위치</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${log.location || '-'}</td>
+                        </tr>
+                        <tr>
                             <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; white-space: nowrap;">기기</td>
-                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 11px; color: #6b7280; word-break: break-all;">${log.device || '-'}</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${log.device || '-'}</td>
                         </tr>
                     </table>
                 </div>
@@ -4129,55 +4798,176 @@
             snap.forEach(d => {
                 const u = d.data();
                 deletedUsers.push({
+                    id: d.id,
                     name: u.originalName || u.name,
                     guild: u.guild || '-',
                     power: u.power || 0,
                     deletedAt: formatDateTime(u.deletedAt),
+                    deletedAtRaw: u.deletedAt,
                     reason: u.deleteReason || '-',
-                    memo: u.deleteMemo || '-',
-                    deletedBy: u.deletedBy || 'admin'
+                    memo: u.deleteMemo || '',
+                    deletedBy: u.deletedBy || 'admin',
+                    shape_legend: u.shape_legend || 0,
+                    shape_myth: u.shape_myth || 0,
+                    mount_legend: u.mount_legend || 0,
+                    mount_myth: u.mount_myth || 0
                 });
             });
             
+            // 전역 저장 (상세보기용)
+            window.deletedUsersList = deletedUsers;
+            
+            // 사유 목록 추출
+            const reasonSet = new Set(deletedUsers.map(u => u.reason));
+            const reasonOptions = Array.from(reasonSet).sort().map(r => `<option value="${r}">${r}</option>`).join('');
+            
+            // 길드 목록 추출
+            const guildSet = new Set(deletedUsers.map(u => u.guild));
+            const guildOptions = Array.from(guildSet).sort().map(g => `<option value="${g}">${g}</option>`).join('');
+            
+            // 삭제자 목록 추출
+            const deletedBySet = new Set(deletedUsers.map(u => u.deletedBy));
+            const deletedByOptions = Array.from(deletedBySet).sort().map(d => `<option value="${d}">${d}</option>`).join('');
+            
             let html = `
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <input type="text" id="deletedSearchInput" class="form-input" placeholder="닉네임 검색..." autocomplete="off" style="margin-bottom: 0;">
-                    <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">총 ${deletedUsers.length}명</p>
+                <div style="margin-bottom: 16px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                        <input type="text" id="deletedSearchInput" class="form-input" placeholder="닉네임 검색..." autocomplete="off" style="flex:1; min-width:120px;">
+                        <select id="deletedGuildFilter" class="form-input" style="flex:1; min-width:100px;">
+                            <option value="">전체 길드</option>
+                            ${guildOptions}
+                        </select>
+                        <select id="deletedReasonFilter" class="form-input" style="flex:1; min-width:100px;">
+                            <option value="">전체 사유</option>
+                            ${reasonOptions}
+                        </select>
+                        <select id="deletedByFilter" class="form-input" style="flex:1; min-width:100px;">
+                            <option value="">전체 삭제자</option>
+                            ${deletedByOptions}
+                        </select>
+                    </div>
+                    <p style="font-size: 12px; color: #6b7280;">총 <span id="deletedCount">${deletedUsers.length}</span>명</p>
                 </div>
-                <div class="table-scroll-container">
-                    <table class="common-table" id="deletedUsersTable">
+                <div class="table-scroll-container" style="max-height: 400px;">
+                    <table class="common-table" id="deletedUsersTable" style="table-layout: fixed;">
                         <thead>
                             <tr>
-                                <th>닉네임</th>
-                                <th>길드</th>
-                                <th>전투력</th>
-                                <th>삭제일시</th>
-                                <th>사유</th>
+                                <th style="width: 18%;">닉네임</th>
+                                <th style="width: 12%;">길드</th>
+                                <th style="width: 15%;">전투력</th>
+                                <th style="width: 20%;">삭제일시</th>
+                                <th style="width: 15%;">사유</th>
+                                <th style="width: 20%;">삭제자</th>
                             </tr>
                         </thead>
                         <tbody>`;
             
-            deletedUsers.forEach(u => {
-                html += `<tr>
-                    <td><strong>${u.name}</strong></td>
+            deletedUsers.forEach((u, idx) => {
+                const deletedByDisplay = u.deletedBy === 'admin' || u.deletedBy === '아이디미기록' ? '관리자' : u.deletedBy;
+                html += `<tr data-index="${idx}" data-guild="${u.guild}" data-reason="${u.reason}" data-deletedby="${u.deletedBy}" style="cursor:pointer;" onclick="showDeletedUserDetail(${idx})">
+                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${u.name}"><strong>${u.name}</strong></td>
                     <td>${u.guild}</td>
                     <td style="color:#3b82f6; font-weight:600;">${u.power.toLocaleString()}</td>
                     <td style="font-size:12px;">${u.deletedAt}</td>
-                    <td><span style="padding:4px 8px; background:#fef2f2; color:#991b1b; border-radius:4px; font-size:12px;">${u.reason}</span></td>
+                    <td><span style="padding:2px 6px; background:#fef2f2; color:#991b1b; border-radius:4px; font-size:11px;">${u.reason}</span></td>
+                    <td style="font-size:12px;"><span style="color:#8b5cf6;">👑 ${deletedByDisplay}</span></td>
                 </tr>`;
             });
             
             html += '</tbody></table></div>';
             setModalBody(html);
             
-                       document.getElementById('deletedSearchInput').addEventListener('input', (e) => {
-                const searchText = e.target.value.toLowerCase();
+            // 필터 함수
+            function applyDeletedFilters() {
+                const searchText = document.getElementById('deletedSearchInput').value.toLowerCase();
+                const guildFilter = document.getElementById('deletedGuildFilter').value;
+                const reasonFilter = document.getElementById('deletedReasonFilter').value;
+                const deletedByFilter = document.getElementById('deletedByFilter').value;
+                
+                let visibleCount = 0;
                 document.querySelectorAll('#deletedUsersTable tbody tr').forEach(row => {
                     const name = row.cells[0].textContent.toLowerCase();
-                    row.style.display = name.includes(searchText) ? '' : 'none';
+                    const guild = row.dataset.guild;
+                    const reason = row.dataset.reason;
+                    const deletedBy = row.dataset.deletedby;
+                    
+                    const matchSearch = !searchText || name.includes(searchText);
+                    const matchGuild = !guildFilter || guild === guildFilter;
+                    const matchReason = !reasonFilter || reason === reasonFilter;
+                    const matchDeletedBy = !deletedByFilter || deletedBy === deletedByFilter;
+                    
+                    if (matchSearch && matchGuild && matchReason && matchDeletedBy) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
                 });
-            });
+                document.getElementById('deletedCount').textContent = visibleCount;
+            }
+            
+            document.getElementById('deletedSearchInput').addEventListener('input', applyDeletedFilters);
+            document.getElementById('deletedGuildFilter').addEventListener('change', applyDeletedFilters);
+            document.getElementById('deletedReasonFilter').addEventListener('change', applyDeletedFilters);
+            document.getElementById('deletedByFilter').addEventListener('change', applyDeletedFilters);
         });
+        
+        // 삭제된 사용자 상세보기
+        window.showDeletedUserDetail = function(index) {
+            const u = window.deletedUsersList[index];
+            if (!u) return;
+            
+            const html = `
+                <div style="padding: 10px 0; max-height: 60vh; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; width: 100px;">닉네임</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-weight: 600;">${u.name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">길드</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${u.guild}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">전투력</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #3b82f6; font-weight: 600;">${u.power.toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">스펙</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 13px;">
+                                형상 전설: ${u.shape_legend}개 / 신화: ${u.shape_myth}개<br>
+                                탈것 전설: ${u.mount_legend}개 / 신화: ${u.mount_myth}개
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">삭제일시</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">${u.deletedAt}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">사유</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb;">
+                                <span style="padding: 4px 10px; background: #fef2f2; color: #991b1b; border-radius: 4px;">${u.reason}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">삭제자</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; color: #8b5cf6; font-weight: 600;">
+                                👑 ${u.deletedBy === 'admin' || u.deletedBy === '아이디미기록' ? '관리자' : u.deletedBy}
+                            </td>
+                        </tr>
+                        ${u.memo ? `<tr>
+                            <td style="padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600;">메모</td>
+                            <td style="padding: 12px 16px; border: 1px solid #e5e7eb; font-size: 13px; color: #6b7280;">${u.memo}</td>
+                        </tr>` : ''}
+                    </table>
+                </div>
+            `;
+            
+            openSmallModal('📋 삭제된 사용자 상세', u.name, html);
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-primary" onclick="closeModal()">닫기</button>
+            `;
+        };
 
                document.getElementById('bulkDeleteBtn').addEventListener('click', async () => {
             if(!isAdmin) return;
@@ -4451,7 +5241,8 @@
                             editedBy: loggedInAdminId || '아이디미기록',
                             createdAt: Date.now(),
                             ip: await getIp(),
-                            device: navigator.userAgent
+                            location: (await getIpAndLocation()).location,
+                            device: parseUserAgent(navigator.userAgent)
                         });
                         
                         successCount++;
@@ -4508,7 +5299,7 @@
         });
 
                async function authenticateAndRun(name, callback) {
-            if (isSystemLocked() && !isAdmin) { 
+            if (isSystemLocked() && !isSuperAdmin) { 
                 const lockMsg = `관리자가 수정 잠금을 하여 수정이 불가능합니다.\n\n기간: ${formatKSTDateTime(lockStartTime)} ~ ${formatKSTDateTime(lockEndTime)} (KST)`;
                 showAlert(lockMsg, 'error'); 
                 return; 
@@ -4644,17 +5435,35 @@
                // 모달 스택 (중첩 모달 지원)
         let modalStack = [];
         
+        // 버튼 상태 리셋 함수 (정규표현식으로 처리)
+        function resetButtonStates(htmlContent) {
+            if (!htmlContent) return htmlContent;
+            
+            // disabled 속성 제거
+            let result = htmlContent.replace(/\s+disabled(=["'][^"']*["'])?/gi, '');
+            
+            // "처리 중...", "저장 중...", "진행 중..." 텍스트 복원
+            result = result.replace(/>처리 중\.\.\.</g, '>길드 이동 실행<');
+            result = result.replace(/>저장 중\.\.\.</g, '>저장<');
+            result = result.replace(/>진행 중\.\.\.</g, '>확인<');
+            
+            return result;
+        }
+        
         function openLargeModal(t, s) {
             // 현재 모달 상태 저장
-            const currentContent = document.getElementById('modalBody').innerHTML;
+            let currentContent = document.getElementById('modalBody').innerHTML;
             const currentTitle = document.getElementById('modalTitle').textContent;
             const currentSubtitle = document.getElementById('modalSubtitle').textContent;
-            const currentFooter = document.getElementById('modalFooter').innerHTML;
+            let currentFooter = document.getElementById('modalFooter').innerHTML;
             const currentFooterDisplay = document.getElementById('modalFooter').style.display;
             const isLarge = document.getElementById('modalContent').classList.contains('modal-lg');
             const isActive = document.getElementById('modalOverlay').classList.contains('active');
             
             if (isActive) {
+                // 저장 전 버튼 상태 리셋
+                currentContent = resetButtonStates(currentContent);
+                currentFooter = resetButtonStates(currentFooter);
                 modalStack.push({ title: currentTitle, subtitle: currentSubtitle, body: currentContent, footer: currentFooter, footerDisplay: currentFooterDisplay, isLarge });
             }
             
@@ -4669,15 +5478,18 @@
 
         function openSmallModal(t, s, b) {
             // 현재 모달 상태 저장
-            const currentContent = document.getElementById('modalBody').innerHTML;
+            let currentContent = document.getElementById('modalBody').innerHTML;
             const currentTitle = document.getElementById('modalTitle').textContent;
             const currentSubtitle = document.getElementById('modalSubtitle').textContent;
-            const currentFooter = document.getElementById('modalFooter').innerHTML;
+            let currentFooter = document.getElementById('modalFooter').innerHTML;
             const currentFooterDisplay = document.getElementById('modalFooter').style.display;
             const isLarge = document.getElementById('modalContent').classList.contains('modal-lg');
             const isActive = document.getElementById('modalOverlay').classList.contains('active');
             
             if (isActive) {
+                // 저장 전 버튼 상태 리셋
+                currentContent = resetButtonStates(currentContent);
+                currentFooter = resetButtonStates(currentFooter);
                 modalStack.push({ title: currentTitle, subtitle: currentSubtitle, body: currentContent, footer: currentFooter, footerDisplay: currentFooterDisplay, isLarge });
             }
             
@@ -4713,6 +5525,13 @@
                 } else {
                     document.getElementById('modalContent').classList.remove('modal-lg');
                 }
+                
+                // 복원 후 버튼 활성화 (안전장치)
+                setTimeout(() => {
+                    document.querySelectorAll('#modalBody button, #modalFooter button').forEach(btn => {
+                        btn.disabled = false;
+                    });
+                }, 10);
             } else {
                 // 모달 닫기
                 document.getElementById('modalOverlay').classList.remove('active');
@@ -4727,6 +5546,11 @@
             document.getElementById('modalOverlay').classList.remove('active');
             document.getElementById('modalContent').style.maxWidth = ''; // 인라인 스타일 리셋
             document.body.style.overflow = '';
+        };
+        
+        // 모달 스택 초기화 (작업 완료 후 호출)
+        window.clearModalStack = () => {
+            modalStack = [];
         };
         
        
@@ -4938,6 +5762,38 @@
                 compareOptions += `<option value="${b.id}">${name}</option>`;
             });
             
+            // 최종관리자가 아니면 백업 생성 UI 숨김
+            const backupCreateSection = isSuperAdmin ? `
+                <div style="background:#f9fafb; border-radius:12px; padding:16px; margin-bottom:20px;">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label class="form-label" style="font-size:13px;">📝 백업 이름 (선택사항)</label>
+                        <input type="text" id="backupNameInput" class="form-input" placeholder="예: 1월 2주차, 길드전 전날 등" maxlength="50">
+                    </div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label class="form-label" style="font-size:13px;">👤 생성자 이름</label>
+                        <input type="text" id="backupCreatorInput" class="form-input" placeholder="예: 에비츄" maxlength="20" value="${isSuperAdmin ? '에비츄' : (loggedInAdminId || '')}">
+                        <p style="font-size:11px; color:#6b7280; margin-top:4px;">백업 기록과 엑셀에 표시될 이름입니다</p>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:13px;">📊 비교 기준 백업</label>
+                        <select id="compareBackupSelect" class="form-input">${compareOptions}</select>
+                        <p style="font-size:11px; color:#6b7280; margin-top:4px;">전투력 증감을 어느 백업과 비교할지 선택합니다</p>
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="runManualBackup()" style="background:#0891b2;">📦 지금 백업하기</button>
+                    <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">📋 백업 기록 보기</button>
+                </div>
+            ` : `
+                <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
+                    <p style="color:#92400e; font-size:12px; margin:0;">⚠️ 백업 생성은 최종관리자만 가능합니다</p>
+                </div>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">📋 백업 기록 보기</button>
+                </div>
+            `;
+            
             const html = `
                 <div style="margin-bottom:24px;">
                     <div style="background:#f0f9ff; border:1px solid #0891b2; border-radius:12px; padding:16px; margin-bottom:20px;">
@@ -4965,22 +5821,7 @@
                         </div>
                     </div>
                     
-                    <div style="background:#f9fafb; border-radius:12px; padding:16px; margin-bottom:20px;">
-                        <div class="form-group" style="margin-bottom:12px;">
-                            <label class="form-label" style="font-size:13px;">📝 백업 이름 (선택사항)</label>
-                            <input type="text" id="backupNameInput" class="form-input" placeholder="예: 1월 2주차, 길드전 전날 등" maxlength="50">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label" style="font-size:13px;">📊 비교 기준 백업</label>
-                            <select id="compareBackupSelect" class="form-input">${compareOptions}</select>
-                            <p style="font-size:11px; color:#6b7280; margin-top:4px;">전투력 증감을 어느 백업과 비교할지 선택합니다</p>
-                        </div>
-                    </div>
-                    
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <button class="btn btn-primary" onclick="runManualBackup()" style="background:#0891b2;">📦 지금 백업하기</button>
-                        <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">📋 백업 기록 보기</button>
-                    </div>
+                    ${backupCreateSection}
                 </div>
             `;
             
@@ -4989,7 +5830,13 @@
         });
         
         window.runManualBackup = async function() {
+            if (!isSuperAdmin) {
+                showAlert('백업 생성은 최종관리자만 가능합니다', 'error');
+                return;
+            }
+            
             const backupName = document.getElementById('backupNameInput')?.value.trim() || '';
+            const backupCreator = document.getElementById('backupCreatorInput')?.value.trim() || loggedInAdminId || 'admin';
             const compareBackupId = document.getElementById('compareBackupSelect')?.value || '';
             
             const confirmMsg = backupName 
@@ -5003,12 +5850,14 @@
             const now = Date.now();
             
             let lastBackupData = {};
+            let compareBackupName = '최근 백업';
             try {
                 // 비교할 백업 선택
                 if (compareBackupId) {
                     const compareDoc = await getDoc(doc(db, "backups", compareBackupId));
                     if (compareDoc.exists()) {
                         const compareBackup = compareDoc.data();
+                        compareBackupName = compareBackup.backupName || formatDateTime(compareBackup.createdAt);
                         if (compareBackup.users) {
                             compareBackup.users.forEach(u => {
                                 lastBackupData[u.name] = u.power;
@@ -5020,6 +5869,7 @@
                     const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
                     if (!backupsSnap.empty) {
                         const lastBackup = backupsSnap.docs[0].data();
+                        compareBackupName = lastBackup.backupName || formatDateTime(lastBackup.createdAt);
                         if (lastBackup.users) {
                             lastBackup.users.forEach(u => {
                                 lastBackupData[u.name] = u.power;
@@ -5063,10 +5913,11 @@
                     totalPower: backupUsers.reduce((sum, u) => sum + u.power, 0),
                     totalDiff: backupUsers.reduce((sum, u) => sum + u.diff, 0),
                     createdAt: now,
-                    createdBy: loggedInAdminId || 'admin',
+                    createdBy: backupCreator,
                     type: 'manual',
                     backupName: backupName || null,
-                    compareBackupId: compareBackupId || null
+                    compareBackupId: compareBackupId || null,
+                    compareBackupName: compareBackupName
                 });
                 
                 showAlert('백업이 완료되었습니다!', 'success');
@@ -5205,6 +6056,10 @@
                 const users = backup.users || [];
                 const guildStats = backup.guildStats || {};
                 
+                // 전역 저장 (필터용)
+                window.backupDetailUsers = users;
+                window.backupDetailGuilds = [...new Set(users.map(u => u.guild))].sort();
+                
                 let guildStatsHtml = '';
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
@@ -5220,23 +6075,12 @@
                     </tr>`;
                 });
                 
-                let usersHtml = '';
-                users.forEach((u, idx) => {
-                    const diffSign = u.diff >= 0 ? '+' : '';
-                    const diffColor = u.diff >= 0 ? '#10b981' : '#ef4444';
-                    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
-                    usersHtml += `<tr>
-                        <td style="text-align:center;">${medal}</td>
-                        <td>${u.name}</td>
-                        <td style="text-align:center;">${u.guild}</td>
-                        <td style="text-align:right; font-weight:600;">${u.power.toLocaleString()}</td>
-                        <td style="text-align:right; color:${diffColor};">${diffSign}${u.diff.toLocaleString()}</td>
-                    </tr>`;
-                });
-                
                 const totalDiff = backup.totalDiff || 0;
                 const diffSign = totalDiff >= 0 ? '+' : '';
                 const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
+                
+                // 길드 옵션 생성
+                const guildOptions = window.backupDetailGuilds.map(g => `<option value="${g}">${g}</option>`).join('');
                 
                 const html = `
                     <div style="margin-bottom:20px;">
@@ -5266,26 +6110,294 @@
                         </table>
                     </div>
                     
-                    <h4 style="margin:0 0 12px; color:#374151;">👥 전체 명단 (${users.length}명)</h4>
-                    <div style="max-height:400px; overflow-y:auto; overflow-x:auto;">
-                        <table class="common-table">
+                    <h4 style="margin:0 0 12px; color:#374151;">👥 전체 명단 (<span id="backupUserCount">${users.length}</span>명)</h4>
+                    
+                    <!-- 필터 UI -->
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; padding:12px; background:#f9fafb; border-radius:8px;">
+                        <input type="text" id="backupSearchInput" class="form-input" placeholder="닉네임 검색..." style="flex:1; min-width:120px; padding:8px 12px; font-size:13px;">
+                        <select id="backupGuildFilter" class="form-input" style="min-width:100px; padding:8px 12px; font-size:13px;">
+                            <option value="">전체 길드</option>
+                            ${guildOptions}
+                        </select>
+                        <select id="backupDiffFilter" class="form-input" style="min-width:100px; padding:8px 12px; font-size:13px;">
+                            <option value="">전체 증감</option>
+                            <option value="plus">📈 증가 (+)</option>
+                            <option value="zero">➡️ 변동없음 (0)</option>
+                            <option value="minus">📉 감소 (-)</option>
+                        </select>
+                        <select id="backupPowerFilter" class="form-input" style="min-width:120px; padding:8px 12px; font-size:13px;">
+                            <option value="">전체 전투력</option>
+                            <option value="1500000">150만 이상</option>
+                            <option value="1400000">140만 이상</option>
+                            <option value="1300000">130만 이상</option>
+                            <option value="1200000">120만 이상</option>
+                            <option value="1100000">110만 이상</option>
+                            <option value="1000000">100만 이상</option>
+                            <option value="900000">90만 이상</option>
+                            <option value="800000">80만 이상</option>
+                            <option value="700000">70만 이상</option>
+                            <option value="600000">60만 이상</option>
+                            <option value="500000">50만 이상</option>
+                            <option value="custom">⚙️ 직접 설정...</option>
+                        </select>
+                        <select id="backupSortFilter" class="form-input" style="min-width:120px; padding:8px 12px; font-size:13px;">
+                            <option value="power_desc">전투력 높은순</option>
+                            <option value="power_asc">전투력 낮은순</option>
+                            <option value="diff_desc">증감 높은순</option>
+                            <option value="diff_asc">증감 낮은순</option>
+                            <option value="name_asc">이름순 (ㄱ-ㅎ)</option>
+                            <option value="name_desc">이름순 (ㅎ-ㄱ)</option>
+                            <option value="guild_asc">길드순</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 커스텀 필터 패널 (숨김) -->
+                    <div id="customPowerFilterPanel" style="display:none; padding:12px; background:#fef3c7; border-radius:8px; margin-bottom:12px;">
+                        <p style="font-size:13px; color:#92400e; margin:0 0 8px; font-weight:600;">⚙️ 전투력 범위 직접 설정</p>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <input type="number" id="customPowerMin" class="form-input" placeholder="최소 (예: 1000000)" style="width:140px; padding:8px; font-size:13px;">
+                            <span style="color:#6b7280;">~</span>
+                            <input type="number" id="customPowerMax" class="form-input" placeholder="최대 (비워두면 무제한)" style="width:140px; padding:8px; font-size:13px;">
+                            <button onclick="applyCustomPowerFilter()" class="btn btn-primary" style="padding:8px 16px; font-size:13px;">적용</button>
+                            <button onclick="resetPowerFilter()" class="btn btn-cancel" style="padding:8px 12px; font-size:13px;">초기화</button>
+                        </div>
+                    </div>
+                    
+                    <div id="backupUserListContainer" style="max-height:400px; overflow-y:auto; overflow-x:auto;">
+                        <table class="common-table" id="backupUserTable">
                             <thead><tr><th>순위</th><th>닉네임</th><th>길드</th><th>전투력</th><th>증감</th></tr></thead>
-                            <tbody>${usersHtml}</tbody>
+                            <tbody id="backupUserTableBody"></tbody>
                         </table>
                     </div>
                 `;
                 
                 setModalBody(html);
+                
+                // 초기 렌더링
+                renderBackupUserList();
+                
+                // 필터 이벤트 리스너
+                document.getElementById('backupSearchInput').addEventListener('input', renderBackupUserList);
+                document.getElementById('backupGuildFilter').addEventListener('change', renderBackupUserList);
+                document.getElementById('backupDiffFilter').addEventListener('change', renderBackupUserList);
+                document.getElementById('backupPowerFilter').addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        document.getElementById('customPowerFilterPanel').style.display = 'block';
+                    } else {
+                        document.getElementById('customPowerFilterPanel').style.display = 'none';
+                        window.customPowerMin = null;
+                        window.customPowerMax = null;
+                        renderBackupUserList();
+                    }
+                });
+                document.getElementById('backupSortFilter').addEventListener('change', renderBackupUserList);
+                
             } catch(e) {
                 console.error(e);
                 setModalBody('<p style="text-align:center; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다</p>');
             }
             
             document.getElementById('modalFooter').innerHTML = `
+                <button class="btn" onclick="openShareBackupModal('${backupId}')" style="background:#8b5cf6; color:white;">🔗 공유 링크 생성</button>
                 <button class="btn" onclick="downloadBackupExcel('${backupId}')" style="background:#10b981; color:white;">📥 엑셀 다운로드</button>
                 <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">← 백업 기록</button>
                 <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
             `;
+        };
+        
+        // 커스텀 전투력 필터 적용
+        window.applyCustomPowerFilter = function() {
+            const min = document.getElementById('customPowerMin').value;
+            const max = document.getElementById('customPowerMax').value;
+            window.customPowerMin = min ? parseInt(min) : null;
+            window.customPowerMax = max ? parseInt(max) : null;
+            renderBackupUserList();
+        };
+        
+        // 전투력 필터 초기화
+        window.resetPowerFilter = function() {
+            document.getElementById('backupPowerFilter').value = '';
+            document.getElementById('customPowerFilterPanel').style.display = 'none';
+            document.getElementById('customPowerMin').value = '';
+            document.getElementById('customPowerMax').value = '';
+            window.customPowerMin = null;
+            window.customPowerMax = null;
+            renderBackupUserList();
+        };
+        
+        // 백업 상세 유저 목록 렌더링 함수
+        function renderBackupUserList() {
+            const users = window.backupDetailUsers || [];
+            const tbody = document.getElementById('backupUserTableBody');
+            if (!tbody) return;
+            
+            const search = document.getElementById('backupSearchInput')?.value.toLowerCase() || '';
+            const guildFilter = document.getElementById('backupGuildFilter')?.value || '';
+            const diffFilter = document.getElementById('backupDiffFilter')?.value || '';
+            const powerFilter = document.getElementById('backupPowerFilter')?.value || '';
+            const sortFilter = document.getElementById('backupSortFilter')?.value || 'power_desc';
+            
+            // 필터링
+            let filtered = users.filter(u => {
+                if (search && !u.name.toLowerCase().includes(search)) return false;
+                if (guildFilter && u.guild !== guildFilter) return false;
+                if (diffFilter === 'plus' && u.diff <= 0) return false;
+                if (diffFilter === 'zero' && u.diff !== 0) return false;
+                if (diffFilter === 'minus' && u.diff >= 0) return false;
+                
+                // 전투력 필터 (일반 또는 커스텀)
+                if (powerFilter === 'custom') {
+                    if (window.customPowerMin && u.power < window.customPowerMin) return false;
+                    if (window.customPowerMax && u.power > window.customPowerMax) return false;
+                } else if (powerFilter && u.power < parseInt(powerFilter)) {
+                    return false;
+                }
+                return true;
+            });
+            
+            // 정렬
+            filtered.sort((a, b) => {
+                switch(sortFilter) {
+                    case 'power_desc': return b.power - a.power;
+                    case 'power_asc': return a.power - b.power;
+                    case 'diff_desc': return b.diff - a.diff;
+                    case 'diff_asc': return a.diff - b.diff;
+                    case 'name_asc': return a.name.localeCompare(b.name, 'ko');
+                    case 'name_desc': return b.name.localeCompare(a.name, 'ko');
+                    case 'guild_asc': return a.guild.localeCompare(b.guild, 'ko') || b.power - a.power;
+                    default: return b.power - a.power;
+                }
+            });
+            
+            // 렌더링
+            tbody.innerHTML = '';
+            filtered.forEach((u, idx) => {
+                const diffSign = u.diff >= 0 ? '+' : '';
+                const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
+                const rank = sortFilter === 'power_desc' ? (idx + 1) : '-';
+                const medal = sortFilter === 'power_desc' && idx === 0 ? '🥇' : 
+                              sortFilter === 'power_desc' && idx === 1 ? '🥈' : 
+                              sortFilter === 'power_desc' && idx === 2 ? '🥉' : rank;
+                
+                tbody.innerHTML += `<tr>
+                    <td style="text-align:center;">${medal}</td>
+                    <td>${u.name}</td>
+                    <td style="text-align:center;">${u.guild}</td>
+                    <td style="text-align:right; font-weight:600;">${u.power.toLocaleString()}</td>
+                    <td style="text-align:right; color:${diffColor}; font-weight:500;">${diffSign}${u.diff.toLocaleString()}</td>
+                </tr>`;
+            });
+            
+            // 카운트 업데이트
+            const countEl = document.getElementById('backupUserCount');
+            if (countEl) countEl.textContent = filtered.length;
+        }
+        
+        // 공유 링크 생성 모달
+        window.openShareBackupModal = async function(backupId) {
+            try {
+                const backupDoc = await getDoc(doc(db, "backups", backupId));
+                if (!backupDoc.exists()) {
+                    showAlert('백업 데이터를 찾을 수 없습니다', 'error');
+                    return;
+                }
+                
+                const backup = backupDoc.data();
+                const backupTime = formatDateTime(backup.createdAt);
+                const defaultTitle = backup.backupName || `오스카2 전투력 현황 (${backupTime})`;
+                
+                const html = `
+                    <div style="padding: 10px 0;">
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">📌 페이지 제목</label>
+                            <input type="text" id="sharePageTitle" class="form-input" value="${defaultTitle}" placeholder="예: 오스카2 1월 2주차 전투력">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">🏷️ 헤더 이름</label>
+                            <input type="text" id="shareHeaderName" class="form-input" value="🏆 오스카2 전투력 현황판" placeholder="페이지 상단에 표시될 이름">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">📝 추가 설명 (선택)</label>
+                            <textarea id="shareDescription" class="form-input" rows="2" placeholder="공유 페이지에 표시할 추가 설명"></textarea>
+                        </div>
+                        <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                            <p style="font-size: 12px; color: #0369a1; margin: 0;">
+                                💡 생성된 링크는 누구나 볼 수 있으며, 링크만 있으면 전투력 현황을 확인할 수 있습니다.
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                openSmallModal('🔗 공유 링크 생성', backupTime, html);
+                document.getElementById('modalFooter').innerHTML = `
+                    <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+                    <button class="btn btn-primary" onclick="generateShareLink('${backupId}')">🔗 링크 생성</button>
+                `;
+            } catch(e) {
+                console.error(e);
+                showAlert('오류가 발생했습니다', 'error');
+            }
+        };
+        
+        // 공유 링크 생성
+        window.generateShareLink = async function(backupId) {
+            const pageTitle = document.getElementById('sharePageTitle').value.trim() || '오스카2 전투력 현황';
+            const headerName = document.getElementById('shareHeaderName').value.trim() || '🏆 오스카2 전투력 현황판';
+            const description = document.getElementById('shareDescription').value.trim() || '';
+            
+            try {
+                const backupDoc = await getDoc(doc(db, "backups", backupId));
+                if (!backupDoc.exists()) {
+                    showAlert('백업 데이터를 찾을 수 없습니다', 'error');
+                    return;
+                }
+                
+                const backup = backupDoc.data();
+                
+                // 공유 데이터 저장
+                const shareId = `share_${Date.now()}`;
+                await setDoc(doc(db, "sharedBackups", shareId), {
+                    backupId: backupId,
+                    pageTitle: pageTitle,
+                    headerName: headerName,
+                    description: description,
+                    createdAt: Date.now(),
+                    createdBy: loggedInAdminId || 'admin',
+                    backupData: backup
+                });
+                
+                // 공유 URL 생성 (현재 페이지 기준)
+                const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+                
+                const html = `
+                    <div style="padding: 10px 0; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <p style="font-size: 16px; font-weight: 600; color: #10b981; margin-bottom: 20px;">공유 링크가 생성되었습니다!</p>
+                        <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 16px; word-break: break-all;">
+                            <input type="text" id="shareUrlInput" value="${shareUrl}" readonly 
+                                   style="width: 100%; border: none; background: transparent; text-align: center; font-size: 13px; color: #374151;">
+                        </div>
+                        <button onclick="copyShareUrl()" class="btn btn-primary" style="width: 100%;">📋 링크 복사</button>
+                    </div>
+                `;
+                
+                openSmallModal('🔗 공유 링크', '', html);
+                document.getElementById('modalFooter').innerHTML = `
+                    <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
+                `;
+                
+            } catch(e) {
+                console.error(e);
+                showAlert('링크 생성 중 오류가 발생했습니다', 'error');
+            }
+        };
+        
+        // 공유 URL 복사
+        window.copyShareUrl = function() {
+            const input = document.getElementById('shareUrlInput');
+            input.select();
+            document.execCommand('copy');
+            showAlert('링크가 복사되었습니다!', 'success');
         };
         
         window.downloadBackupExcel = async function(backupId) {
@@ -5298,24 +6410,88 @@
                 
                 const backup = backupDoc.data();
                 const users = backup.users || [];
-                const time = formatDateTime(backup.createdAt).replace(/[:\s]/g, '-');
+                const backupTime = formatDateTime(backup.createdAt);
+                const fileName = `오스카2_전투력_${backupTime.replace(/[:\s]/g, '_')}.xlsx`;
                 
-                const ws = XLSX.utils.json_to_sheet(users.map((u, idx) => ({
-                    '순위': idx + 1,
-                    '닉네임': u.name,
-                    '길드': u.guild,
-                    '전투력': u.power,
-                    '이전 전투력': u.prevPower,
-                    '주간 증감': u.diff,
-                    '형상 전설': u.shape_legend || 0,
-                    '형상 신화': u.shape_myth || 0,
-                    '탈것 전설': u.mount_legend || 0,
-                    '탈것 신화': u.mount_myth || 0
-                })));
+                // KST 현재 시간
+                const now = new Date();
+                const kstNow = now.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+                
+                // 메타 정보 시트
+                const metaData = [
+                    ['🏆 오스카2 전투력 현황판 - 백업 데이터'],
+                    [''],
+                    ['📋 백업 정보'],
+                    ['백업 이름', backup.backupName || '(이름 없음)'],
+                    ['백업 일시', backupTime + ' (KST)'],
+                    ['생성자', backup.createdBy || 'admin'],
+                    ['비교 기준', backup.compareBackupName || '최근 백업'],
+                    [''],
+                    ['📊 요약'],
+                    ['총 인원', backup.totalUsers + '명'],
+                    ['총 전투력', backup.totalPower.toLocaleString()],
+                    ['주간 증감', (backup.totalDiff >= 0 ? '+' : '') + backup.totalDiff.toLocaleString()],
+                    [''],
+                    ['📥 다운로드 정보'],
+                    ['다운로드 일시', kstNow],
+                    ['']
+                ];
+                
+                const metaWs = XLSX.utils.aoa_to_sheet(metaData);
+                
+                // 길드별 통계 시트
+                const guildStatsData = [['길드', '인원', '평균 전투력', '총 전투력', '주간 증감']];
+                Object.keys(backup.guildStats || {}).sort().forEach(guild => {
+                    const stats = backup.guildStats[guild];
+                    const activeCount = stats.activeCount || stats.count;
+                    const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount) : 0;
+                    guildStatsData.push([
+                        guild,
+                        stats.count,
+                        avgPower,
+                        stats.totalPower,
+                        stats.totalDiff
+                    ]);
+                });
+                const guildWs = XLSX.utils.aoa_to_sheet(guildStatsData);
+                
+                // 전체 명단 시트
+                const userData = [['순위', '닉네임', '길드', '전투력', '이전 전투력', '주간 증감', '형상 전설', '형상 신화', '탈것 전설', '탈것 신화']];
+                users.forEach((u, idx) => {
+                    userData.push([
+                        idx + 1,
+                        u.name,
+                        u.guild,
+                        u.power,
+                        u.prevPower,
+                        u.diff,
+                        u.shape_legend || 0,
+                        u.shape_myth || 0,
+                        u.mount_legend || 0,
+                        u.mount_myth || 0
+                    ]);
+                });
+                const userWs = XLSX.utils.aoa_to_sheet(userData);
+                
+                // 열 너비 설정
+                userWs['!cols'] = [
+                    { wch: 6 },  // 순위
+                    { wch: 15 }, // 닉네임
+                    { wch: 10 }, // 길드
+                    { wch: 12 }, // 전투력
+                    { wch: 12 }, // 이전 전투력
+                    { wch: 12 }, // 주간 증감
+                    { wch: 10 }, // 형상 전설
+                    { wch: 10 }, // 형상 신화
+                    { wch: 10 }, // 탈것 전설
+                    { wch: 10 }  // 탈것 신화
+                ];
                 
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, '백업데이터');
-                XLSX.writeFile(wb, `길드전투력_백업_${time}.xlsx`);
+                XLSX.utils.book_append_sheet(wb, metaWs, '백업 정보');
+                XLSX.utils.book_append_sheet(wb, guildWs, '길드별 통계');
+                XLSX.utils.book_append_sheet(wb, userWs, '전체 명단');
+                XLSX.writeFile(wb, fileName);
                 
                 showAlert('엑셀 다운로드 완료!', 'success');
             } catch(e) {
@@ -5427,23 +6603,32 @@
 
             openLargeModal('관리자 관리', '일반 관리자 계정을 추가하거나 삭제합니다');
             
-           
+            // 관리자 목록 로드
             const adminSnapshot = await getDocs(collection(db, "admins"));
+            
+            // 전역 저장
+            window.adminsList = [];
+            adminSnapshot.forEach(docSnap => {
+                window.adminsList.push({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                });
+            });
             
             let adminListHtml = '';
             if (adminSnapshot.empty) {
                 adminListHtml = '<p style="text-align:center; color:#9ca3af; padding:20px;">등록된 일반 관리자가 없습니다</p>';
             } else {
-                adminListHtml = '<div class="table-scroll-container"><table class="common-table"><thead><tr><th>아이디</th><th>생성일</th><th>관리</th></tr></thead><tbody>';
+                adminListHtml = '<div class="table-scroll-container"><table class="common-table"><thead><tr><th style="width:30%;">아이디</th><th style="width:35%;">생성일</th><th style="width:35%;">관리</th></tr></thead><tbody>';
                 adminSnapshot.forEach(docSnap => {
                     const admin = docSnap.data();
                     const createdAt = admin.createdAt ? formatDateTime(admin.createdAt) : '-';
                     adminListHtml += `<tr>
-                        <td><strong>${docSnap.id}</strong></td>
-                        <td>${createdAt}</td>
-                        <td>
-                            <button class="btn btn-reset-pw" onclick="window.resetAdminPw('${docSnap.id}')" style="margin-right:4px;">비밀번호 초기화</button>
-                            <button class="btn btn-danger" onclick="window.deleteAdmin('${docSnap.id}')" style="padding:4px 8px; font-size:12px;">삭제</button>
+                        <td style="cursor:pointer;" onclick="showAdminDetail('${docSnap.id}')"><strong style="color:#3b82f6; text-decoration:underline;">${docSnap.id}</strong></td>
+                        <td style="font-size:12px;">${createdAt}</td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn btn-primary" onclick="window.resetAdminPw('${docSnap.id}')" style="padding:6px 10px; font-size:12px; margin-right:4px;">비밀번호 초기화</button>
+                            <button class="btn btn-danger" onclick="window.deleteAdmin('${docSnap.id}')" style="padding:6px 10px; font-size:12px;">삭제</button>
                         </td>
                     </tr>`;
                 });
@@ -5456,6 +6641,7 @@
                 </div>
                 
                 <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; color:#374151;">📋 일반 관리자 목록</h4>
+                <p style="font-size:11px; color:#6b7280; margin-bottom:8px;">아이디를 클릭하면 접속 로그를 확인할 수 있습니다</p>
                 ${adminListHtml}
                 
                 <div style="margin-top:20px; padding-top:20px; border-top:1px solid #e5e7eb;">
@@ -5471,6 +6657,84 @@
 
             document.getElementById('modalBody').innerHTML = html + `<div style="text-align:right;margin-top:20px"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>`;
         });
+        
+        // 관리자 상세 정보 + 접속 로그
+        window.showAdminDetail = async function(adminId) {
+            openSmallModal('👑 관리자 상세', adminId, '<p style="text-align:center; padding:20px;">로딩 중...</p>');
+            
+            // 관리자 정보 가져오기
+            const adminDoc = await getDoc(doc(db, "admins", adminId));
+            const adminData = adminDoc.exists() ? adminDoc.data() : {};
+            const createdAt = adminData.createdAt ? formatDateTime(adminData.createdAt) : '-';
+            
+            // 접속 로그 가져오기
+            const logsSnap = await getDocs(query(
+                collection(db, "adminLogs"),
+                orderBy("loginAt", "desc")
+            ));
+            
+            const logs = [];
+            logsSnap.forEach(d => {
+                const l = d.data();
+                if (l.adminId === adminId) {
+                    logs.push({
+                        time: formatDateTime(l.loginAt),
+                        ip: l.ip || '-',
+                        device: l.device || '-',
+                        location: l.location || '-',
+                        type: l.loginType || '수동'
+                    });
+                }
+            });
+            
+            let logsHtml = '';
+            if (logs.length === 0) {
+                logsHtml = '<p style="text-align:center; color:#9ca3af; padding:15px;">접속 기록이 없습니다</p>';
+            } else {
+                logsHtml = `
+                    <div style="max-height:200px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                            <thead>
+                                <tr style="background:#f9fafb;">
+                                    <th style="padding:8px; border-bottom:1px solid #e5e7eb; text-align:left;">시간</th>
+                                    <th style="padding:8px; border-bottom:1px solid #e5e7eb; text-align:left;">IP</th>
+                                    <th style="padding:8px; border-bottom:1px solid #e5e7eb; text-align:left;">기기</th>
+                                    <th style="padding:8px; border-bottom:1px solid #e5e7eb; text-align:left;">위치</th>
+                                    <th style="padding:8px; border-bottom:1px solid #e5e7eb; text-align:left;">유형</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                logs.slice(0, 50).forEach(l => {  // 최근 50건만
+                    const typeColor = l.type === '자동' ? '#10b981' : '#3b82f6';
+                    logsHtml += `<tr>
+                        <td style="padding:8px; border-bottom:1px solid #f3f4f6;">${l.time}</td>
+                        <td style="padding:8px; border-bottom:1px solid #f3f4f6;">${l.ip}</td>
+                        <td style="padding:8px; border-bottom:1px solid #f3f4f6;">${l.device}</td>
+                        <td style="padding:8px; border-bottom:1px solid #f3f4f6;">${l.location}</td>
+                        <td style="padding:8px; border-bottom:1px solid #f3f4f6;"><span style="color:${typeColor};">${l.type}</span></td>
+                    </tr>`;
+                });
+                logsHtml += '</tbody></table></div>';
+            }
+            
+            const html = `
+                <div style="padding: 10px 0;">
+                    <div style="margin-bottom:16px; padding:12px; background:#f9fafb; border-radius:8px;">
+                        <p style="margin:0 0 8px;"><strong>아이디:</strong> ${adminId}</p>
+                        <p style="margin:0; font-size:13px; color:#6b7280;"><strong>생성일:</strong> ${createdAt}</p>
+                    </div>
+                    
+                    <h4 style="font-size:13px; font-weight:600; margin-bottom:8px; color:#374151;">📊 접속 로그 (최근 50건)</h4>
+                    ${logsHtml}
+                </div>
+            `;
+            
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-primary" onclick="closeModal()">닫기</button>
+            `;
+        };
 
                window.addNewAdmin = async function() {
             const adminId = document.getElementById('newAdminId').value.trim();
@@ -5582,6 +6846,50 @@
                 }
             };
         };
+
+        // 버전 정보 모달
+        document.getElementById('versionInfoBtn').addEventListener('click', () => {
+            let changelogHtml = '';
+            APP_CHANGELOG.forEach(release => {
+                changelogHtml += `
+                    <div style="margin-bottom: 20px; padding: 16px; background: #f9fafb; border-radius: 12px; border-left: 4px solid #3b82f6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-weight: 700; font-size: 16px; color: #1f2937;">v${release.version}</span>
+                            <span style="font-size: 12px; color: #6b7280; background: #e5e7eb; padding: 4px 8px; border-radius: 4px;">${release.date}</span>
+                        </div>
+                        <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.8;">
+                            ${release.changes.map(c => `<li>${c}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+            
+            const html = `
+                <div style="text-align: center; padding: 20px 0; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">🏆</div>
+                    <h2 style="font-size: 24px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">오스카2 전투력 현황판</h2>
+                    <div style="display: flex; justify-content: center; gap: 16px; margin-top: 12px;">
+                        <span style="background: #dbeafe; color: #1d4ed8; padding: 6px 12px; border-radius: 6px; font-weight: 600;">v${APP_VERSION}</span>
+                        <span style="background: #f3f4f6; color: #6b7280; padding: 6px 12px; border-radius: 6px;">빌드: ${APP_BUILD_DATE}</span>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px;">📋 변경 내역</h3>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    ${changelogHtml}
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 12px; color: #9ca3af;">Made with ❤️ for 오스카2 연합</p>
+                </div>
+            `;
+            
+            openSmallModal('ℹ️ 버전 정보', '', html);
+            document.getElementById('modalContent').style.maxWidth = '480px';
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-primary" onclick="closeModal()">확인</button>
+            `;
+        });
 
         init();
     </script>
