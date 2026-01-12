@@ -3639,9 +3639,18 @@
                 });
             });
             
+            // 관리자 목록 추출 (self, admin, 아이디미기록, - 제외)
+            const adminSet = new Set();
+            logs.forEach(l => {
+                if (l.editedBy && l.editedBy !== 'self' && l.editedBy !== 'admin' && l.editedBy !== '아이디미기록' && l.editedBy !== '-') {
+                    adminSet.add(l.editedBy);
+                }
+            });
+            const adminList = Array.from(adminSet).sort();
+            
                        function formatLogType(type) {
                 const typeMap = {
-                    'power': '⚡ 전투력 변경',
+                    'power': '✏️ 정보 수정',
                     'info_edit': '✏️ 정보 수정',
                     'nickname_change': '🔄 닉네임 변경',
                     'user_approved': '✅ 사용자 승인',
@@ -3699,12 +3708,38 @@
                 }
             }
             
+            // 관리자 옵션 HTML 생성
+            let adminOptionsHtml = adminList.map(admin => 
+                `<option value="admin:${admin}">👑 ${admin}</option>`
+            ).join('');
+            
             let html = `
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="margin-bottom: 0;">
-                    <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">총 ${logs.length}개 로그</p>
+                <div style="margin-bottom: 16px;">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+                        <input type="text" id="logSearchInput" class="form-input" placeholder="대상 검색..." autocomplete="off" style="flex:1; min-width:150px;">
+                        <select id="logTypeFilter" class="form-input" style="flex:1; min-width:130px;">
+                            <option value="">전체 작업</option>
+                            <option value="info_edit,power">✏️ 정보 수정</option>
+                            <option value="nickname_change">🔄 닉네임 변경</option>
+                            <option value="user_approved">✅ 사용자 승인</option>
+                            <option value="user_rejected">❌ 사용자 거부</option>
+                            <option value="user_deleted">🗑️ 사용자 삭제</option>
+                            <option value="user_request">📝 등록 요청</option>
+                            <option value="bulk_update">📋 일괄 처리</option>
+                            <option value="guild_move">🚀 길드 이동</option>
+                            <option value="exclude_update">🚫 분배 제외</option>
+                            <option value="spreadsheet_sync,google_sheet_sync">📊 동기화</option>
+                        </select>
+                        <select id="logWorkerFilter" class="form-input" style="flex:1; min-width:130px;">
+                            <option value="">전체 작업자</option>
+                            <option value="self">👤 본인 변경</option>
+                            <option value="admin">👑 관리자 전체</option>
+                            ${adminOptionsHtml}
+                        </select>
+                    </div>
+                    <p style="font-size: 12px; color: #6b7280;">총 <span id="logCount">${logs.length}</span>개 로그</p>
                 </div>
-                <div style="max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; -webkit-overflow-scrolling: touch;">
+                <div style="max-height: 450px; overflow-y: auto; overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 8px; -webkit-overflow-scrolling: touch;">
                     <table class="common-table" id="logTable" style="width: 100%; table-layout: fixed;">
                         <thead>
                             <tr>
@@ -3827,37 +3862,80 @@
                 }
                 
                 let workerDisplay = '-';
+                let workerTitle = l.editedBy || '-';
+                let workerType = 'unknown';
+                
                 if (l.editedBy === 'self') {
                     workerDisplay = '<span style="color:#6b7280;">본인</span>';
+                    workerType = 'self';
                 } else if (l.editedBy === 'admin' || l.editedBy === '아이디미기록') {
                     workerDisplay = '<span style="color:#8b5cf6; font-weight:600;">👑 관리자</span>';
+                    workerType = 'admin';
                 } else if (l.editedBy && l.editedBy !== '-') {
                     workerDisplay = `<span style="color:#8b5cf6; font-weight:600;">👑 ${l.editedBy}</span>`;
+                    workerType = 'admin';
                 } else {
                     workerDisplay = '<span style="color:#9ca3af;">-</span>';
                 }
                 
-                html += `<tr>
-                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${l.time}</td>
-                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong>${l.who}</strong></td>
+                html += `<tr data-type="${l.type}" data-worker="${workerType}" data-admin-id="${l.editedBy}">
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.time}">${l.time}</td>
+                    <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${l.who}"><strong>${l.who}</strong></td>
                     <td style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${logType}</td>
-                    <td style="color:#ef4444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${oldDisplay}</td>
-                    <td style="color:#10b981; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${newDisplay}</td>
-                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contentDisplay}</td>
-                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${workerDisplay}</td>
+                    <td style="color:#ef4444; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${oldDisplay}">${oldDisplay}</td>
+                    <td style="color:#10b981; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${newDisplay}">${newDisplay}</td>
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${contentDisplay}">${contentDisplay}</td>
+                    <td style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;" title="${workerTitle}">${workerDisplay}</td>
                 </tr>`; 
             });
             
             html += '</tbody></table></div>';
             setModalBody(html);
             
-                       document.getElementById('logSearchInput').addEventListener('input', (e) => { 
-                const searchText = e.target.value.toLowerCase(); 
+                       // 필터 함수
+            function applyLogFilters() {
+                const searchText = document.getElementById('logSearchInput').value.toLowerCase();
+                const typeFilter = document.getElementById('logTypeFilter').value;
+                const workerFilter = document.getElementById('logWorkerFilter').value;
+                const types = typeFilter ? typeFilter.split(',') : [];
+                
+                let visibleCount = 0;
                 document.querySelectorAll('#logTable tbody tr').forEach(row => {
                     const who = row.cells[1].textContent.toLowerCase();
-                    row.style.display = who.includes(searchText) ? '' : 'none';
+                    const rowType = row.dataset.type;
+                    const rowWorker = row.dataset.worker;
+                    const rowAdminId = row.dataset.adminId;
+                    
+                    const matchSearch = !searchText || who.includes(searchText);
+                    const matchType = types.length === 0 || types.includes(rowType);
+                    
+                    // 작업자 필터 로직
+                    let matchWorker = true;
+                    if (workerFilter) {
+                        if (workerFilter === 'self') {
+                            matchWorker = rowWorker === 'self';
+                        } else if (workerFilter === 'admin') {
+                            matchWorker = rowWorker === 'admin';
+                        } else if (workerFilter.startsWith('admin:')) {
+                            // 특정 관리자 선택
+                            const selectedAdmin = workerFilter.replace('admin:', '');
+                            matchWorker = rowAdminId === selectedAdmin;
+                        }
+                    }
+                    
+                    if (matchSearch && matchType && matchWorker) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
                 });
-            });
+                document.getElementById('logCount').textContent = visibleCount;
+            }
+            
+            document.getElementById('logSearchInput').addEventListener('input', applyLogFilters);
+            document.getElementById('logTypeFilter').addEventListener('change', applyLogFilters);
+            document.getElementById('logWorkerFilter').addEventListener('change', applyLogFilters);
         });
 
                document.getElementById('deletedUsersBtn').addEventListener('click', async () => {
