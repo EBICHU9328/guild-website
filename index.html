@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <title> 오스카2 전투력 현황판 </title>
+    <title>🐴 길드 전투력 현황판 2027</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         
@@ -4114,7 +4114,6 @@
             
             // 모달 열기 (큰 사이즈)
             openSmallModal('📋 로그 상세', log.who.length > 20 ? log.who.substring(0, 20) + '...' : log.who, html);
-            document.getElementById('modalContent').style.maxWidth = '500px';
             document.getElementById('modalFooter').innerHTML = `
                 <button class="btn btn-primary" onclick="closeModal()">닫기</button>
             `;
@@ -4676,6 +4675,7 @@
                 document.getElementById('modalBody').innerHTML = prev.body;
                 document.getElementById('modalFooter').innerHTML = prev.footer;
                 document.getElementById('modalFooter').style.display = prev.footerDisplay;
+                document.getElementById('modalContent').style.maxWidth = ''; // 인라인 스타일 리셋
                 if (prev.isLarge) {
                     document.getElementById('modalContent').classList.add('modal-lg');
                 } else {
@@ -4684,6 +4684,7 @@
             } else {
                 // 모달 닫기
                 document.getElementById('modalOverlay').classList.remove('active');
+                document.getElementById('modalContent').style.maxWidth = ''; // 인라인 스타일 리셋
                 document.body.style.overflow = '';
             }
         };
@@ -4692,6 +4693,7 @@
         window.closeAllModals = () => {
             modalStack = [];
             document.getElementById('modalOverlay').classList.remove('active');
+            document.getElementById('modalContent').style.maxWidth = ''; // 인라인 스타일 리셋
             document.body.style.overflow = '';
         };
         
@@ -5553,4 +5555,3 @@
     </script>
 </body>
 </html>
-
