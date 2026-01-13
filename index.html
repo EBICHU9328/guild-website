@@ -7,12 +7,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.8.4">
-    <meta name="build-date" content="2026-01-13 11:00">
+    <meta name="version" content="1.8.6">
+    <meta name="build-date" content="2026-01-13 11:40">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
     <style>
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -828,7 +826,7 @@
                 <div class="admin-dropdown-menu">
                     <button class="admin-dropdown-item" id="spreadsheetBtn">📋 스프레드시트 연동</button>
                     <button class="admin-dropdown-item" id="syncExcludeBtn">🚫 분배 제외 관리</button>
-                    <button class="admin-dropdown-item" id="excelBtn">📄 PDF 다운로드</button>
+                    <button class="admin-dropdown-item" id="excelBtn">🔗 공유 링크 생성</button>
                     <button class="admin-dropdown-item" id="backupManageBtn">📦 주간 백업</button>
                 </div>
             </div>
@@ -1029,12 +1027,20 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.8.4';
-        const APP_BUILD_DATE = '2026-01-13 11:00';
+        const APP_VERSION = '1.8.6';
+        const APP_BUILD_DATE = '2026-01-13 11:40';
         const APP_CHANGELOG = [
+            { version: '1.8.6', date: '2026-01-13 11:40', changes: [
+                '🔗 현재 전투력 공유 링크 생성 기능',
+                '📱 카카오톡 등 메신저로 바로 공유 가능',
+                '🎨 공유 페이지 깔끔한 디자인'
+            ]},
+            { version: '1.8.5', date: '2026-01-13 11:20', changes: [
+                '🔗 백업 공유 링크 기능 개선',
+                '📋 백업 목록에 공유 버튼 추가'
+            ]},
             { version: '1.8.4', date: '2026-01-13 11:00', changes: [
                 '🔧 로그 닉네임 검색 버그 수정',
-                '📄 PDF 다운로드 기능 (정렬 옵션: 전투력/길드/이름순)',
                 '⚡ 로그 로딩 최적화 (최근 1000건)',
                 '📍 위치 한글 변환 강화'
             ]},
@@ -1111,8 +1117,7 @@
                 '✅ 길드 이동/닉변 후 "처리 중" 상태 해결'
             ]},
             { version: '1.4.2', date: '2026-01-12 08:40', changes: [
-                '🔗 백업 공유 링크 생성 기능',
-                '📄 백업 다운로드 기능'
+                '🔗 백업 공유 링크 생성 기능'
             ]},
             { version: '1.4.1', date: '2026-01-12 08:30', changes: [
                 '👤 백업 생성자 이름 입력',
@@ -3719,11 +3724,19 @@
         document.getElementById('excelBtn').addEventListener('click', () => {
             if(!isAdmin || allGuildData.length === 0) return;
             
-            // PDF 다운로드 옵션 모달
-            openSmallModal('📄 PDF 다운로드', '출력 옵션 선택', `
+            // 공유 링크 생성 모달
+            openSmallModal('🔗 공유 링크 생성', '현재 전투력 현황을 공유합니다', `
+                <div class="form-group">
+                    <label class="form-label">페이지 제목</label>
+                    <input type="text" id="shareTitle" class="form-input" value="🏆 오스카2 전투력 현황판" placeholder="카카오톡에 표시될 제목">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">설명 (선택)</label>
+                    <input type="text" id="shareDesc" class="form-input" placeholder="추가 설명 입력">
+                </div>
                 <div class="form-group">
                     <label class="form-label">정렬 기준</label>
-                    <select id="pdfSortType" class="form-input">
+                    <select id="shareSortType" class="form-input">
                         <option value="power">전투력순 (높은순)</option>
                         <option value="guild">길드별 (전투력순)</option>
                         <option value="name">이름순 (가나다)</option>
@@ -3734,47 +3747,31 @@
                     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
                         ${guildList.map(g => `
                             <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-                                <input type="checkbox" class="pdf-guild-check" value="${g}" checked>
+                                <input type="checkbox" class="share-guild-check" value="${g}" checked>
                                 <span style="font-size:13px;">${g}</span>
                             </label>
                         `).join('')}
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">포함할 정보</label>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
-                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-                            <input type="checkbox" id="pdfIncludeSpec" checked>
-                            <span style="font-size:13px;">스펙 정보</span>
-                        </label>
-                        <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-                            <input type="checkbox" id="pdfIncludeStats" checked>
-                            <span style="font-size:13px;">통계 요약</span>
-                        </label>
                     </div>
                 </div>
             `);
             
             document.getElementById('modalFooter').innerHTML = `
                 <button class="btn" onclick="closeModal()" style="background:#6b7280; color:white;">취소</button>
-                <button class="btn btn-primary" onclick="generatePDF()">📄 PDF 생성</button>
+                <button class="btn btn-primary" onclick="generateShareLinkCurrent()">🔗 링크 생성</button>
             `;
         });
         
-        // PDF 생성 함수
-        window.generatePDF = async function() {
-            const sortType = document.getElementById('pdfSortType').value;
-            const selectedGuilds = Array.from(document.querySelectorAll('.pdf-guild-check:checked')).map(c => c.value);
-            const includeSpec = document.getElementById('pdfIncludeSpec').checked;
-            const includeStats = document.getElementById('pdfIncludeStats').checked;
+        // 현재 전투력 공유 링크 생성
+        window.generateShareLinkCurrent = async function() {
+            const pageTitle = document.getElementById('shareTitle').value.trim() || '🏆 오스카2 전투력 현황판';
+            const description = document.getElementById('shareDesc').value.trim() || '';
+            const sortType = document.getElementById('shareSortType').value;
+            const selectedGuilds = Array.from(document.querySelectorAll('.share-guild-check:checked')).map(c => c.value);
             
             if (selectedGuilds.length === 0) {
                 showAlert('최소 1개 길드를 선택해주세요', 'error');
                 return;
             }
-            
-            closeModal();
-            showAlert('📄 PDF 생성 중...', 'info');
             
             // 데이터 필터링 및 정렬
             let data = allGuildData.filter(u => selectedGuilds.includes(u.guild));
@@ -3790,137 +3787,74 @@
                 data.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
             }
             
+            // 길드별 통계 계산
+            const guildStats = {};
+            selectedGuilds.forEach(guild => {
+                const guildUsers = data.filter(u => u.guild === guild);
+                const totalPower = guildUsers.reduce((sum, u) => sum + u.power, 0);
+                guildStats[guild] = {
+                    count: guildUsers.length,
+                    totalPower: totalPower,
+                    totalDiff: 0
+                };
+            });
+            
+            const totalPower = data.reduce((sum, u) => sum + u.power, 0);
+            
             try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4');
-                
-                // 한글 폰트 설정 (기본)
-                doc.setFont('helvetica');
-                
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
-                const margin = 15;
-                let yPos = margin;
-                
-                // 현재 날짜
-                const now = new Date();
-                const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-                
-                // 헤더
-                doc.setFontSize(18);
-                doc.setTextColor(31, 41, 55);
-                doc.text('Oscar2 Guild Combat Power Report', pageWidth / 2, yPos, { align: 'center' });
-                yPos += 8;
-                
-                doc.setFontSize(10);
-                doc.setTextColor(107, 114, 128);
-                doc.text(`Generated: ${dateStr}`, pageWidth / 2, yPos, { align: 'center' });
-                yPos += 10;
-                
-                // 통계 요약
-                if (includeStats) {
-                    const totalPower = data.reduce((sum, u) => sum + u.power, 0);
-                    const avgPower = Math.round(totalPower / data.length);
-                    const maxPower = Math.max(...data.map(u => u.power));
-                    const minPower = Math.min(...data.map(u => u.power));
-                    
-                    doc.setFillColor(249, 250, 251);
-                    doc.roundedRect(margin, yPos, pageWidth - margin * 2, 25, 3, 3, 'F');
-                    
-                    doc.setFontSize(9);
-                    doc.setTextColor(55, 65, 81);
-                    
-                    const statY = yPos + 10;
-                    const colWidth = (pageWidth - margin * 2) / 4;
-                    
-                    doc.text(`Total: ${data.length}`, margin + colWidth * 0.5, statY, { align: 'center' });
-                    doc.text(`Avg: ${avgPower.toLocaleString()}`, margin + colWidth * 1.5, statY, { align: 'center' });
-                    doc.text(`Max: ${maxPower.toLocaleString()}`, margin + colWidth * 2.5, statY, { align: 'center' });
-                    doc.text(`Min: ${minPower.toLocaleString()}`, margin + colWidth * 3.5, statY, { align: 'center' });
-                    
-                    yPos += 30;
-                }
-                
-                // 테이블 헤더
-                const headers = includeSpec 
-                    ? [['No', 'Guild', 'Nickname', 'Power', 'Shape L', 'Shape M', 'Mount L', 'Mount M']]
-                    : [['No', 'Guild', 'Nickname', 'Power']];
-                
-                // 테이블 데이터
-                const tableData = data.map((u, idx) => {
-                    const row = [
-                        idx + 1,
-                        u.guild,
-                        u.name,
-                        u.power.toLocaleString()
-                    ];
-                    if (includeSpec) {
-                        row.push(u.shape_legend || 0);
-                        row.push(u.shape_myth || 0);
-                        row.push(u.mount_legend || 0);
-                        row.push(u.mount_myth || 0);
-                    }
-                    return row;
-                });
-                
-                // 테이블 생성
-                doc.autoTable({
-                    head: headers,
-                    body: tableData,
-                    startY: yPos,
-                    margin: { left: margin, right: margin },
-                    styles: {
-                        fontSize: 8,
-                        cellPadding: 2,
-                        overflow: 'linebreak',
-                        halign: 'center'
-                    },
-                    headStyles: {
-                        fillColor: [59, 130, 246],
-                        textColor: 255,
-                        fontStyle: 'bold'
-                    },
-                    columnStyles: includeSpec ? {
-                        0: { cellWidth: 10 },
-                        1: { cellWidth: 18 },
-                        2: { cellWidth: 35, halign: 'left' },
-                        3: { cellWidth: 25, halign: 'right' },
-                        4: { cellWidth: 18 },
-                        5: { cellWidth: 18 },
-                        6: { cellWidth: 18 },
-                        7: { cellWidth: 18 }
-                    } : {
-                        0: { cellWidth: 15 },
-                        1: { cellWidth: 30 },
-                        2: { cellWidth: 60, halign: 'left' },
-                        3: { cellWidth: 40, halign: 'right' }
-                    },
-                    alternateRowStyles: {
-                        fillColor: [249, 250, 251]
-                    },
-                    didDrawPage: function(data) {
-                        // 페이지 번호
-                        doc.setFontSize(8);
-                        doc.setTextColor(156, 163, 175);
-                        doc.text(
-                            `Page ${doc.internal.getNumberOfPages()}`,
-                            pageWidth / 2,
-                            pageHeight - 10,
-                            { align: 'center' }
-                        );
+                // 공유 데이터 저장
+                const shareId = `share_${Date.now()}`;
+                await setDoc(doc(db, "sharedBackups", shareId), {
+                    type: 'current',
+                    pageTitle: pageTitle,
+                    headerName: pageTitle,
+                    description: description,
+                    sortType: sortType,
+                    createdAt: Date.now(),
+                    createdBy: loggedInAdminId || 'admin',
+                    backupData: {
+                        users: data.map(u => ({
+                            name: u.name,
+                            guild: u.guild,
+                            power: u.power,
+                            diff: 0,
+                            shape_legend: u.shape_legend || 0,
+                            shape_myth: u.shape_myth || 0,
+                            mount_legend: u.mount_legend || 0,
+                            mount_myth: u.mount_myth || 0
+                        })),
+                        totalUsers: data.length,
+                        totalPower: totalPower,
+                        totalDiff: 0,
+                        guildStats: guildStats,
+                        createdAt: Date.now()
                     }
                 });
                 
-                // 파일명
-                const sortName = sortType === 'power' ? 'power' : sortType === 'guild' ? 'guild' : 'name';
-                const fileName = `Oscar2_Report_${dateStr}_${sortName}.pdf`;
+                // 공유 URL 생성
+                const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
                 
-                doc.save(fileName);
-                showAlert('PDF 다운로드 완료!', 'success');
+                const html = `
+                    <div style="padding: 10px 0; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <p style="font-size: 16px; font-weight: 600; color: #10b981; margin-bottom: 20px;">공유 링크가 생성되었습니다!</p>
+                        <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 16px; word-break: break-all;">
+                            <input type="text" id="shareUrlInput" value="${shareUrl}" readonly 
+                                   style="width: 100%; border: none; background: transparent; text-align: center; font-size: 13px; color: #374151;">
+                        </div>
+                        <button onclick="copyShareUrl()" class="btn btn-primary" style="width: 100%;">📋 링크 복사</button>
+                        <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">💡 카카오톡에 바로 붙여넣기 하세요!</p>
+                    </div>
+                `;
+                
+                openSmallModal('🔗 공유 링크', '', html);
+                document.getElementById('modalFooter').innerHTML = `
+                    <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
+                `;
                 
             } catch(e) {
-                console.error('PDF 생성 오류:', e);
-                showAlert('PDF 생성 중 오류가 발생했습니다', 'error');
+                console.error(e);
+                showAlert('링크 생성 중 오류가 발생했습니다', 'error');
             }
         };
 
@@ -6634,7 +6568,7 @@
                         <td>${type}</td>
                         <td style="white-space:nowrap;">
                             <button class="btn" onclick="viewBackupDetail('${backupId}')" style="padding:4px 8px; font-size:12px; background:#6366f1; color:white;">상세</button>
-                            <button class="btn" onclick="downloadBackupExcel('${backupId}')" style="padding:4px 8px; font-size:12px; background:#10b981; color:white;">엑셀</button>
+                            <button class="btn" onclick="openShareBackupModal('${backupId}')" style="padding:4px 8px; font-size:12px; background:#8b5cf6; color:white;">공유</button>
                             <button class="btn" onclick="deleteBackup('${backupId}')" style="padding:4px 8px; font-size:12px; background:#ef4444; color:white;">삭제</button>
                         </td>
                     </tr>`;
@@ -6855,7 +6789,6 @@
             
             document.getElementById('modalFooter').innerHTML = `
                 <button class="btn" onclick="openShareBackupModal('${backupId}')" style="background:#8b5cf6; color:white;">🔗 공유 링크 생성</button>
-                <button class="btn" onclick="downloadBackupExcel('${backupId}')" style="background:#10b981; color:white;">📥 엑셀 다운로드</button>
                 <button class="btn" onclick="viewBackupHistory()" style="background:#6366f1; color:white;">← 백업 기록</button>
                 <button class="btn btn-cancel" onclick="closeModal()">닫기</button>
             `;
@@ -7054,106 +6987,6 @@
             input.select();
             document.execCommand('copy');
             showAlert('링크가 복사되었습니다!', 'success');
-        };
-        
-        window.downloadBackupExcel = async function(backupId) {
-            try {
-                const backupDoc = await getDoc(doc(db, "backups", backupId));
-                if (!backupDoc.exists()) {
-                    showAlert('백업 데이터를 찾을 수 없습니다', 'error');
-                    return;
-                }
-                
-                const backup = backupDoc.data();
-                const users = backup.users || [];
-                const backupTime = formatDateTime(backup.createdAt);
-                const fileName = `오스카2_전투력_${backupTime.replace(/[:\s]/g, '_')}.xlsx`;
-                
-                // KST 현재 시간
-                const now = new Date();
-                const kstNow = now.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
-                
-                // 메타 정보 시트
-                const metaData = [
-                    ['🏆 오스카2 전투력 현황판 - 백업 데이터'],
-                    [''],
-                    ['📋 백업 정보'],
-                    ['백업 이름', backup.backupName || '(이름 없음)'],
-                    ['백업 일시', backupTime + ' (KST)'],
-                    ['생성자', backup.createdBy || 'admin'],
-                    ['비교 기준', backup.compareBackupName || '최근 백업'],
-                    [''],
-                    ['📊 요약'],
-                    ['총 인원', backup.totalUsers + '명'],
-                    ['총 전투력', backup.totalPower.toLocaleString()],
-                    ['주간 증감', (backup.totalDiff >= 0 ? '+' : '') + backup.totalDiff.toLocaleString()],
-                    [''],
-                    ['📥 다운로드 정보'],
-                    ['다운로드 일시', kstNow],
-                    ['']
-                ];
-                
-                const metaWs = XLSX.utils.aoa_to_sheet(metaData);
-                
-                // 길드별 통계 시트
-                const guildStatsData = [['길드', '인원', '평균 전투력', '총 전투력', '주간 증감']];
-                Object.keys(backup.guildStats || {}).sort().forEach(guild => {
-                    const stats = backup.guildStats[guild];
-                    const activeCount = stats.activeCount || stats.count;
-                    const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount) : 0;
-                    guildStatsData.push([
-                        guild,
-                        stats.count,
-                        avgPower,
-                        stats.totalPower,
-                        stats.totalDiff
-                    ]);
-                });
-                const guildWs = XLSX.utils.aoa_to_sheet(guildStatsData);
-                
-                // 전체 명단 시트
-                const userData = [['순위', '닉네임', '길드', '전투력', '이전 전투력', '주간 증감', '형상 전설', '형상 신화', '탈것 전설', '탈것 신화']];
-                users.forEach((u, idx) => {
-                    userData.push([
-                        idx + 1,
-                        u.name,
-                        u.guild,
-                        u.power,
-                        u.prevPower,
-                        u.diff,
-                        u.shape_legend || 0,
-                        u.shape_myth || 0,
-                        u.mount_legend || 0,
-                        u.mount_myth || 0
-                    ]);
-                });
-                const userWs = XLSX.utils.aoa_to_sheet(userData);
-                
-                // 열 너비 설정
-                userWs['!cols'] = [
-                    { wch: 6 },  // 순위
-                    { wch: 15 }, // 닉네임
-                    { wch: 10 }, // 길드
-                    { wch: 12 }, // 전투력
-                    { wch: 12 }, // 이전 전투력
-                    { wch: 12 }, // 주간 증감
-                    { wch: 10 }, // 형상 전설
-                    { wch: 10 }, // 형상 신화
-                    { wch: 10 }, // 탈것 전설
-                    { wch: 10 }  // 탈것 신화
-                ];
-                
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, metaWs, '백업 정보');
-                XLSX.utils.book_append_sheet(wb, guildWs, '길드별 통계');
-                XLSX.utils.book_append_sheet(wb, userWs, '전체 명단');
-                XLSX.writeFile(wb, fileName);
-                
-                showAlert('엑셀 다운로드 완료!', 'success');
-            } catch(e) {
-                console.error(e);
-                showAlert('다운로드 중 오류가 발생했습니다', 'error');
-            }
         };
         
         async function checkAutoBackup() {
