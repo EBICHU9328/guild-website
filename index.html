@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.8.6">
-    <meta name="build-date" content="2026-01-13 11:40">
+    <meta name="version" content="1.8.7">
+    <meta name="build-date" content="2026-01-13 12:00">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -1027,9 +1027,14 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.8.6';
-        const APP_BUILD_DATE = '2026-01-13 11:40';
+        const APP_VERSION = '1.8.7';
+        const APP_BUILD_DATE = '2026-01-13 12:00';
         const APP_CHANGELOG = [
+            { version: '1.8.7', date: '2026-01-13 12:00', changes: [
+                '⚔️ 공유 링크 생성 시 길드별 클랜 묘실 차감 기능',
+                '🏷️ 차감 적용된 공유 페이지에 차감 정보 배너 표시',
+                '📊 길드별 현황에 차감 뱃지 표시'
+            ]},
             { version: '1.8.6', date: '2026-01-13 11:40', changes: [
                 '🔗 현재 전투력 공유 링크 생성 기능',
                 '📱 카카오톡 등 메신저로 바로 공유 가능',
@@ -1359,17 +1364,45 @@
                 const users = backup.users || [];
                 const guildStats = backup.guildStats || {};
                 const backupTime = formatDateTime(backup.createdAt);
+                const guildDeductions = share.guildDeductions || {};
                 
-                // 길드별 통계 HTML
+                // 차감 정보 배너 생성
+                let deductionBannerHtml = '';
+                const deductionEntries = Object.entries(guildDeductions).filter(([_, v]) => v > 0);
+                if (deductionEntries.length > 0) {
+                    const deductionItems = deductionEntries.map(([guild, amount]) => 
+                        `<span style="background:#fef3c7; padding:4px 10px; border-radius:12px; font-size:13px; white-space:nowrap;">
+                            <strong>${guild}</strong> -${amount.toLocaleString()}
+                        </span>`
+                    ).join('');
+                    deductionBannerHtml = `
+                        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: center;">
+                            <p style="color: #92400e; font-size: 14px; font-weight: 600; margin: 0 0 10px;">⚔️ 클랜 묘실 차감 적용됨</p>
+                            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+                                ${deductionItems}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // 전체 평균 전투력 (0 제외)
+                const activeUsers = users.filter(u => u.power > 0);
+                const totalAvgPower = activeUsers.length > 0 ? Math.round(backup.totalPower / activeUsers.length) : 0;
+                
+                // 길드별 통계 HTML (차감 정보 포함)
                 let guildStatsHtml = '';
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
-                    const activeCount = stats.activeCount || stats.count;
+                    const deduction = guildDeductions[guild] || 0;
+                    // 해당 길드의 전투력 > 0인 유저만 카운트
+                    const guildActiveUsers = users.filter(u => u.guild === guild && u.power > 0);
+                    const activeCount = guildActiveUsers.length;
                     const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
                     const diffSign = stats.totalDiff >= 0 ? '+' : '';
                     const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
+                    const deductionBadge = deduction > 0 ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">-${deduction.toLocaleString()}</span>` : '';
                     guildStatsHtml += `<tr>
-                        <td style="padding: 12px; font-weight: 600;">${guild}</td>
+                        <td style="padding: 12px; font-weight: 600;">${guild}${deductionBadge}</td>
                         <td style="padding: 12px; text-align: center;">${stats.count}명</td>
                         <td style="padding: 12px; text-align: right;">${avgPower}</td>
                         <td style="padding: 12px; text-align: right; color: ${diffColor}; font-weight: 600;">${diffSign}${stats.totalDiff.toLocaleString()}</td>
@@ -1382,12 +1415,21 @@
                     const diffSign = u.diff >= 0 ? '+' : '';
                     const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
                     const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                    let icons = '';
+                    if (u.shape_legend > 0) icons += '🛡️';
+                    if (u.shape_myth > 0) icons += '👑';
+                    if (u.mount_legend > 0) icons += '🐴';
+                    if (u.mount_myth > 0) icons += '🦄';
                     usersHtml += `<tr>
                         <td style="padding: 10px; text-align: center;">${medal}</td>
                         <td style="padding: 10px; font-weight: 500;">${u.name}</td>
                         <td style="padding: 10px; text-align: center;">${u.guild}</td>
                         <td style="padding: 10px; text-align: right; font-weight: 600;">${u.power.toLocaleString()}</td>
                         <td style="padding: 10px; text-align: right; color: ${diffColor}; font-weight: 500;">${diffSign}${u.diff.toLocaleString()}</td>
+                        <td style="padding: 10px; text-align: center;">${u.shape_legend || 0}</td>
+                        <td style="padding: 10px; text-align: center;">${u.shape_myth || 0}</td>
+                        <td style="padding: 10px; text-align: center;">${u.mount_legend || 0}</td>
+                        <td style="padding: 10px; text-align: center;">${u.mount_myth || 0}</td>
                     </tr>`;
                 });
                 
@@ -1411,6 +1453,9 @@
                                 ${backup.createdBy ? `<p style="color: #6b7280; font-size: 13px; margin: 4px 0 0;">👤 생성자: <strong>${backup.createdBy}</strong></p>` : ''}
                             </div>
                             
+                            <!-- 차감 정보 배너 -->
+                            ${deductionBannerHtml}
+                            
                             <!-- 요약 카드 -->
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px;">
                                 <div style="background: #fef3c7; padding: 20px; border-radius: 12px; text-align: center;">
@@ -1420,6 +1465,10 @@
                                 <div style="background: #d1fae5; padding: 20px; border-radius: 12px; text-align: center;">
                                     <p style="color: #065f46; font-size: 12px; margin: 0;">총 전투력</p>
                                     <p style="color: #047857; font-size: 24px; font-weight: 700; margin: 8px 0 0;">${backup.totalPower.toLocaleString()}</p>
+                                </div>
+                                <div style="background: #dbeafe; padding: 20px; border-radius: 12px; text-align: center;">
+                                    <p style="color: #1e40af; font-size: 12px; margin: 0;">평균 전투력</p>
+                                    <p style="color: #1d4ed8; font-size: 24px; font-weight: 700; margin: 8px 0 0;">${totalAvgPower.toLocaleString()}</p>
                                 </div>
                                 <div style="background: #e0e7ff; padding: 20px; border-radius: 12px; text-align: center;">
                                     <p style="color: #3730a3; font-size: 12px; margin: 0;">주간 증감</p>
@@ -1448,8 +1497,8 @@
                             <!-- 전체 명단 -->
                             <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
                                 <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">👥 전체 명단 (${users.length}명)</h3>
-                                <div style="max-height: 600px; overflow-y: auto;">
-                                    <table style="width: 100%; border-collapse: collapse;">
+                                <div style="max-height: 600px; overflow-x: auto; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
                                         <thead style="position: sticky; top: 0; background: white;">
                                             <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                                 <th style="padding: 10px; text-align: center; font-weight: 600;">순위</th>
@@ -1457,6 +1506,10 @@
                                                 <th style="padding: 10px; text-align: center; font-weight: 600;">길드</th>
                                                 <th style="padding: 10px; text-align: right; font-weight: 600;">전투력</th>
                                                 <th style="padding: 10px; text-align: right; font-weight: 600;">증감</th>
+                                                <th style="padding: 10px; text-align: center; font-weight: 600;">🛡️형상전</th>
+                                                <th style="padding: 10px; text-align: center; font-weight: 600;">👑형상신</th>
+                                                <th style="padding: 10px; text-align: center; font-weight: 600;">🐴탈것전</th>
+                                                <th style="padding: 10px; text-align: center; font-weight: 600;">🦄탈것신</th>
                                             </tr>
                                         </thead>
                                         <tbody>${usersHtml}</tbody>
@@ -3811,7 +3864,7 @@
                     description: description,
                     sortType: sortType,
                     createdAt: Date.now(),
-                    createdBy: loggedInAdminId || 'admin',
+                    createdBy: '에비츄',
                     backupData: {
                         users: data.map(u => ({
                             name: u.name,
@@ -6653,7 +6706,9 @@
                 let guildStatsHtml = '';
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
-                    const activeCount = stats.activeCount || stats.count;
+                    // 해당 길드의 전투력 > 0인 유저만 카운트
+                    const guildActiveUsers = users.filter(u => u.guild === guild && u.power > 0);
+                    const activeCount = guildActiveUsers.length;
                     const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
                     const diffSign = stats.totalDiff >= 0 ? '+' : '';
                     const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
@@ -6895,6 +6950,19 @@
                 const backupTime = formatDateTime(backup.createdAt);
                 const defaultTitle = backup.backupName || `오스카2 전투력 현황 (${backupTime})`;
                 
+                // 길드 목록 추출
+                const guilds = [...new Set((backup.users || []).map(u => u.guild))].sort();
+                
+                // 길드별 차감 입력 필드 생성
+                const guildDeductInputs = guilds.map(guild => `
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="min-width:60px; font-weight:500; font-size:13px;">${guild}</span>
+                        <input type="number" class="form-input guild-deduct-input" data-guild="${guild}" 
+                               placeholder="0" style="width:100px; padding:6px 10px;" min="0">
+                        <span style="font-size:12px; color:#6b7280;">차감</span>
+                    </div>
+                `).join('');
+                
                 const html = `
                     <div style="padding: 10px 0;">
                         <div class="form-group" style="margin-bottom: 16px;">
@@ -6908,6 +6976,13 @@
                         <div class="form-group" style="margin-bottom: 16px;">
                             <label class="form-label">📝 추가 설명 (선택)</label>
                             <textarea id="shareDescription" class="form-input" rows="2" placeholder="공유 페이지에 표시할 추가 설명"></textarea>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">⚔️ 길드별 클랜 묘실 차감</label>
+                            <p style="font-size:11px; color:#6b7280; margin:4px 0 12px;">각 길드의 클랜 묘실 수치를 차감하여 표시합니다 (예: 4400)</p>
+                            <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                                ${guildDeductInputs}
+                            </div>
                         </div>
                         <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
                             <p style="font-size: 12px; color: #0369a1; margin: 0;">
@@ -6934,6 +7009,16 @@
             const headerName = document.getElementById('shareHeaderName').value.trim() || '🏆 오스카2 전투력 현황판';
             const description = document.getElementById('shareDescription').value.trim() || '';
             
+            // 길드별 차감 정보 수집
+            const guildDeductions = {};
+            document.querySelectorAll('.guild-deduct-input').forEach(input => {
+                const guild = input.dataset.guild;
+                const value = parseInt(input.value) || 0;
+                if (value > 0) {
+                    guildDeductions[guild] = value;
+                }
+            });
+            
             try {
                 const backupDoc = await getDoc(doc(db, "backups", backupId));
                 if (!backupDoc.exists()) {
@@ -6943,6 +7028,39 @@
                 
                 const backup = backupDoc.data();
                 
+                // 차감 적용된 유저 데이터 생성
+                const modifiedUsers = (backup.users || []).map(u => {
+                    const deduction = guildDeductions[u.guild] || 0;
+                    return {
+                        ...u,
+                        power: Math.max(0, u.power - deduction),
+                        originalPower: u.power,
+                        deduction: deduction
+                    };
+                });
+                
+                // 차감 적용된 길드 통계 재계산
+                const modifiedGuildStats = {};
+                modifiedUsers.forEach(u => {
+                    if (!modifiedGuildStats[u.guild]) {
+                        modifiedGuildStats[u.guild] = { count: 0, totalPower: 0, totalDiff: 0, activeCount: 0 };
+                    }
+                    modifiedGuildStats[u.guild].count++;
+                    if (u.power > 0) {
+                        modifiedGuildStats[u.guild].activeCount++;
+                        modifiedGuildStats[u.guild].totalPower += u.power;
+                    }
+                    modifiedGuildStats[u.guild].totalDiff += u.diff;
+                });
+                
+                // 수정된 백업 데이터
+                const modifiedBackup = {
+                    ...backup,
+                    users: modifiedUsers,
+                    guildStats: modifiedGuildStats,
+                    totalPower: modifiedUsers.reduce((sum, u) => sum + u.power, 0)
+                };
+                
                 // 공유 데이터 저장
                 const shareId = `share_${Date.now()}`;
                 await setDoc(doc(db, "sharedBackups", shareId), {
@@ -6951,8 +7069,9 @@
                     headerName: headerName,
                     description: description,
                     createdAt: Date.now(),
-                    createdBy: loggedInAdminId || 'admin',
-                    backupData: backup
+                    createdBy: '에비츄',
+                    guildDeductions: guildDeductions,
+                    backupData: modifiedBackup
                 });
                 
                 // 공유 URL 생성 (현재 페이지 기준)
