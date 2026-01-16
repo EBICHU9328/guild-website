@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.0.5">
-    <meta name="build-date" content="2026-01-16 20:00">
+    <meta name="version" content="2.0.6">
+    <meta name="build-date" content="2026-01-16 20:45">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1081,9 +1081,15 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.0.5';
-        const APP_BUILD_DATE = '2026-01-16 20:00';
+        const APP_VERSION = '2.0.6';
+        const APP_BUILD_DATE = '2026-01-16 20:45';
         const APP_CHANGELOG = [
+            { version: '2.0.6', date: '2026-01-16 20:45', changes: [
+                '📊 길드별 현황 → 클랜별 현황으로 명칭 변경',
+                '📈 클랜별 주간 증감을 평균 기준으로 변경',
+                '🔢 전체 명단 항목별 정렬 기능 추가',
+                '✏️ 에디터 커서(캐럿) 표시 버그 수정'
+            ]},
             { version: '2.0.5', date: '2026-01-16 20:00', changes: [
                 '🔧 게시글 수정 시 줄바꿈 미적용 버그 수정',
                 '🖥️ PC에서 수정 모달 너비 확장 (800px)'
@@ -2133,14 +2139,16 @@
                     const guildActiveUsers = users.filter(u => u.guild === guild && u.power > 0);
                     const activeCount = guildActiveUsers.length;
                     const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
-                    const diffSign = stats.totalDiff >= 0 ? '+' : '';
-                    const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
+                    // 평균 증감 계산
+                    const avgDiff = activeCount > 0 ? Math.round(stats.totalDiff / activeCount) : 0;
+                    const diffSign = avgDiff >= 0 ? '+' : '';
+                    const diffColor = avgDiff >= 0 ? '#10b981' : '#ef4444';
                     const deductionBadge = deduction > 0 ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">-${deduction.toLocaleString()}</span>` : '';
                     guildStatsHtml += `<tr>
                         <td style="padding: 12px; font-weight: 600;">${guild}${deductionBadge}</td>
                         <td style="padding: 12px; text-align: center;">${stats.count}명</td>
                         <td style="padding: 12px; text-align: right;">${avgPower}</td>
-                        <td style="padding: 12px; text-align: right; color: ${diffColor}; font-weight: 600;">${diffSign}${stats.totalDiff.toLocaleString()}</td>
+                        <td style="padding: 12px; text-align: right; color: ${diffColor}; font-weight: 600;">${diffSign}${avgDiff.toLocaleString()}</td>
                     </tr>`;
                 });
                 
@@ -2211,9 +2219,9 @@
                                 </div>
                             </div>
                             
-                            <!-- 길드별 현황 -->
+                            <!-- 클랜별 현황 -->
                             <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
-                                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">📊 길드별 현황</h3>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">📊 클랜별 현황</h3>
                                 <div style="overflow-x: auto;">
                                     <table style="width: 100%; border-collapse: collapse;">
                                         <thead>
@@ -2233,21 +2241,21 @@
                             <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
                                 <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">👥 전체 명단 (${users.length}명)</h3>
                                 <div style="max-height: 600px; overflow-x: auto; overflow-y: auto;">
-                                    <table style="width: 100%; border-collapse: collapse; min-width: 700px;">
-                                        <thead style="position: sticky; top: 0; background: white;">
+                                    <table id="shareUserTable" style="width: 100%; border-collapse: collapse; min-width: 700px;">
+                                        <thead style="position: sticky; top: 0; background: white; z-index: 1;">
                                             <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                                                <th style="padding: 10px; text-align: center; font-weight: 600;">순위</th>
-                                                <th style="padding: 10px; text-align: left; font-weight: 600;">닉네임</th>
-                                                <th style="padding: 10px; text-align: center; font-weight: 600;">길드</th>
-                                                <th style="padding: 10px; text-align: right; font-weight: 600;">전투력</th>
-                                                <th style="padding: 10px; text-align: right; font-weight: 600;">증감</th>
-                                                <th style="padding: 10px; text-align: center; font-weight: 600;">🛡️형상전</th>
-                                                <th style="padding: 10px; text-align: center; font-weight: 600;">👑형상신</th>
-                                                <th style="padding: 10px; text-align: center; font-weight: 600;">🐴탈것전</th>
-                                                <th style="padding: 10px; text-align: center; font-weight: 600;">🦄탈것신</th>
+                                                <th class="sortable-header" data-sort="rank" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">순위 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="name" style="padding: 10px; text-align: left; font-weight: 600; cursor: pointer; user-select: none;">닉네임 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="guild" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">길드 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="power" style="padding: 10px; text-align: right; font-weight: 600; cursor: pointer; user-select: none;">전투력 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="diff" style="padding: 10px; text-align: right; font-weight: 600; cursor: pointer; user-select: none;">증감 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="shape_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">🛡️형상전 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="shape_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">👑형상신 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="mount_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">🐴탈것전 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="mount_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">🦄탈것신 <span class="sort-icon">↕</span></th>
                                             </tr>
                                         </thead>
-                                        <tbody>${usersHtml}</tbody>
+                                        <tbody id="shareUserTableBody">${usersHtml}</tbody>
                                     </table>
                                 </div>
                             </div>
@@ -2258,7 +2266,81 @@
                             </div>
                         </div>
                     </div>
+                    <style>
+                        .sortable-header { transition: background 0.15s; }
+                        .sortable-header:hover { background: #e5e7eb !important; }
+                        .sort-icon { font-size: 10px; color: #9ca3af; margin-left: 4px; }
+                        .sort-icon.active { color: #3b82f6; }
+                    </style>
                 `;
+                
+                // 정렬 기능을 위한 전역 데이터 저장
+                window.shareUsers = users;
+                window.shareSortState = { column: 'rank', direction: 'asc' };
+                
+                // 정렬 함수
+                window.sortShareTable = function(column) {
+                    const state = window.shareSortState;
+                    if (state.column === column) {
+                        state.direction = state.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        state.column = column;
+                        state.direction = column === 'name' || column === 'guild' ? 'asc' : 'desc';
+                    }
+                    
+                    const sorted = [...window.shareUsers].sort((a, b) => {
+                        let valA, valB;
+                        if (column === 'rank') {
+                            valA = a.power; valB = b.power;
+                            return state.direction === 'asc' ? valB - valA : valA - valB;
+                        } else if (column === 'name' || column === 'guild') {
+                            valA = a[column] || ''; valB = b[column] || '';
+                            return state.direction === 'asc' ? valA.localeCompare(valB, 'ko') : valB.localeCompare(valA, 'ko');
+                        } else {
+                            valA = a[column] || 0; valB = b[column] || 0;
+                            return state.direction === 'asc' ? valA - valB : valB - valA;
+                        }
+                    });
+                    
+                    // 테이블 다시 렌더링
+                    let html = '';
+                    sorted.forEach((u, idx) => {
+                        const diffSign = u.diff >= 0 ? '+' : '';
+                        const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
+                        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                        html += '<tr>' +
+                            '<td style="padding: 10px; text-align: center;">' + medal + '</td>' +
+                            '<td style="padding: 10px; font-weight: 500;">' + u.name + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + u.guild + '</td>' +
+                            '<td style="padding: 10px; text-align: right; font-weight: 600;">' + u.power.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px; text-align: right; color: ' + diffColor + '; font-weight: 500;">' + diffSign + u.diff.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.shape_legend || 0) + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.shape_myth || 0) + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.mount_legend || 0) + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.mount_myth || 0) + '</td>' +
+                        '</tr>';
+                    });
+                    document.getElementById('shareUserTableBody').innerHTML = html;
+                    
+                    // 아이콘 업데이트
+                    document.querySelectorAll('.sortable-header .sort-icon').forEach(icon => {
+                        const header = icon.parentElement;
+                        if (header.dataset.sort === column) {
+                            icon.textContent = state.direction === 'asc' ? '↑' : '↓';
+                            icon.classList.add('active');
+                        } else {
+                            icon.textContent = '↕';
+                            icon.classList.remove('active');
+                        }
+                    });
+                };
+                
+                // 헤더 클릭 이벤트 추가
+                setTimeout(() => {
+                    document.querySelectorAll('.sortable-header').forEach(header => {
+                        header.addEventListener('click', () => sortShareTable(header.dataset.sort));
+                    });
+                }, 100);
             } catch(e) {
                 console.error(e);
                 document.body.innerHTML = `
@@ -2656,9 +2738,9 @@
                     .editor-toolbar button:hover { background: #e0f2fe; border-color: #3b82f6; }
                     .editor-toolbar select { padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: white; cursor: pointer; }
                     .toolbar-divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px; }
-                    .wysiwyg-editor { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; }
+                    .wysiwyg-editor { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; caret-color: #1e293b; }
                     .wysiwyg-editor:empty:before { content: attr(placeholder); color: #94a3b8; }
-                    .wysiwyg-editor:focus { border-color: #3b82f6; }
+                    .wysiwyg-editor:focus { border-color: #3b82f6; caret-color: #1e293b; }
                     @media (max-width: 640px) {
                         .editor-toolbar { gap: 2px; padding: 6px; }
                         .editor-toolbar button { width: 28px; height: 28px; font-size: 12px; }
@@ -3273,8 +3355,8 @@
                         .edit-toolbar button:hover { background: #e0f2fe; border-color: #3b82f6; }
                         .edit-toolbar select { padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: white; cursor: pointer; }
                         .edit-toolbar-divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px; }
-                        .edit-wysiwyg { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; }
-                        .edit-wysiwyg:focus { border-color: #3b82f6; }
+                        .edit-wysiwyg { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; caret-color: #1e293b; }
+                        .edit-wysiwyg:focus { border-color: #3b82f6; caret-color: #1e293b; }
                         .edit-modal-container { background: white; border-radius: 20px; max-width: 600px; margin: 40px auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
                         @media (min-width: 768px) {
                             .edit-modal-container { max-width: 800px; }
@@ -8991,13 +9073,15 @@
                     const guildActiveUsers = users.filter(u => u.guild === guild && u.power > 0);
                     const activeCount = guildActiveUsers.length;
                     const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
-                    const diffSign = stats.totalDiff >= 0 ? '+' : '';
-                    const diffColor = stats.totalDiff >= 0 ? '#10b981' : '#ef4444';
+                    // 평균 증감 계산
+                    const avgDiff = activeCount > 0 ? Math.round(stats.totalDiff / activeCount) : 0;
+                    const diffSign = avgDiff >= 0 ? '+' : '';
+                    const diffColor = avgDiff >= 0 ? '#10b981' : '#ef4444';
                     guildStatsHtml += `<tr>
                         <td style="font-weight:600;">${guild}</td>
                         <td style="text-align:center;">${stats.count}명</td>
                         <td style="text-align:right;">${avgPower}</td>
-                        <td style="text-align:right; color:${diffColor};">${diffSign}${stats.totalDiff.toLocaleString()}</td>
+                        <td style="text-align:right; color:${diffColor};">${diffSign}${avgDiff.toLocaleString()}</td>
                     </tr>`;
                 });
                 
@@ -9028,7 +9112,7 @@
                         </div>
                     </div>
                     
-                    <h4 style="margin:0 0 12px; color:#374151;">📊 길드별 현황</h4>
+                    <h4 style="margin:0 0 12px; color:#374151;">📊 클랜별 현황</h4>
                     <div style="overflow-x:auto; margin-bottom:24px;">
                         <table class="common-table">
                             <thead><tr><th>길드</th><th>인원</th><th>평균 전투력</th><th>주간 증감</th></tr></thead>
