@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.3.2">
-    <meta name="build-date" content="2026-01-17 00:35">
+    <meta name="version" content="2.3.3">
+    <meta name="build-date" content="2026-01-17 01:00">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -27,7 +27,7 @@
     <meta name="description" content="오스카2 연합 길드 공식 게시판 - 공지사항, 다이아 매입, 전투력 현황 등">
     <meta name="keywords" content="오스카2, 뱀서, 연합, 길드, 게시판">
     
-    <title> 오스카2 전투력 현황판</title>
+    <title>오스카2 전투력 현황판</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -826,7 +826,7 @@
                     <circle cx="18" cy="40" r="2.5" fill="#ffc0cb"/>
                 </g>
                 <text x="250" y="33" text-anchor="middle" font-family="'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" font-size="22" font-weight="700" fill="#c62828">
-                    🏆 오스카2 전투력 현황판
+                    오스카2 전투력 현황판
                 </text>
                 <!-- 오른쪽 매화 (직접 그리기) -->
                 <g class="plum-right">
@@ -1068,10 +1068,10 @@
     </div>
 
     <script type="module">
-        // 🚨 전역 오류 핸들러 - 디버깅용
+
         window.addEventListener('error', function(event) {
             console.error('🚨 JavaScript 오류:', event.message, 'at', event.filename, 'line', event.lineno);
-            // 오류 발생 시 화면에 표시
+
             const errorDiv = document.createElement('div');
             errorDiv.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;background:#fee2e2;color:#dc2626;padding:16px;border-radius:8px;z-index:99999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
             errorDiv.innerHTML = '<b>🚨 오류 발생:</b> ' + event.message + '<br><small>위치: ' + (event.lineno || 'unknown') + '번 줄</small><br><button onclick="this.parentElement.remove()" style="margin-top:8px;padding:4px 12px;background:#dc2626;color:white;border:none;border-radius:4px;cursor:pointer;">닫기</button>';
@@ -1082,15 +1082,25 @@
             console.error('🚨 Promise 오류:', event.reason);
         });
         
-        // 🚀 부드러운 페이지 전환 함수
+
         window.navigateTo = function(url) {
-            document.body.classList.add('page-exit');
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#ffffff;z-index:99999;opacity:0;transition:opacity 0.2s ease;';
+            document.body.appendChild(overlay);
+            
+
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+            });
+            
+
             setTimeout(() => {
                 location.href = url;
-            }, 180);
+            }, 200);
         };
         
-        // 모든 내부 링크에 부드러운 전환 적용
+
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a[href^="?"]');
             if (link && !e.ctrlKey && !e.metaKey) {
@@ -1116,10 +1126,13 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 앱 버전 정보
-        const APP_VERSION = '2.3.2';
-        const APP_BUILD_DATE = '2026-01-17 00:35';
+        const APP_VERSION = '2.3.3';
+        const APP_BUILD_DATE = '2026-01-17 01:00';
         const APP_CHANGELOG = [
+            { version: '2.3.3', date: '2026-01-17 01:00', changes: [
+                '🧹 코드 주석 정리',
+                '📝 제목 이모지 삭제'
+            ]},
             { version: '2.3.2', date: '2026-01-17 00:35', changes: [
                 '✨ 페이지 전환 애니메이션 추가',
                 '🎬 부드러운 fade in/out 효과'
@@ -1434,11 +1447,9 @@
             ]}
         ];
 
-        // ==================== 점검 모드 관련 ====================
-        // 점검 모드 체크 함수
         async function checkMaintenanceMode() {
             try {
-                // 먼저 최종관리자 세션 확인
+
                 const isSuperAdminSession = sessionStorage.getItem('isSuperAdmin') === 'true';
                 
                 const maintenanceDoc = await getDoc(doc(db, "config", "maintenance"));
@@ -1451,16 +1462,16 @@
                 const startTime = data.startTime || 0;
                 const endTime = data.endTime || 0;
                 
-                // 점검 시간이 아니면 패스
+
                 if (now < startTime || now > endTime) return false;
                 
-                // 최종관리자는 패스
+
                 if (isSuperAdminSession) {
                     console.log('최종관리자 - 점검 모드 우회');
                     return false;
                 }
                 
-                // 점검 페이지 표시
+
                 showMaintenancePage(data);
                 return true;
                 
@@ -1470,7 +1481,7 @@
             }
         }
         
-        // 점검 안내 페이지 표시
+
         function showMaintenancePage(data) {
             const startTime = new Date(data.startTime);
             const endTime = new Date(data.endTime);
@@ -1845,7 +1856,7 @@
                 </style>
             `;
             
-            // 카운트다운 시작
+
             let endTimeMs = data.endTime;
             let hasAutoExtended = data.isExtended || false;
             const hoursEl = document.getElementById('hours');
@@ -1856,14 +1867,14 @@
                 const now = Date.now();
                 const remaining = endTimeMs - now;
                 
-                // 1분 남았을 때 자동 연장 (아직 연장되지 않은 경우에만)
+
                 if (remaining <= 60 * 1000 && remaining > 0 && !hasAutoExtended) {
                     hasAutoExtended = true;
-                    // 1시간 연장
+
                     const newEndTime = endTimeMs + (60 * 60 * 1000);
                     endTimeMs = newEndTime;
                     
-                    // Firebase에 연장 정보 저장
+
                     try {
                         await setDoc(doc(db, "config", "maintenance"), {
                             ...data,
@@ -1872,7 +1883,7 @@
                             extendedAt: Date.now()
                         });
                         
-                        // UI 업데이트
+
                         document.getElementById('extendedNotice').style.display = 'block';
                         const newEndDate = new Date(newEndTime);
                         const startDate = new Date(data.startTime);
@@ -1906,7 +1917,7 @@
             updateCountdown();
             setInterval(updateCountdown, 1000);
             
-            // 점검 페이지 로그인 함수들
+
             window.showMaintenanceLogin = function() {
                 document.getElementById('maintenanceLoginModal').style.display = 'flex';
             };
@@ -1929,13 +1940,13 @@
                     return;
                 }
                 
-                // 최종관리자 확인
+
                 const _d = (s) => atob(s);
                 const superAdminId = _d('dGpkYWxzOTMyOA==');
                 const superAdminPw = _d('dG5hbHM5MzI4QEA=');
                 
                 if (id === superAdminId && pw === superAdminPw) {
-                    // 최종관리자 로그인 성공
+
                     sessionStorage.setItem('isAdmin', 'true');
                     sessionStorage.setItem('isSuperAdmin', 'true');
                     sessionStorage.setItem('adminLastActivity', Date.now().toString());
@@ -1946,20 +1957,20 @@
                 }
             };
             
-            // Enter 키 로그인
+
             document.getElementById('maintenanceAdminPw').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') tryMaintenanceLogin();
             });
         }
         
-        // 점검 모드 설정 모달 열기 (최종관리자용)
+
         window.openMaintenanceModal = async function() {
             if (!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
                 return;
             }
             
-            // 현재 설정 로드
+
             let currentData = { enabled: false, startTime: 0, endTime: 0, reason: '', isExtended: false };
             try {
                 const maintenanceDoc = await getDoc(doc(db, "config", "maintenance"));
@@ -1968,9 +1979,9 @@
                 }
             } catch(e) { console.error(e); }
             
-            // 현재 KST 시간
+
             const now = new Date();
-            // 새로 설정할 때는 항상 현재 시간으로, 기존 설정이 있으면 그대로
+
             const defaultStart = currentData.enabled && currentData.startTime ? new Date(currentData.startTime) : now;
             const defaultEnd = currentData.enabled && currentData.endTime ? new Date(currentData.endTime) : new Date(now.getTime() + 2 * 60 * 60 * 1000);
             
@@ -2022,7 +2033,7 @@
             `;
         };
         
-        // 점검 모드 저장
+
         window.saveMaintenanceMode = async function(enabled) {
             const startInput = document.getElementById('maintenanceStart').value;
             const endInput = document.getElementById('maintenanceEnd').value;
@@ -2060,7 +2071,6 @@
                 showAlert('저장 중 오류가 발생했습니다.', 'error');
             }
         };
-        // ==================== 점검 모드 관련 끝 ====================
 
        
         let allGuildData = [];
@@ -2187,13 +2197,13 @@
 
        
         async function init() {
-            // 점검 모드 체크 (최종관리자 제외)
+
             const maintenanceCheck = await checkMaintenanceMode();
             if (maintenanceCheck) {
                 return; // 점검 중이면 여기서 멈춤
             }
             
-            // 공유 링크 체크
+
             const urlParams = new URLSearchParams(window.location.search);
             const shareId = urlParams.get('share');
             if (shareId) {
@@ -2201,7 +2211,7 @@
                 return;
             }
             
-            // 게시판 페이지 체크
+
             const page = urlParams.get('page');
             if (page === 'board') {
                 await showBoardPage();
@@ -2240,7 +2250,7 @@
             await loadData();
         }
         
-        // 공유된 백업 표시
+
         async function showSharedBackup(shareId) {
             document.body.innerHTML = `
                 <div style="min-height: 100vh; background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%); padding: 20px;">
@@ -2276,7 +2286,7 @@
                 const backupTime = formatDateTime(backup.createdAt);
                 const guildDeductions = share.guildDeductions || {};
                 
-                // 차감 정보 배너 생성
+
                 let deductionBannerHtml = '';
                 const deductionEntries = Object.entries(guildDeductions).filter(([_, v]) => v > 0);
                 if (deductionEntries.length > 0) {
@@ -2295,11 +2305,11 @@
                     `;
                 }
                 
-                // 전체 평균 전투력 (0 제외)
+
                 const activeUsers = users.filter(u => u.power > 0);
                 const totalAvgPower = activeUsers.length > 0 ? Math.round(backup.totalPower / activeUsers.length) : 0;
                 
-                // 길드별 통계 HTML (차감 정보 포함)
+
                 let guildStatsHtml = '';
                 const guildColorMap = {
                     '사신': '#8b5cf6',  // 보라
@@ -2311,11 +2321,11 @@
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
                     const deduction = guildDeductions[guild] || 0;
-                    // 해당 길드의 전투력 > 0인 유저만 카운트
+
                     const guildActiveUsers = users.filter(u => u.guild === guild && u.power > 0);
                     const activeCount = guildActiveUsers.length;
                     const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
-                    // 평균 증감 계산
+
                     const avgDiff = activeCount > 0 ? Math.round(stats.totalDiff / activeCount) : 0;
                     const diffSign = avgDiff >= 0 ? '+' : '';
                     const diffColor = avgDiff >= 0 ? '#10b981' : '#ef4444';
@@ -2329,10 +2339,10 @@
                     </tr>`;
                 });
                 
-                // 유저 목록 HTML
+
                 let usersHtml = '';
                 
-                // 길드별 색상
+
                 const guildColors = {
                     '사신': '#8b5cf6',  // 보라
                     '축복': '#3b82f6',  // 파랑
@@ -2512,12 +2522,12 @@
                     </style>
                 `;
                 
-                // 정렬 기능을 위한 전역 데이터 저장
+
                 window.shareUsers = users;
                 window.shareFilteredUsers = users;
                 window.shareSortState = { column: 'rank', direction: 'asc' };
                 
-                // 필터 적용 함수
+
                 window.applyShareFilter = function() {
                     const nickname = document.getElementById('filterNickname').value.trim().toLowerCase();
                     const guild = document.getElementById('filterGuild').value;
@@ -2526,37 +2536,37 @@
                     
                     let filtered = [...window.shareUsers];
                     
-                    // 닉네임 필터
+
                     if (nickname) {
                         filtered = filtered.filter(u => u.name.toLowerCase().includes(nickname));
                     }
                     
-                    // 길드 필터
+
                     if (guild) {
                         filtered = filtered.filter(u => u.guild === guild);
                     }
                     
-                    // 전투력 필터
+
                     if (power) {
                         const minPower = parseInt(power) * 10000;
                         filtered = filtered.filter(u => u.power >= minPower);
                     }
                     
-                    // 신화 필터 (1개라도 있으면)
+
                     if (myth === 'any') {
                         filtered = filtered.filter(u => (u.shape_myth || 0) > 0 || (u.mount_myth || 0) > 0);
                     }
                     
                     window.shareFilteredUsers = filtered;
                     
-                    // 인원수 업데이트
+
                     document.getElementById('filteredUserCount').textContent = filtered.length;
                     
-                    // 테이블 다시 렌더링
+
                     renderShareTable(filtered);
                 };
                 
-                // 필터 초기화
+
                 window.resetShareFilter = function() {
                     document.getElementById('filterNickname').value = '';
                     document.getElementById('filterGuild').value = '';
@@ -2567,20 +2577,20 @@
                     document.getElementById('filteredUserCount').textContent = window.shareUsers.length;
                     renderShareTable(window.shareUsers);
                     
-                    // 정렬 아이콘 초기화
+
                     document.querySelectorAll('.sortable-header .sort-icon').forEach(icon => {
                         icon.textContent = '↕';
                         icon.classList.remove('active');
                     });
                 };
                 
-                // 테이블 렌더링 함수
+
                 window.renderShareTable = function(users) {
                     let html = '';
-                    // 전투력 순 정렬 (순위 부여용)
+
                     const sortedByPower = [...users].sort((a, b) => b.power - a.power);
                     
-                    // 길드별 색상
+
                     const guildColors = {
                         '사신': '#8b5cf6',  // 보라
                         '축복': '#3b82f6',  // 파랑
@@ -2610,7 +2620,7 @@
                     document.getElementById('shareUserTableBody').innerHTML = html;
                 };
                 
-                // 정렬 함수
+
                 window.sortShareTable = function(column) {
                     const state = window.shareSortState;
                     if (state.column === column) {
@@ -2620,7 +2630,7 @@
                         state.direction = column === 'name' || column === 'guild' ? 'asc' : 'desc';
                     }
                     
-                    // 필터된 데이터 사용
+
                     const dataToSort = window.shareFilteredUsers || window.shareUsers;
                     
                     const sorted = [...dataToSort].sort((a, b) => {
@@ -2637,7 +2647,7 @@
                         }
                     });
                     
-                    // 테이블 다시 렌더링
+
                     let html = '';
                     sorted.forEach((u, idx) => {
                         const diffSign = u.diff >= 0 ? '+' : '';
@@ -2657,7 +2667,7 @@
                     });
                     document.getElementById('shareUserTableBody').innerHTML = html;
                     
-                    // 아이콘 업데이트
+
                     document.querySelectorAll('.sortable-header .sort-icon').forEach(icon => {
                         const header = icon.parentElement;
                         if (header.dataset.sort === column) {
@@ -2670,7 +2680,7 @@
                     });
                 };
                 
-                // 헤더 클릭 이벤트 추가
+
                 setTimeout(() => {
                     document.querySelectorAll('.sortable-header').forEach(header => {
                         header.addEventListener('click', () => sortShareTable(header.dataset.sort));
@@ -2690,9 +2700,9 @@
             }
         }
         
-        // ==================== 게시판 기능 ====================
+
         async function showBoardPage() {
-            // 세션 체크
+
             if (sessionStorage.getItem('isAdmin') === 'true') { 
                 isAdmin = true;
                 if (sessionStorage.getItem('isSuperAdmin') === 'true') {
@@ -2713,18 +2723,17 @@
         }
         
 
-        // 게시판 목록
         async function showBoardList(initialCategory = 'all') {
             document.title = '📋 게시판 - 오스카2';
             
-            // Firebase에서 카테고리 로드
+
             let categories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }];
             try {
                 const catDoc = await getDoc(doc(db, "config", "boardCategories"));
                 if (catDoc.exists() && catDoc.data().list) {
                     categories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...catDoc.data().list];
                 } else {
-                    // 기본 카테고리 생성
+
                     const defaultCats = [
                         { id: 'notice', name: '공지사항', icon: '📢', color: '#ef4444', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
                         { id: 'dia', name: '다이아', icon: '💎', color: '#3b82f6', allowUserWrite: true, isPrivate: false, requireStatus: false, defaultTemplate: '💰 매입 단가\n10,000 다이아 당 : 00,000원 지급\n\n🍊 매입 수량\n최소 : 1,000개부터 소량도 OK\n최대 : 10만 개까지\n\n수량 상관없이 깔끔하게 매입해 드립니다.\n판매 원하시면 아래 버튼을 눌러주세요!\n\n👇 [판매 문의 바로가기]' },
@@ -2736,14 +2745,14 @@
                 }
             } catch(e) { console.error('카테고리 로드 오류:', e); }
             
-            // 카테고리를 window에 저장 (다른 함수에서 사용)
+
             window.boardCategories = categories;
             
             const categoryTabs = categories.map(cat => 
                 `<button class="cat-tab" data-category="${cat.id}" style="--c: ${cat.color};">${cat.name}</button>`
             ).join('');
             
-            // 카테고리 옵션 (글쓰기용) - '전체' 제외
+
             const categoryOptions = categories.filter(c => c.id !== 'all').map(cat => 
                 `<option value="${cat.id}">${cat.icon} ${cat.name}</option>`
             ).join('');
@@ -3169,14 +3178,14 @@
                 </div>
             `;
             
-            // 카테고리 탭 이벤트
+
             document.querySelectorAll('.cat-tab').forEach(tab => {
                 tab.addEventListener('click', function() {
                     document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
                     const cat = this.dataset.category;
                     
-                    // URL 파라미터 업데이트 (히스토리에 추가)
+
                     const newUrl = cat === 'all' 
                         ? `${window.location.pathname}?page=board`
                         : `${window.location.pathname}?page=board&cat=${cat}`;
@@ -3186,7 +3195,7 @@
                 });
             });
             
-            // 해당 카테고리 탭 활성화
+
             const targetTab = document.querySelector(`.cat-tab[data-category="${initialCategory}"]`);
             if (targetTab) {
                 targetTab.classList.add('active');
@@ -3197,27 +3206,26 @@
             await loadBoardList(initialCategory);
         }
         
-        // 브라우저 뒤로가기/앞으로가기 대응
+
         window.addEventListener('popstate', function(e) {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('page') === 'board') {
                 const postId = urlParams.get('post');
                 if (postId) {
-                    // 게시글 상세로 이동
+
                     showPostDetail(postId);
                 } else {
-                    // 목록으로 이동
+
                     const cat = urlParams.get('cat') || 'all';
                     showBoardPage();
                 }
             } else {
-                // 메인 페이지로 이동
+
                 location.reload();
             }
         });
         
-        // 게시글 목록 로드
-        // 페이지네이션 상태
+
         window.boardPageSize = parseInt(localStorage.getItem('boardPageSize') || '20');
         window.boardCurrentPage = 1;
         window.boardAllPosts = [];
@@ -3233,30 +3241,30 @@
                 
                 const boardList = document.getElementById('boardList');
                 
-                // 카테고리 필터링
+
                 let posts = [];
                 snap.forEach((docSnap) => {
                     const post = docSnap.data();
                     post.id = docSnap.id;
                     if (category === 'all' || post.category === category) {
-                        // 숨김 처리된 게시글은 관리자만 볼 수 있음
+
                         if (post.isHidden && !isAdmin) return;
                         posts.push(post);
                     }
                 });
                 
-                // 현재 카테고리에서 고정인지 판단하는 함수
+
                 const isPinnedInCategory = (post) => {
-                    // 전체 고정이면 항상 true
+
                     if (post.isPinned) return true;
-                    // 카테고리별 고정 체크 (전체 탭에서는 카테고리별 고정 적용 안함)
+
                     if (category !== 'all' && post.pinnedCategories && post.pinnedCategories.includes(category)) {
                         return true;
                     }
                     return false;
                 };
                 
-                // 고정 게시글 먼저, 그 다음 최신순
+
                 posts.sort((a, b) => {
                     const aPinned = isPinnedInCategory(a);
                     const bPinned = isPinnedInCategory(b);
@@ -3274,20 +3282,20 @@
                             <p>등록된 게시글이 없습니다.</p>
                         </div>
                     `;
-                    // 페이지네이션 숨기기
+
                     const paginationEl = document.getElementById('boardPagination');
                     if (paginationEl) paginationEl.innerHTML = '';
                     return;
                 }
                 
-                // 페이지네이션 계산
+
                 const pageSize = window.boardPageSize;
                 const totalPages = Math.ceil(posts.length / pageSize);
                 const startIdx = (page - 1) * pageSize;
                 const endIdx = startIdx + pageSize;
                 const pagePosts = posts.slice(startIdx, endIdx);
                 
-                // 카테고리 정보 가져오기
+
                 const categories = window.boardCategories || [];
                 const getCatInfo = (catId) => {
                     const cat = categories.find(c => c.id === catId);
@@ -3301,14 +3309,14 @@
                     } : { name: catId, icon: '📋', color: '#6366f1', isPrivate: false, requireStatus: false, allowUserWrite: false };
                 };
                 
-                // 전체 게시글에 번호 매기기 (createdAt 기준, 오래된 글이 1번)
+
                 const postNumbers = {};
                 const sortedByDate = [...posts].sort((a, b) => a.createdAt - b.createdAt);
                 sortedByDate.forEach((post, idx) => {
                     postNumbers[post.id] = idx + 1;
                 });
                 
-                // 상대적 시간 표시 함수
+
                 function getRelativeTime(timestamp) {
                     const now = Date.now();
                     const diff = now - timestamp;
@@ -3323,7 +3331,7 @@
                     return new Date(timestamp).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
                 }
                 
-                // 테이블 헤더
+
                 let html = `
                     <div class="post-header-row">
                         <span class="post-h-num">번호</span>
@@ -3342,29 +3350,29 @@
                     const isPinned = isPinnedInCategory(post);
                     const pinnedClass = isPinned ? ' pinned' : '';
                     
-                    // 비공개 카테고리 처리 (관리자 또는 작성자만 내용 열람 가능)
+
                     const isPrivateCategory = catInfo.isPrivate;
                     const shouldBlur = isPrivateCategory && !isAdmin;
                     
-                    // 글 번호
+
                     const postNumber = postNumbers[post.id];
                     
-                    // 고정 게시글이면 번호+분류를 하나로 합침
+
                     const numCatHtml = isPinned 
                         ? `<span class="post-cat-wide pinned-notice"><span class="pin-icon">📌</span> ${post.isPinned ? '공지사항' : catInfo.name}</span>`
                         : `<span class="post-num">${postNumber}</span><span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`;
                     
-                    // 제목 색상
+
                     const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
                     
-                    // 블러 처리된 제목
+
                     const displayTitle = shouldBlur ? '🔒 비공개 글입니다' : post.title;
                     const blurClass = shouldBlur ? ' blurred-post' : '';
                     
-                    // 숨김 표시 (관리자에게만)
+
                     const hiddenBadge = post.isHidden && isAdmin ? '<span class="hidden-badge">숨김</span>' : '';
                     
-                    // 처리 상태 표시
+
                     let statusBadge = '';
                     if (post.status && catInfo.requireStatus) {
                         if (post.status === 'pending') {
@@ -3398,7 +3406,7 @@
                 
                 boardList.innerHTML = html;
                 
-                // 페이지네이션 UI 렌더링
+
                 renderBoardPagination(page, totalPages, posts.length);
                 
             } catch(e) {
@@ -3411,7 +3419,7 @@
             }
         }
         
-        // 페이지네이션 UI 렌더링
+
         function renderBoardPagination(currentPage, totalPages, totalPosts) {
             const paginationEl = document.getElementById('boardPagination');
             if (!paginationEl) return;
@@ -3433,10 +3441,10 @@
             
             let pagesHtml = '';
             
-            // 이전 버튼
+
             pagesHtml += `<button class="page-btn ${currentPage === 1 ? 'disabled' : ''}" onclick="goToBoardPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
             
-            // 페이지 번호들
+
             const startPage = Math.max(1, currentPage - 2);
             const endPage = Math.min(totalPages, currentPage + 2);
             
@@ -3454,7 +3462,7 @@
                 pagesHtml += `<button class="page-btn" onclick="goToBoardPage(${totalPages})">${totalPages}</button>`;
             }
             
-            // 다음 버튼
+
             pagesHtml += `<button class="page-btn ${currentPage === totalPages ? 'disabled' : ''}" onclick="goToBoardPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
             
             paginationEl.innerHTML = `
@@ -3473,14 +3481,14 @@
             `;
         }
         
-        // 페이지 이동
+
         window.goToBoardPage = function(page) {
             loadBoardList(window.boardCurrentCategory, page);
-            // 스크롤 맨 위로
+
             document.querySelector('.post-list-wrap')?.scrollTo(0, 0);
         };
         
-        // 페이지 크기 변경
+
         window.changeBoardPageSize = function(size) {
             window.boardPageSize = parseInt(size);
             localStorage.setItem('boardPageSize', size);
@@ -3488,7 +3496,7 @@
             loadBoardList(window.boardCurrentCategory, 1);
         };
         
-        // 게시글 상세
+
         async function showPostDetail(postId) {
             document.body.innerHTML = `
                 <div class="board-wrap">
@@ -3521,7 +3529,7 @@
                     return;
                 }
                 
-                // 조회수 증가 (관리자 제외, 1시간 딜레이)
+
                 let viewIncremented = false;
                 if (!isAdmin) {
                     const viewKey = `post_view_${postId}`;
@@ -3543,17 +3551,17 @@
                 const createdDate = formatDateTime(post.createdAt);
                 const updatedDate = post.updatedAt ? formatDateTime(post.updatedAt) : null;
                 
-                // 카테고리 정보 가져오기
+
                 const categories = window.boardCategories || [];
                 const catInfo = categories.find(c => c.id === post.category) || { isPrivate: false, requireStatus: false };
                 
-                // 비공개 글 접근 제어
+
                 const isPrivatePost = catInfo.isPrivate;
                 let canViewContent = isAdmin; // 관리자는 항상 볼 수 있음
                 
-                // 비공개 글이면서 관리자가 아닌 경우 비밀번호 확인 필요
+
                 if (isPrivatePost && !isAdmin) {
-                    // 작성자 본인인지 확인할 비밀번호 입력 요청
+
                     document.body.innerHTML = `
                         <div class="board-wrap">
                             <div class="board-container">
@@ -3579,7 +3587,7 @@
                     window.verifyPrivatePost = async function(pid, authorPw) {
                         const inputPw = document.getElementById('privatePostPw').value;
                         if (inputPw === authorPw) {
-                            // 인증 성공 - 실제 내용 표시
+
                             sessionStorage.setItem('verifiedPost_' + pid, 'true');
                             location.reload();
                         } else {
@@ -3587,7 +3595,7 @@
                         }
                     };
                     
-                    // 이미 인증된 경우 통과
+
                     if (sessionStorage.getItem('verifiedPost_' + postId) === 'true') {
                         canViewContent = true;
                     } else {
@@ -3595,20 +3603,20 @@
                     }
                 }
                 
-                // 내용에서 줄바꿈 처리 (HTML 태그가 없으면 줄바꿈 처리)
+
                 let contentHtml = post.content || '';
                 if (!contentHtml.includes('<') && !contentHtml.includes('>')) {
                     contentHtml = contentHtml.replace(/\n/g, '<br>');
                 }
                 
-                // 이미지
+
                 const imageHtml = post.image ? `
                     <div style="margin-bottom: 24px; text-align: center;">
                         <img src="${post.image}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     </div>
                 ` : '';
                 
-                // 링크 버튼
+
                 const linkButtonHtml = post.link ? `
                     <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #f1f5f9; text-align: center;">
                         <a href="${post.link}" target="_blank" class="link-btn">
@@ -3617,13 +3625,13 @@
                     </div>
                 ` : '';
                 
-                // 공지사항 배지
+
                 const pinnedBadge = post.isPinned ? `<span class="pinned-badge">📌 공지사항</span>` : '';
                 
-                // 숨김 배지
+
                 const hiddenBadge = post.isHidden ? `<span class="hidden-badge-detail">👁️ 숨김 상태</span>` : '';
                 
-                // 처리 상태 배지
+
                 let statusBadge = '';
                 if (catInfo.requireStatus && post.status) {
                     if (post.status === 'pending') {
@@ -3633,10 +3641,10 @@
                     }
                 }
                 
-                // 색상
+
                 const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
                 
-                // 댓글 렌더링 함수 (먼저 정의)
+
                 const renderCommentsHtml = function(comments, pid) {
                     if (!comments || comments.length === 0) {
                         return '<p class="no-comments">등록된 댓글이 없습니다.</p>';
@@ -3658,10 +3666,10 @@
                             authorHtml = '👤 ' + c.author;
                         }
                         
-                        // 수정됨 표시
+
                         const editedBadge = c.editedAt ? '<span class="comment-edited">(수정됨)</span>' : '';
                         
-                        // 삭제된 댓글 표시 (관리자만)
+
                         if (c.isDeleted && isSuperAdmin) {
                             return '<div class="comment-item deleted" data-idx="' + idx + '">' +
                                 '<div class="comment-header">' +
@@ -3674,16 +3682,16 @@
                             '</div>';
                         }
                         
-                        // 버튼 영역
+
                         let buttonsHtml = '';
                         if (isSuperAdmin) {
-                            // 최종관리자는 모든 댓글 삭제 가능 + 수정 내역 보기
+
                             buttonsHtml = '<button onclick="deleteComment(\''+pid+'\', '+idx+')" class="comment-delete-btn">삭제</button>';
                             if (c.editHistory && c.editHistory.length > 0) {
                                 buttonsHtml += '<button onclick="showCommentEditHistory(\''+pid+'\', '+idx+')" class="comment-history-btn">수정내역</button>';
                             }
                         } else if (isUserComment) {
-                            // 사용자 댓글은 본인 인증 후 수정/삭제
+
                             buttonsHtml = '<div class="comment-user-actions" id="commentAuth_'+pid+'_'+idx+'">' +
                                 '<input type="password" maxlength="4" placeholder="비번" style="width:60px;padding:4px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;text-align:center;">' +
                                 '<button onclick="verifyCommentOwner(\''+pid+'\', '+idx+', \''+c.authorPassword+'\')" style="padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">확인</button>' +
@@ -3705,7 +3713,7 @@
                     }).join('');
                 };
                 
-                // 전역에도 등록 (submitComment, deleteComment에서 사용)
+
                 window.renderComments = renderCommentsHtml;
                 
                 const commentsHtml = renderCommentsHtml(post.comments || [], postId);
@@ -3925,11 +3933,11 @@
             }
         }
         
-        // 글쓰기 모달 열기
+
         window.openWritePostModal = function() {
             const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
             
-            // 사용자가 작성 가능한 카테고리만 필터링 (관리자는 모두 가능)
+
             const writableCategories = isAdmin ? categories : categories.filter(c => c.allowUserWrite === true);
             
             if (writableCategories.length === 0) {
@@ -3937,7 +3945,7 @@
                 return;
             }
             
-            // 카테고리 옵션 재생성
+
             const catOptionsHtml = writableCategories.map(cat => 
                 `<option value="${cat.id}" data-template="${encodeURIComponent(cat.defaultTemplate || '')}">${cat.icon} ${cat.name}</option>`
             ).join('');
@@ -3952,20 +3960,20 @@
             document.getElementById('postTitleColor').value = '#1e293b';
             clearImage();
             
-            // 제목 색상 버튼은 관리자만 표시
+
             document.getElementById('postTitleColor').style.display = isAdmin ? 'block' : 'none';
             
-            // 고정 옵션은 관리자만 표시
+
             document.getElementById('pinOptionsSection').style.display = isAdmin ? 'block' : 'none';
             
-            // 링크 첨부는 관리자만 표시
+
             document.getElementById('linkAttachSection').style.display = isAdmin ? 'block' : 'none';
             
-            // 비밀번호 입력은 비로그인 사용자만 표시
+
             document.getElementById('userAuthSection').style.display = isAdmin ? 'none' : 'block';
             document.getElementById('postUserPassword').value = '';
             
-            // 다이아 거래 유형 섹션 초기화
+
             const firstCatId = writableCategories[0]?.id;
             const diaSection = document.getElementById('diaTypeSection');
             if (diaSection) {
@@ -3979,7 +3987,7 @@
             }
             window.selectedDiaType = null;
             
-            // 첫번째 카테고리의 기본 양식 적용
+
             const firstCat = writableCategories[0];
             if (firstCat && firstCat.defaultTemplate) {
                 document.getElementById('postContentEditor').innerHTML = firstCat.defaultTemplate.replace(/\n/g, '<br>');
@@ -3987,7 +3995,7 @@
                 document.getElementById('postContentEditor').innerHTML = '';
             }
             
-            // 카테고리별 고정 옵션 생성
+
             const pinOptionsHtml = categories.map(cat => `
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
                     <input type="checkbox" class="categoryPinCheckbox" data-cat="${cat.id}" style="width: 16px; height: 16px; accent-color: ${cat.color};">
@@ -3999,14 +4007,14 @@
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
             
-            // 이미지 드래그앤드롭 및 붙여넣기 이벤트 설정
+
             setTimeout(() => {
                 setupImageDragDrop();
                 setupImagePaste();
             }, 100);
         };
         
-        // 카테고리 변경시 기본 양식 적용
+
         window.onCategoryChange = function(selectEl) {
             const selectedOption = selectEl.options[selectEl.selectedIndex];
             const categoryId = selectedOption.value;
@@ -4015,12 +4023,12 @@
                 document.getElementById('postContentEditor').innerHTML = template.replace(/\n/g, '<br>');
             }
             
-            // 다이아 카테고리일 때만 거래 유형 선택 표시
+
             const diaSection = document.getElementById('diaTypeSection');
             if (diaSection) {
                 if (categoryId === 'dia') {
                     diaSection.style.display = 'block';
-                    // 선택 초기화
+
                     document.querySelectorAll('#diaTypeSection label').forEach(label => {
                         label.style.background = '#f8fafc';
                         label.style.borderColor = '#e2e8f0';
@@ -4035,15 +4043,15 @@
             }
         };
         
-        // 다이아 거래 유형 선택
+
         window.selectDiaType = function(type, labelEl) {
-            // 모든 라벨 초기화
+
             document.querySelectorAll('#diaTypeSection label').forEach(label => {
                 label.style.background = '#f8fafc';
                 label.style.borderColor = '#e2e8f0';
             });
             
-            // 선택된 라벨 강조
+
             if (type === 'sell') {
                 labelEl.style.background = '#fef3c7';
                 labelEl.style.borderColor = '#f59e0b';
@@ -4057,19 +4065,19 @@
             window.selectedDiaType = type;
         };
         
-        // WYSIWYG 에디터 명령 실행
+
         window.execCmd = function(command, value = null) {
             document.execCommand(command, false, value);
         };
         
-        // 이미지 미리보기
+
         window.previewImage = function(input) {
             const file = input.files[0];
             if (!file) return;
             handleImageFile(file);
         };
         
-        // 이미지 파일 처리 공통 함수
+
         window.handleImageFile = function(file) {
             if (!file.type.startsWith('image/')) {
                 showBoardAlert('이미지 파일만 첨부할 수 있습니다.', 'error');
@@ -4089,7 +4097,7 @@
                 document.getElementById('imagePreviewArea').style.borderStyle = 'solid';
                 document.getElementById('imagePreviewArea').style.borderColor = '#3b82f6';
                 
-                // DataTransfer를 사용해 input에 파일 설정
+
                 const dt = new DataTransfer();
                 dt.items.add(file);
                 document.getElementById('postImageInput').files = dt.files;
@@ -4097,12 +4105,12 @@
             reader.readAsDataURL(file);
         };
         
-        // 드래그 앤 드롭 이벤트 설정
+
         window.setupImageDragDrop = function() {
             const dropArea = document.getElementById('imagePreviewArea');
             if (!dropArea) return;
             
-            // 드래그 오버 시 스타일 변경
+
             dropArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -4110,7 +4118,7 @@
                 this.style.background = '#eff6ff';
             });
             
-            // 드래그 나갈 때 스타일 복원
+
             dropArea.addEventListener('dragleave', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -4120,7 +4128,7 @@
                 }
             });
             
-            // 드롭 시 파일 처리
+
             dropArea.addEventListener('drop', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -4133,7 +4141,7 @@
             });
         };
         
-        // 붙여넣기 이벤트 설정 (모달 내에서)
+
         window.setupImagePaste = function() {
             const modal = document.getElementById('boardModalOverlay');
             if (!modal) return;
@@ -4155,7 +4163,7 @@
             });
         };
         
-        // 이미지 제거
+
         window.clearImage = function() {
             document.getElementById('postImageInput').value = '';
             document.getElementById('previewImg').src = '';
@@ -4165,7 +4173,7 @@
             document.getElementById('imagePreviewArea').style.borderColor = '#e2e8f0';
         };
         
-        // 게시글 작성자 비밀번호 확인
+
         window.verifyPostOwner = function(postId, authorPassword) {
             const inputPw = document.getElementById(`postAuthPw_${postId}`).value;
             
@@ -4175,17 +4183,17 @@
             }
             
             if (inputPw === authorPassword) {
-                // 인증 성공
+
                 document.getElementById(`postAuthSection_${postId}`).style.display = 'none';
                 document.getElementById(`postActionsSection_${postId}`).style.display = 'flex';
-                // 세션에 인증 정보 저장 (페이지 새로고침 전까지 유지)
+
                 sessionStorage.setItem(`postAuth_${postId}`, 'verified');
             } else {
                 showAlert('비밀번호가 일치하지 않습니다.', 'error');
             }
         };
         
-        // 사용자가 자신의 게시글 삭제
+
         window.deletePostByUser = async function(postId) {
             if (!confirm('정말 삭제하시겠습니까? 삭제된 글은 복구할 수 없습니다.')) return;
             
@@ -4199,7 +4207,7 @@
             }
         };
         
-        // 게시글 수정
+
         window.editPost = async function(postId) {
             try {
                 const postDoc = await getDoc(doc(db, "posts", postId));
@@ -4210,7 +4218,7 @@
                 
                 const post = postDoc.data();
                 
-                // 카테고리 로드 (없으면 Firebase에서 가져오기)
+
                 let categories = window.boardCategories || [];
                 if (categories.length === 0) {
                     try {
@@ -4226,15 +4234,15 @@
                     `<option value="${cat.id}" ${post.category === cat.id ? 'selected' : ''}>${cat.icon} ${cat.name}</option>`
                 ).join('');
                 
-                // 기존 수정 모달 제거
+
                 const existingModal = document.getElementById('editModalOverlay');
                 if (existingModal) existingModal.remove();
                 
-                // 수정 모달 표시
+
                 const modalHtml = document.createElement('div');
                 modalHtml.id = 'editModalOverlay';
                 modalHtml.style.cssText = 'display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.5); z-index: 1000; padding: 20px; overflow-y: auto; backdrop-filter: blur(4px);';
-                // 줄바꿈 처리: \n을 <br>로 변환 (HTML 태그가 없는 plain text인 경우)
+
                 let displayContent = post.content;
                 if (displayContent && !displayContent.includes('<') && displayContent.includes('\n')) {
                     displayContent = displayContent.replace(/\n/g, '<br>');
@@ -4338,7 +4346,7 @@
                 `;
                 document.body.appendChild(modalHtml);
                 
-                // 이벤트 리스너 추가
+
                 document.getElementById('editCancelBtn').addEventListener('click', () => {
                     document.getElementById('editModalOverlay').remove();
                 });
@@ -4352,7 +4360,7 @@
             }
         };
         
-        // 게시글 업데이트
+
         window.updatePost = async function(postId) {
             const category = document.getElementById('editCategoryInput').value;
             const title = document.getElementById('editTitleInput').value.trim();
@@ -4363,7 +4371,7 @@
             const isPinned = document.getElementById('editPinnedInput').checked;
             const titleColor = document.getElementById('editTitleColor').value;
             
-            // 카테고리별 고정 수집
+
             const pinnedCategories = [];
             document.querySelectorAll('.editCategoryPinCheckbox:checked').forEach(cb => {
                 pinnedCategories.push(cb.dataset.cat);
@@ -4395,11 +4403,11 @@
                 
                 await updateDoc(doc(db, "posts", postId), updateData);
                 
-                // 모달 먼저 닫기
+
                 const modal = document.getElementById('editModalOverlay');
                 if (modal) modal.remove();
                 
-                // 해당 게시글 페이지로 이동
+
                 location.href = '?page=board&post=' + postId;
                 
             } catch(e) {
@@ -4408,7 +4416,7 @@
             }
         };
         
-        // 게시글 삭제
+
         window.deletePost = async function(postId) {
             if (!confirm('정말 삭제하시겠습니까?')) return;
             
@@ -4425,7 +4433,7 @@
             }
         };
         
-        // 게시글 숨기기/해제
+
         window.togglePostHidden = async function(postId, hide) {
             try {
                 await updateDoc(doc(db, "posts", postId), {
@@ -4440,7 +4448,7 @@
             }
         };
         
-        // 처리 완료 상태로 변경
+
         window.completePostStatus = async function(postId) {
             if (!confirm('처리 완료로 변경하시겠습니까?')) return;
             try {
@@ -4457,7 +4465,7 @@
             }
         };
         
-        // 댓글 사용자 인증
+
         window.verifyCommentUser = async function() {
             const password = document.getElementById('commentUserPassword').value.trim();
             if (!password || password.length !== 4) {
@@ -4480,7 +4488,7 @@
                     return;
                 }
                 
-                // 인증 정보 저장
+
                 window.verifiedCommentUser = matchedUsers[0];
                 document.getElementById('commentVerifiedName').style.display = 'inline';
                 document.getElementById('commentVerifiedName').querySelector('span').textContent = matchedUsers[0].name;
@@ -4492,7 +4500,7 @@
             }
         };
         
-        // 댓글 등록
+
         window.submitComment = async function(postId) {
             const content = document.getElementById('commentInput').value.trim();
             if (!content) {
@@ -4500,12 +4508,12 @@
                 return;
             }
             
-            // 관리자가 아닌 경우 인증 확인
+
             let authorName = '';
             let authorPassword = null;
             
             if (isAdmin) {
-                // 관리자 별명 가져오기
+
                 if (isSuperAdmin) {
                     try {
                         const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
@@ -4526,7 +4534,7 @@
                     } catch(e) { authorName = '관리자'; }
                 }
             } else {
-                // 일반 사용자 인증 확인
+
                 if (!window.verifiedCommentUser) {
                     showBoardAlert('먼저 비밀번호 인증을 해주세요.', 'error');
                     return;
@@ -4555,10 +4563,10 @@
                 
                 await updateDoc(postRef, { comments: comments });
                 
-                // 입력창 비우기
+
                 document.getElementById('commentInput').value = '';
                 
-                // 인증 정보 초기화
+
                 window.verifiedCommentUser = null;
                 const verifiedName = document.getElementById('commentVerifiedName');
                 if (verifiedName) verifiedName.style.display = 'none';
@@ -4568,7 +4576,7 @@
                     pwInput.disabled = false;
                 }
                 
-                // 댓글 목록 즉시 갱신
+
                 document.getElementById('commentList').innerHTML = renderComments(comments, postId);
                 document.getElementById('commentCount').textContent = comments.filter(c => !c.isDeleted).length;
                 
@@ -4580,7 +4588,7 @@
             }
         };
         
-        // 댓글 삭제 (관리자) - 소프트 삭제
+
         window.deleteComment = async function(postId, commentIdx) {
             if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
             
@@ -4595,7 +4603,7 @@
                 
                 const comments = postDoc.data().comments || [];
                 
-                // 삭제자 이름 가져오기
+
                 let deletedBy = '관리자';
                 if (isSuperAdmin) {
                     try {
@@ -4608,14 +4616,14 @@
                     } catch(e) { deletedBy = '최종관리자'; }
                 }
                 
-                // 소프트 삭제 (기록 유지)
+
                 comments[commentIdx].isDeleted = true;
                 comments[commentIdx].deletedAt = Date.now();
                 comments[commentIdx].deletedBy = deletedBy;
                 
                 await updateDoc(postRef, { comments: comments });
                 
-                // 댓글 목록 즉시 갱신
+
                 document.getElementById('commentList').innerHTML = renderComments(comments, postId);
                 document.getElementById('commentCount').textContent = comments.filter(c => !c.isDeleted).length;
                 
@@ -4627,7 +4635,7 @@
             }
         };
         
-        // 댓글 본인 확인
+
         window.verifyCommentOwner = function(postId, commentIdx, authorPassword) {
             const authDiv = document.getElementById('commentAuth_' + postId + '_' + commentIdx);
             const input = authDiv.querySelector('input');
@@ -4646,7 +4654,7 @@
             }
         };
         
-        // 댓글 수정
+
         window.editComment = async function(postId, commentIdx) {
             try {
                 const postRef = doc(db, "posts", postId);
@@ -4659,7 +4667,7 @@
                 const contentDiv = document.getElementById('commentContent_' + postId + '_' + commentIdx);
                 const originalContent = comment.content;
                 
-                // 편집 모드로 변경
+
                 contentDiv.innerHTML = '<textarea id="editCommentInput_' + postId + '_' + commentIdx + '" style="width:100%;padding:10px;border:2px solid #3b82f6;border-radius:8px;font-size:14px;resize:vertical;min-height:60px;">' + originalContent + '</textarea>' +
                     '<div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">' +
                         '<button onclick="cancelEditComment(\'' + postId + '\', ' + commentIdx + ', \'' + encodeURIComponent(originalContent) + '\')" style="padding:6px 14px;background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;">취소</button>' +
@@ -4671,13 +4679,13 @@
             }
         };
         
-        // 댓글 수정 취소
+
         window.cancelEditComment = function(postId, commentIdx, encodedContent) {
             const contentDiv = document.getElementById('commentContent_' + postId + '_' + commentIdx);
             contentDiv.innerHTML = decodeURIComponent(encodedContent).replace(/\n/g, '<br>');
         };
         
-        // 댓글 수정 저장
+
         window.saveEditComment = async function(postId, commentIdx) {
             const newContent = document.getElementById('editCommentInput_' + postId + '_' + commentIdx).value.trim();
             if (!newContent) {
@@ -4693,7 +4701,7 @@
                 const comments = postDoc.data().comments || [];
                 const comment = comments[commentIdx];
                 
-                // 수정 내역 저장
+
                 if (!comment.editHistory) comment.editHistory = [];
                 comment.editHistory.push({
                     oldContent: comment.content,
@@ -4705,7 +4713,7 @@
                 
                 await updateDoc(postRef, { comments: comments });
                 
-                // 댓글 목록 갱신
+
                 document.getElementById('commentList').innerHTML = renderComments(comments, postId);
                 
                 showAlert('댓글이 수정되었습니다.', 'success');
@@ -4716,7 +4724,7 @@
             }
         };
         
-        // 사용자가 본인 댓글 삭제
+
         window.deleteCommentByUser = async function(postId, commentIdx) {
             if (!confirm('댓글을 삭제하시겠습니까?')) return;
             
@@ -4727,14 +4735,14 @@
                 
                 const comments = postDoc.data().comments || [];
                 
-                // 소프트 삭제
+
                 comments[commentIdx].isDeleted = true;
                 comments[commentIdx].deletedAt = Date.now();
                 comments[commentIdx].deletedBy = comments[commentIdx].author + ' (본인)';
                 
                 await updateDoc(postRef, { comments: comments });
                 
-                // 댓글 목록 갱신
+
                 document.getElementById('commentList').innerHTML = renderComments(comments, postId);
                 document.getElementById('commentCount').textContent = comments.filter(c => !c.isDeleted).length;
                 
@@ -4746,7 +4754,7 @@
             }
         };
         
-        // 관리자용 댓글 수정 내역 보기
+
         window.showCommentEditHistory = async function(postId, commentIdx) {
             try {
                 const postDoc = await getDoc(doc(db, "posts", postId));
@@ -4780,12 +4788,12 @@
             }
         };
         
-        // 모달 닫기
+
         window.closeBoardModal = function() {
             document.getElementById('boardModalOverlay').style.display = 'none';
         };
         
-        // 게시글 등록
+
         window.submitPost = async function() {
             const category = document.getElementById('postCategoryInput').value;
             let title = document.getElementById('postTitleInput').value.trim();
@@ -4797,16 +4805,16 @@
             const imageInput = document.getElementById('postImageInput');
             const titleColor = isAdmin ? document.getElementById('postTitleColor').value : '#1e293b';
             
-            // 다이아 카테고리인 경우 거래 유형 태그 추가
+
             if (category === 'dia' && window.selectedDiaType) {
                 const diaTag = window.selectedDiaType === 'sell' ? '[다이아 판매]' : '[다이아 구매]';
-                // 이미 태그가 있으면 추가하지 않음
+
                 if (!title.startsWith('[다이아 판매]') && !title.startsWith('[다이아 구매]')) {
                     title = diaTag + ' ' + title;
                 }
             }
             
-            // 카테고리별 고정 수집 (관리자만)
+
             const pinnedCategories = [];
             if (isAdmin) {
                 document.querySelectorAll('.categoryPinCheckbox:checked').forEach(cb => {
@@ -4819,7 +4827,7 @@
                 return;
             }
             
-            // 비로그인 사용자는 인증 필요
+
             let authorName = '관리자';
             let authorPassword = null;
             
@@ -4831,7 +4839,7 @@
                 authorName = window.verifiedPostUser.name;
                 authorPassword = window.verifiedPostUser.password;
             } else {
-                // 관리자 이름 설정
+
                 if (isSuperAdmin) {
                     try {
                         const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
@@ -4872,13 +4880,13 @@
                     status: catInfo?.requireStatus ? 'pending' : null // 처리 상태 (닉변 등)
                 };
                 
-                // 링크가 있으면 추가
+
                 if (link) {
                     postData.link = link;
                     postData.linkText = linkText || '바로가기';
                 }
                 
-                // 이미지가 있으면 Base64로 저장
+
                 if (imageInput.files[0]) {
                     const file = imageInput.files[0];
                     const base64 = await new Promise((resolve) => {
@@ -4891,12 +4899,12 @@
                 
                 await setDoc(doc(db, "posts", postId), postData);
                 
-                // 인증 정보 초기화
+
                 window.verifiedPostUser = null;
                 
                 closeBoardModal();
                 showBoardAlert('등록되었습니다!', 'success', () => {
-                    // 등록된 게시글로 바로 이동
+
                     location.href = '?page=board&post=' + postId;
                 });
                 
@@ -4906,7 +4914,7 @@
             }
         };
         
-        // 비밀번호로 사용자 인증
+
         window.verifyUserPassword = async function() {
             const password = document.getElementById('postUserPassword').value.trim();
             if (!password || password.length !== 4) {
@@ -4915,7 +4923,7 @@
             }
             
             try {
-                // users 컬렉션에서 해당 비밀번호를 가진 사용자 찾기
+
                 const usersSnapshot = await getDocs(collection(db, "users"));
                 const matchedUsers = [];
                 
@@ -4932,13 +4940,13 @@
                 }
                 
                 if (matchedUsers.length === 1) {
-                    // 단일 사용자 - 바로 인증
+
                     window.verifiedPostUser = matchedUsers[0];
                     document.getElementById('verifiedUserName').style.display = 'block';
                     document.getElementById('verifiedUserName').querySelector('span').textContent = matchedUsers[0].name;
                     showBoardAlert(`${matchedUsers[0].name}님으로 인증되었습니다.`, 'success');
                 } else {
-                    // 다중 사용자 - 선택창 표시
+
                     showUserSelectModal(matchedUsers);
                 }
                 
@@ -4948,7 +4956,7 @@
             }
         };
         
-        // 다중 사용자 선택 모달
+
         window.showUserSelectModal = function(users) {
             const overlay = document.createElement('div');
             overlay.id = 'userSelectOverlay';
@@ -4980,7 +4988,7 @@
             showBoardAlert(`${name}님으로 인증되었습니다.`, 'success');
         };
         
-        // 카테고리 관리 모달
+
         window.openCategoryManageModal = async function() {
             document.getElementById('categoryModalOverlay').style.display = 'block';
             await loadCategoryList();
@@ -4990,7 +4998,7 @@
             document.getElementById('categoryModalOverlay').style.display = 'none';
         };
         
-        // 카테고리 목록 로드
+
         async function loadCategoryList() {
             const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
             const listEl = document.getElementById('categoryList');
@@ -5035,7 +5043,7 @@
             listEl.innerHTML = html;
         }
         
-        // 카테고리 수정
+
         window.updateCategory = async function(catId) {
             const icon = document.getElementById(`cat-icon-${catId}`).value.trim();
             const name = document.getElementById(`cat-name-${catId}`).value.trim();
@@ -5072,7 +5080,7 @@
             }
         };
         
-        // 카테고리 추가
+
         window.addCategory = async function() {
             const icon = document.getElementById('newCatIcon').value.trim();
             const name = document.getElementById('newCatName').value.trim();
@@ -5106,7 +5114,7 @@
                 
                 window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
                 
-                // 입력창 초기화
+
                 document.getElementById('newCatIcon').value = '';
                 document.getElementById('newCatName').value = '';
                 document.getElementById('newCatId').value = '';
@@ -5124,7 +5132,7 @@
             }
         };
         
-        // 카테고리 삭제
+
         window.deleteCategory = async function(catId) {
             if (!confirm(`'${catId}' 카테고리를 삭제하시겠습니까?\n해당 카테고리의 게시글은 유지됩니다.`)) return;
             
@@ -5143,9 +5151,9 @@
             }
         };
         
-        // 게시판 전용 알림 함수
+
         function showBoardAlert(message, type = 'success', callback = null) {
-            // 기존 알림 제거
+
             const existingOverlay = document.querySelector('.board-alert-overlay');
             const existingAlert = document.querySelector('.board-alert');
             if (existingOverlay) existingOverlay.remove();
@@ -5177,10 +5185,10 @@
                 }, 150);
             };
             
-            // 오버레이 클릭 시 닫기
+
             overlay.addEventListener('click', closeBoardAlert);
         }
-        // ==================== 게시판 기능 끝 ====================
+
        
         async function checkDuplicateNicknames() {
             if (!isAdmin) return;
@@ -5313,22 +5321,22 @@
                     lockEndTime = data.lockEndTime || 0;
                     biweeklyBaseTime = data.biweeklyBaseTime || 0;
                     
-                    // 2주 반복이 설정되어 있고, 현재 잠금 기간이 지났으면 다음 기간으로 자동 갱신
+
                     if (biweeklyBaseTime > 0 && lockEndTime > 0) {
                         const now = Date.now();
                         if (now > lockEndTime) {
-                            // 다음 2주 기간 계산
+
                             const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
                             let newStart = lockStartTime;
                             let newEnd = lockEndTime;
                             
-                            // 현재 시간이 지날 때까지 2주씩 추가
+
                             while (newEnd < now) {
                                 newStart += twoWeeksMs;
                                 newEnd += twoWeeksMs;
                             }
                             
-                            // Firebase 업데이트
+
                             await setDoc(docRef, {
                                 lockStartTime: newStart,
                                 lockEndTime: newEnd,
@@ -5431,17 +5439,17 @@
 
         async function getIp() { 
             try { 
-                // 첫 번째 시도: ipify
+
                 const res = await fetch('https://api.ipify.org?format=json', { timeout: 3000 }); 
                 return (await res.json()).ip; 
             } catch (e) { 
                 try {
-                    // 두 번째 시도: ipapi.co
+
                     const res2 = await fetch('https://ipapi.co/ip/', { timeout: 3000 });
                     return await res2.text();
                 } catch (e2) {
                     try {
-                        // 세 번째 시도: ifconfig.me
+
                         const res3 = await fetch('https://ifconfig.me/ip', { timeout: 3000 });
                         return await res3.text();
                     } catch (e3) {
@@ -5451,16 +5459,16 @@
             } 
         }
         
-        // User Agent 파싱 함수
+
         function parseUserAgent(ua) {
             if (!ua) return '알 수 없음';
             
             let device = '';
             let browser = '';
             
-            // 기기 감지 - 더 세분화
+
             if (/iPhone/.test(ua)) {
-                // iPhone 모델 세부 정보 (iOS 버전으로 추정)
+
                 if (/iPhone.*OS\s*(\d+)/.test(ua)) {
                     const ver = parseInt(ua.match(/iPhone.*OS\s*(\d+)/)[1]);
                     if (ver >= 18) device = '아이폰16';
@@ -5474,7 +5482,7 @@
                 }
             } else if (/iPad/.test(ua)) {
                 device = '아이패드';
-            // 갤럭시 S 시리즈 세분화
+
             } else if (/SM-S93[89]/i.test(ua)) {
                 device = '갤럭시S24울트라';
             } else if (/SM-S92[16]/i.test(ua)) {
@@ -5499,7 +5507,7 @@
                 device = '갤럭시S21+';
             } else if (/SM-G99[01]/i.test(ua)) {
                 device = '갤럭시S21';
-            // 갤럭시 폴드 시리즈 세분화
+
             } else if (/SM-F956/i.test(ua)) {
                 device = '갤럭시폴드6';
             } else if (/SM-F946/i.test(ua)) {
@@ -5512,7 +5520,7 @@
                 device = '갤럭시폴드2';
             } else if (/SM-F9\d+/i.test(ua)) {
                 device = '갤럭시폴드';
-            // 갤럭시 플립 시리즈 세분화
+
             } else if (/SM-F756/i.test(ua)) {
                 device = '갤럭시플립6';
             } else if (/SM-F731/i.test(ua)) {
@@ -5525,14 +5533,14 @@
                 device = '갤럭시플립';
             } else if (/SM-F7\d+/i.test(ua)) {
                 device = '갤럭시플립';
-            // 갤럭시 노트 시리즈
+
             } else if (/SM-N98\d/i.test(ua)) {
                 device = '갤럭시노트20';
             } else if (/SM-N97\d/i.test(ua)) {
                 device = '갤럭시노트10';
             } else if (/SM-N9\d+/i.test(ua)) {
                 device = '갤럭시노트';
-            // 갤럭시 A 시리즈
+
             } else if (/SM-A\d+/i.test(ua)) {
                 const match = ua.match(/SM-A(\d)\d+/i);
                 if (match) {
@@ -5554,7 +5562,7 @@
                 device = '기타';
             }
             
-            // 브라우저 감지
+
             if (/Whale/.test(ua)) {
                 browser = '웨일';
             } else if (/SamsungBrowser/.test(ua)) {
@@ -5576,13 +5584,13 @@
             return `${device}-${browser}`;
         }
         
-        // 영어 위치 → 한글 변환 함수
+
         function translateLocation(loc) {
             if (!loc || loc === '-' || loc === '') return '-';
             
-            // 모든 변환 맵 통합 (긴 문자열부터 변환하기 위해 정렬)
+
             const translateMap = {
-                // 국가명
+
                 'South Korea': '대한민국', 'Korea': '대한민국',
                 'United States': '미국', 'USA': '미국',
                 'Japan': '일본', 'China': '중국', 'Taiwan': '대만',
@@ -5592,12 +5600,12 @@
                 'Germany': '독일', 'France': '프랑스', 'Italy': '이탈리아', 'Spain': '스페인',
                 'Russia': '러시아', 'India': '인도', 'Brazil': '브라질', 'Mexico': '멕시코',
                 
-                // 광역시/특별시
+
                 'Seoul': '서울', 'Busan': '부산', 'Incheon': '인천',
                 'Daegu': '대구', 'Daejeon': '대전', 'Gwangju-si': '광주', 
                 'Ulsan': '울산', 'Sejong': '세종',
                 
-                // 도 (긴 것부터)
+
                 'Gyeongsangnam-do': '경남', 'Gyeongsangbuk-do': '경북',
                 'Chungcheongnam-do': '충남', 'Chungcheongbuk-do': '충북',
                 'Jeollanam-do': '전남', 'Jeollabuk-do': '전북',
@@ -5608,7 +5616,7 @@
                 'Gyeonggi': '경기', 'Gangwon': '강원', 'Jeju': '제주',
                 'Jeonbuk': '전북',
                 
-                // 경기도 도시
+
                 'Suwon-si': '수원', 'Suwon': '수원',
                 'Seongnam-si': '성남', 'Seongnam': '성남',
                 'Goyang-si': '고양', 'Goyang': '고양',
@@ -5637,7 +5645,7 @@
                 'Uiwang-si': '의왕', 'Uiwang': '의왕',
                 'Yeoju-si': '여주', 'Yeoju': '여주',
                 
-                // 경상남도 도시
+
                 'Changwon-si': '창원', 'Changwon': '창원',
                 'Gimhae-si': '김해', 'Gimhae': '김해',
                 'Jinju-si': '진주', 'Jinju': '진주',
@@ -5647,7 +5655,7 @@
                 'Tongyeong-si': '통영', 'Tongyeong': '통영',
                 'Miryang-si': '밀양', 'Miryang': '밀양',
                 
-                // 경상북도 도시
+
                 'Pohang-si': '포항', 'Pohang': '포항',
                 'Gumi-si': '구미', 'Gumi': '구미',
                 'Gyeongju-si': '경주', 'Gyeongju': '경주',
@@ -5658,7 +5666,7 @@
                 'Yeongcheon-si': '영천', 'Yeongcheon': '영천',
                 'Mungyeong-si': '문경', 'Mungyeong': '문경',
                 
-                // 충청남도 도시
+
                 'Cheonan-si': '천안', 'Cheonan': '천안',
                 'Asan-si': '아산', 'Asan': '아산',
                 'Seosan-si': '서산', 'Seosan': '서산',
@@ -5667,12 +5675,12 @@
                 'Gongju-si': '공주', 'Gongju': '공주',
                 'Boryeong-si': '보령', 'Boryeong': '보령',
                 
-                // 충청북도 도시
+
                 'Cheongju-si': '청주', 'Cheongju': '청주',
                 'Chungju-si': '충주', 'Chungju': '충주',
                 'Jecheon-si': '제천', 'Jecheon': '제천',
                 
-                // 전라북도 도시
+
                 'Jeonju-si': '전주', 'Jeonju': '전주',
                 'Gunsan-si': '군산', 'Gunsan': '군산',
                 'Iksan-si': '익산', 'Iksan': '익산',
@@ -5680,14 +5688,14 @@
                 'Gimje-si': '김제', 'Gimje': '김제',
                 'Jeongeup-si': '정읍', 'Jeongeup': '정읍',
                 
-                // 전라남도 도시
+
                 'Yeosu-si': '여수', 'Yeosu': '여수',
                 'Suncheon-si': '순천', 'Suncheon': '순천',
                 'Mokpo-si': '목포', 'Mokpo': '목포',
                 'Gwangyang-si': '광양', 'Gwangyang': '광양',
                 'Naju-si': '나주', 'Naju': '나주',
                 
-                // 강원도 도시
+
                 'Chuncheon-si': '춘천', 'Chuncheon': '춘천',
                 'Wonju-si': '원주', 'Wonju': '원주',
                 'Gangneung-si': '강릉', 'Gangneung': '강릉',
@@ -5696,11 +5704,11 @@
                 'Samcheok-si': '삼척', 'Samcheok': '삼척',
                 'Taebaek-si': '태백', 'Taebaek': '태백',
                 
-                // 제주도 도시
+
                 'Jeju City': '제주시', 'Jeju-si': '제주시',
                 'Seogwipo-si': '서귀포', 'Seogwipo': '서귀포',
                 
-                // 서울 구
+
                 'Gangnam-gu': '강남구', 'Gangnam': '강남',
                 'Seocho-gu': '서초구', 'Seocho': '서초',
                 'Songpa-gu': '송파구', 'Songpa': '송파',
@@ -5727,7 +5735,7 @@
                 'Seongdong-gu': '성동구', 'Seongdong': '성동',
                 'Gwangjin-gu': '광진구', 'Gwangjin': '광진',
                 
-                // 부산 구
+
                 'Dongnae-gu': '동래구', 'Dongnae': '동래',
                 'Haeundae-gu': '해운대구', 'Haeundae': '해운대',
                 'Suyeong-gu': '수영구', 'Suyeong': '수영',
@@ -5743,14 +5751,14 @@
                 'Yeongdo-gu': '영도구', 'Yeongdo': '영도',
                 'Gijang-gun': '기장군', 'Gijang': '기장',
                 
-                // 인천 구
+
                 'Namdong-gu': '남동구', 'Namdong': '남동',
                 'Bupyeong-gu': '부평구', 'Bupyeong': '부평',
                 'Gyeyang-gu': '계양구', 'Gyeyang': '계양',
                 'Yeonsu-gu': '연수구', 'Yeonsu': '연수',
                 'Michuhol-gu': '미추홀구', 'Michuhol': '미추홀',
                 
-                // 대구 구
+
                 'Suseong-gu': '수성구', 'Suseong': '수성',
                 'Dalseo-gu': '달서구', 'Dalseo': '달서',
                 'Dalseong-gun': '달성군', 'Dalseong': '달성'
@@ -5758,7 +5766,7 @@
             
             let result = loc;
             
-            // 긴 문자열부터 변환 (정확한 매칭을 위해)
+
             const sortedKeys = Object.keys(translateMap).sort((a, b) => b.length - a.length);
             
             for (const eng of sortedKeys) {
@@ -5767,30 +5775,30 @@
                 }
             }
             
-            // 남은 영어가 있으면 제거하고 정리
+
             result = result.trim();
             
-            // 공백 정리 (연속 공백 제거)
+
             result = result.replace(/\s+/g, ' ');
             
             return result || '-';
         }
         
-        // 위치 정보 조회 함수 (캐시 사용)
+
         let cachedLocation = null;
         let cachedIp = null;
         async function getIpAndLocation() {
             try {
                 const ip = await getIp();
                 
-                // 같은 IP면 캐시된 위치 사용
+
                 if (cachedIp === ip && cachedLocation) {
                     return { ip, location: cachedLocation };
                 }
                 
                 cachedIp = ip;
                 
-                // ipapi.co 무료 API 사용 (HTTPS 지원)
+
                 const res = await fetch(`https://ipapi.co/${ip}/json/`);
                 const data = await res.json();
                 
@@ -5799,16 +5807,16 @@
                     const region = data.region || '';
                     const city = data.city || '';
                     
-                    // 국가별 포맷
+
                     if (country === 'South Korea' || country === 'Korea') {
-                        // 한국: "대한민국 서울특별시 강남구" 형식
+
                         const parts = [];
                         parts.push('대한민국');
                         if (region) parts.push(region);
                         if (city && city !== region) parts.push(city);
                         cachedLocation = parts.join(' ');
                     } else if (country) {
-                        // 해외: "미국 샌프란시스코" 형식
+
                         const parts = [country];
                         if (city) {
                             parts.push(city);
@@ -5829,7 +5837,7 @@
             }
         }
         
-        // 로그 정보 헬퍼 (IP, 위치, 기기 정보)
+
         async function getLogInfo() {
             const { ip, location } = await getIpAndLocation();
             return {
@@ -5994,7 +6002,7 @@
 
                        const renameButton = isAdmin ? `<button class="btn btn-rename" onclick="window.openRenameModal('${name}')" style="flex:1">🔄 닉네임 변경</button>` : '';
             
-            // 최종관리자용 로그 보기 버튼
+
             const logButton = isSuperAdmin ? `<button class="btn" onclick="window.showUserLogs('${name}')" style="flex:1; background:#6366f1; color:white;">📋 로그 보기</button>` : '';
 
             const content = `
@@ -6024,9 +6032,8 @@
             document.getElementById('modalFooter').style.display = 'none';
         }
 
-        // 특정 유저의 로그 보기
         window.showUserLogs = async function(userName) {
-            // 최종관리자만 접근 가능
+
             if (!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
                 return;
@@ -6041,16 +6048,16 @@
                 const userLogs = [];
                 logsSnap.forEach(d => {
                     const l = d.data();
-                    // who 필드에서 유저 이름 검색 (닉네임 변경의 경우 old→new 형태도 체크)
+
                     const who = l.who || '';
                     if (who.includes(userName) || who === userName) {
-                        // 기기 정보 파싱
+
                         let deviceDisplay = l.device || '-';
                         if (deviceDisplay.length > 30 || deviceDisplay.includes('Mozilla')) {
                             deviceDisplay = parseUserAgent(deviceDisplay);
                         }
                         
-                        // 위치 한글 변환
+
                         let locationDisplay = translateLocation(l.location || '-');
                         
                         userLogs.push({
@@ -6067,7 +6074,7 @@
                     }
                 });
                 
-                // 전역 저장 (상세보기용)
+
                 window.currentUserLogs = userLogs;
                 
                 const typeMap = {
@@ -6107,7 +6114,7 @@
                         const typeDisplay = typeMap[l.type] || l.type;
                         let contentDisplay = l.changes || '';
                         
-                        // 타입별 내용 표시
+
                         if (l.type === 'power' || l.type === 'info_edit' || l.type === 'guild_change' || l.type === 'spec_edit') {
                             contentDisplay = l.changes || '정보 수정';
                         } else if (l.type === 'nickname_change') {
@@ -6150,7 +6157,7 @@
             }
         };
         
-        // 유저 로그 상세보기
+
         window.showUserLogDetail = function(index) {
             const l = window.currentUserLogs[index];
             if (!l) return;
@@ -6338,7 +6345,7 @@
                     return; 
                 }
                 
-                // 비밀번호 중복 체크
+
                 const allUsersSnap = await getDocs(collection(db, "users"));
                 let pwDuplicate = false;
                 allUsersSnap.forEach(docSnap => {
@@ -6563,7 +6570,7 @@
 
             document.getElementById('modalSubmit').innerText = "수정 완료";
             document.getElementById('modalSubmit').onclick = async () => {
-                // 더블클릭 방지
+
                 const submitBtn = document.getElementById('modalSubmit');
                 if (submitBtn.disabled) return;
                 submitBtn.disabled = true;
@@ -6661,7 +6668,7 @@
 
                 await updateDoc(doc(db, "users", u.name), newData);
                 
-                // 변경 내용에 따라 로그 타입 결정
+
                 let logType = 'info_edit';
                 const powerChanged = u.power !== nPower;
                 const guildChanged = u.guild !== nGuild;
@@ -6672,7 +6679,7 @@
                     (u.mount_myth || 0) !== newMM
                 );
                 
-                // 변경이 있을 때만 로그 저장
+
                 const hasAnyChange = powerChanged || guildChanged || specChanged;
                 
                 if (hasAnyChange) {
@@ -6683,7 +6690,7 @@
                     } else if (specChanged && !powerChanged && !guildChanged) {
                         logType = 'spec_edit';  // 스펙만 변경
                     }
-                    // 여러 항목 변경 시 info_edit 유지
+
                     
                     await setDoc(doc(collection(db, "logs")), { 
                         who: u.name, 
@@ -6792,7 +6799,7 @@
             btn.innerText = "처리 중...";
             btn.disabled = true;
             
-            // 진행률 모달 표시
+
             const progress = showProgress('📝 일괄 등록 중', `${names.length}명 처리 중...`);
 
             try {
@@ -6818,7 +6825,7 @@
                         newCount++;
                     }
                     
-                    // 진행률 업데이트
+
                     progress.update(((i + 1) / names.length) * 100, `${i + 1}/${names.length} 처리 중... (${name})`);
                 }
                 
@@ -6920,7 +6927,7 @@
             btn.innerText = "처리 중...";
             btn.disabled = true;
             
-            // 진행률 모달 표시
+
             const progress = showProgress('🚀 길드 이동 중', `${names.length}명 처리 중...`);
 
             let movedCount = 0;                 let skippedCount = 0;               let notFoundCount = 0;              const movedUsers = [];
@@ -6954,13 +6961,13 @@
                         notFoundUsers.push(name);
                     }
                     
-                    // 진행률 업데이트
+
                     progress.update(((i + 1) / names.length) * 100, `${i + 1}/${names.length} 처리 중... (${name})`);
                 }
                 
                 progress.close();
                 
-                // 이동된 유저 이름 목록
+
                 const movedNames = movedUsers.map(u => u.name).join(', ');
                 
                                await setDoc(doc(collection(db, "logs")), { 
@@ -7191,7 +7198,7 @@
                         localStorage.setItem('adminAutoLogin', btoa(JSON.stringify({id: inputId, pw: inputPw, type: 'super'})));
                     }
                     
-                    // 접속 로그 기록
+
                     try {
                         const { ip, location } = await getIpAndLocation();
                         await setDoc(doc(collection(db, "adminLogs")), {
@@ -7228,7 +7235,7 @@
                             localStorage.setItem('adminAutoLogin', btoa(JSON.stringify({id: inputId, pw: inputPw, type: 'normal'})));
                         }
                         
-                        // 접속 로그 기록
+
                         try {
                             const { ip, location } = await getIpAndLocation();
                             await setDoc(doc(collection(db, "adminLogs")), {
@@ -7278,7 +7285,7 @@
                         updateAdminUI();
                         await checkPendingUsers();
                         
-                        // 자동 로그인 접속 로그 기록
+
                         try {
                             const { ip, location } = await getIpAndLocation();
                             await setDoc(doc(collection(db, "adminLogs")), {
@@ -7306,7 +7313,7 @@
                         updateAdminUI();
                         await checkPendingUsers();
                         
-                        // 자동 로그인 접속 로그 기록
+
                         try {
                             const { ip, location } = await getIpAndLocation();
                             await setDoc(doc(collection(db, "adminLogs")), {
@@ -7443,8 +7450,7 @@
         document.getElementById('excelBtn').addEventListener('click', async () => {
             if(!isAdmin || allGuildData.length === 0) return;
             
-            // 공유 링크 생성 모달
-            // 먼저 백업 목록 가져오기
+
             let backupOptions = '<option value="">없음 (증감 표시 안함)</option>';
             try {
                 const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc")));
@@ -7457,7 +7463,7 @@
                 });
             } catch(e) { console.error(e); }
             
-            // 길드별 차감 입력 필드 생성
+
             const guildDeductInputs = guildList.map(guild => `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <span style="min-width:60px; font-weight:500; font-size:13px;">${guild}</span>
@@ -7474,7 +7480,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">🏷️ 헤더 이름</label>
-                    <input type="text" id="shareHeaderName" class="form-input" value=" 오스카2 전투력 현황판" placeholder="페이지 상단에 표시될 이름">
+                    <input type="text" id="shareHeaderName" class="form-input" value="오스카2 전투력 현황판" placeholder="페이지 상단에 표시될 이름">
                 </div>
                 <div class="form-group">
                     <label class="form-label">📝 추가 설명 (선택)</label>
@@ -7507,14 +7513,14 @@
             `;
         });
         
-        // 현재 전투력 공유 링크 생성
+
         window.generateShareLinkCurrent = async function() {
-            const pageTitle = document.getElementById('shareTitle').value.trim() || '🏆 오스카2 전투력 현황판';
-            const headerName = document.getElementById('shareHeaderName').value.trim() || '🏆 오스카2 전투력 현황판';
+            const pageTitle = document.getElementById('shareTitle').value.trim() || '오스카2 전투력 현황판';
+            const headerName = document.getElementById('shareHeaderName').value.trim() || '오스카2 전투력 현황판';
             const description = document.getElementById('shareDesc').value.trim() || '';
             const compareBackupId = document.getElementById('shareCompareBackup').value;
             
-            // 길드별 차감 정보 수집
+
             const guildDeductions = {};
             document.querySelectorAll('.guild-deduct-input').forEach(input => {
                 const guild = input.dataset.guild;
@@ -7524,7 +7530,7 @@
                 }
             });
             
-            // 비교본 데이터 로드
+
             let compareData = {};
             if (compareBackupId) {
                 try {
@@ -7538,10 +7544,10 @@
                 } catch(e) { console.error('비교본 로드 오류:', e); }
             }
             
-            // 데이터 정렬 (전투력순)
+
             let data = [...allGuildData].sort((a, b) => b.power - a.power);
             
-            // 길드별 통계 계산
+
             const guildStats = {};
             const guildNames = [...new Set(data.map(u => u.guild))];
             guildNames.forEach(guild => {
@@ -7564,7 +7570,7 @@
                 };
             });
             
-            // 유저 데이터에 차감 및 증감 적용
+
             const modifiedUsers = data.map(u => {
                 const deduction = guildDeductions[u.guild] || 0;
                 const deductedPower = Math.max(0, u.power - deduction);
@@ -7589,7 +7595,7 @@
             const totalDiff = modifiedUsers.reduce((sum, u) => sum + u.diff, 0);
             
             try {
-                // 공유 데이터 저장
+
                 const shareId = `share_${Date.now()}`;
                 await setDoc(doc(db, "sharedBackups", shareId), {
                     type: 'current',
@@ -7610,7 +7616,7 @@
                     }
                 });
                 
-                // 공유 URL 생성
+
                 const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
                 
                 const html = `
@@ -7642,7 +7648,6 @@
             openSpreadsheetSettingsModal();
         });
 
-        // 분배 제외 관리 버튼
         document.getElementById('syncExcludeBtn').addEventListener('click', () => {
             if (!isAdmin) return;
             openSyncExcludeModal();
@@ -7651,7 +7656,7 @@
         async function openSyncExcludeModal() {
             openLargeModal('🚫 분배 제외 관리', '분배금 계산에서 제외할 유저를 선택합니다');
             
-            // 검색 및 필터 UI
+
             let html = `
                 <div style="margin-bottom:16px;">
                     <div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
@@ -7692,7 +7697,7 @@
                         <tbody id="excludeUserList">
             `;
             
-            // 유저 목록 생성
+
             const sortedUsers = [...allGuildData].sort((a, b) => a.name.localeCompare(b.name));
             sortedUsers.forEach(user => {
                 const isExcluded = syncExcludeList.includes(user.name);
@@ -7723,12 +7728,12 @@
             
             setModalBody(html);
             
-            // 검색/필터 이벤트
+
             document.getElementById('excludeSearchInput').addEventListener('input', filterExcludeList);
             document.getElementById('excludeGuildFilter').addEventListener('change', filterExcludeList);
             document.getElementById('excludeStatusFilter').addEventListener('change', filterExcludeList);
             
-            // 체크박스 변경 이벤트
+
             document.querySelectorAll('.exclude-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
                     const name = this.dataset.name;
@@ -7746,10 +7751,10 @@
                 });
             });
             
-            // 행 클릭 시 체크박스 토글
+
             document.querySelectorAll('.exclude-row').forEach(row => {
                 row.addEventListener('click', function(e) {
-                    // 체크박스 직접 클릭은 제외 (이미 처리됨)
+
                     if (e.target.type === 'checkbox') return;
                     
                     const checkbox = this.querySelector('.exclude-checkbox');
@@ -7790,7 +7795,7 @@
 
         function updateExcludeCount() {
             const infoBox = document.querySelector('.openSyncExcludeModal-info');
-            // 헤더의 제외 인원 업데이트는 저장 후에 반영
+
         }
 
         window.selectAllExclude = function(exclude) {
@@ -7820,11 +7825,11 @@
                 await setDoc(doc(db, "config", "spreadsheet"), config);
                 spreadsheetConfig = config;
                 
-                // 변경 내역 계산
+
                 const added = syncExcludeList.filter(n => !prevList.includes(n));
                 const removed = prevList.filter(n => !syncExcludeList.includes(n));
                 
-                // 로그 기록
+
                 let logDetail = '';
                 if (added.length > 0) logDetail += `제외 추가: ${added.join(', ')}`;
                 if (removed.length > 0) logDetail += (logDetail ? ' / ' : '') + `제외 해제: ${removed.join(', ')}`;
@@ -7884,7 +7889,7 @@
             `;
             sheetMappingHtml += '</div>';
             
-            // 최종관리자 전용 수정 안내
+
             const notSuperAdminNotice = !isSuperAdmin ? `
                 <div style="margin-bottom:16px; padding:12px; background:#fef3c7; border-radius:8px; border-left:4px solid #f59e0b;">
                     <p style="font-size:12px; color:#92400e; margin:0;">⚠️ 설정 수정은 최종관리자만 가능합니다 (조회만 가능)</p>
@@ -7936,7 +7941,7 @@
             `;
 
             openLargeModal('스프레드시트 연동 설정', '구글 스프레드시트 자동 동기화');
-            // setModalBody 대신 직접 설정 (닫기 버튼 중복 방지)
+
             document.getElementById('modalBody').innerHTML = html;
 
             const footerDiv = document.createElement('div');
@@ -7999,7 +8004,7 @@
                 powerMaskingEnabled = powerMaskingEnabledVal;
                 showAlert('설정이 저장되었습니다', 'success');
                 closeModal();
-                // 마스킹 설정 변경 시 화면 새로고침
+
                 loadData();
             } catch (e) {
                 console.error(e);
@@ -8153,7 +8158,6 @@
                 return { success: false, error: '스프레드시트 설정이 없습니다' };
             }
 
-            // 제외 목록 필터링
             const filteredUsers = users.filter(u => !syncExcludeList.includes(u.name));
 
             const payload = {
@@ -8233,7 +8237,7 @@
             const startValue = lockStartTime > 0 ? toDatetimeLocalValue(lockStartTime) : '';
             const endValue = lockEndTime > 0 ? toDatetimeLocalValue(lockEndTime) : '';
             
-            // 2주 반복 기본값 계산 (다음 토요일~월요일)
+
             const nowKst = toKST(Date.now());
             const dayOfWeek = nowKst.getUTCDay();
             let daysUntilSat = dayOfWeek === 6 ? 7 : (dayOfWeek === 0 ? 6 : 6 - dayOfWeek);
@@ -8282,7 +8286,6 @@
                 <p style="font-size:12px; color:#6b7280; margin-top:-10px;">※ 한국 표준시(KST) 기준으로 설정됩니다</p>
             `);
 
-            // 2주 반복 중지 버튼
             if (biweeklyBaseTime > 0) {
                 document.getElementById('biweeklyStopBtn').onclick = async () => {
                     if (!await showConfirm('2주 반복 중지', '2주 반복을 중지하시겠습니까?\\n현재 잠금은 유지되고 반복만 중지됩니다.')) return;
@@ -8300,9 +8303,8 @@
                 };
             }
 
-            // 2주 반복 잠금 버튼 핸들러
             document.getElementById('biweeklyLockBtn').onclick = async () => {
-                // 사용자가 입력한 시작/종료 시간 사용
+
                 const startVal = document.getElementById('biweeklyStartInput').value;
                 const endVal = document.getElementById('biweeklyEndInput').value;
                 
@@ -8522,7 +8524,7 @@
                     return;
                 }
                 
-                // 비밀번호 중복 체크
+
                 try {
                     const usersSnap = await getDocs(collection(db, "users"));
                     let isDuplicate = false;
@@ -8542,7 +8544,7 @@
                 
                 await updateDoc(doc(db, "users", name), { password: newPw });
                 
-                // 로그 저장
+
                 await setDoc(doc(collection(db, "logs")), {
                     who: name,
                     type: 'password_change',
@@ -8629,7 +8631,6 @@
             }, 300);
         };
 
-
         document.getElementById('logViewBtn').addEventListener('click', async () => {
             if(!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
@@ -8639,7 +8640,7 @@
             setModalBody('<p style="text-align:center; padding:40px;">📋 로그 로딩 중...</p>');
             
             try {
-                // 관리자 목록 먼저 가져오기
+
                 const adminsSnap = await getDocs(collection(db, "admins"));
                 const allAdmins = [];
                 adminsSnap.forEach(d => {
@@ -8647,19 +8648,19 @@
                 });
                 allAdmins.sort();
                 
-                // 최근 1000건만 로드 (성능 최적화)
+
                 const snap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc"), limit(1000)));
                 
                 const logs = [];
                 snap.forEach(d => { 
                     const l = d.data(); 
-                    // 기기 정보: 긴 User Agent면 변환, 이미 짧으면 그대로
+
                     let deviceDisplay = l.device || '-';
                     if (deviceDisplay.length > 30 || deviceDisplay.includes('Mozilla')) {
                         deviceDisplay = parseUserAgent(deviceDisplay);
                     }
                     
-                    // 위치 정보: 영어면 한글로 변환
+
                     let locationDisplay = translateLocation(l.location || '');
                     
                     logs.push({
@@ -8676,10 +8677,10 @@
                     });
                 });
             
-            // 전역 로그 데이터 저장 (상세보기용)
+
             window.currentLogs = logs;
             
-            // 관리자 목록: DB에서 가져온 목록 + 로그에 있는 관리자
+
             const adminSet = new Set(allAdmins);
             logs.forEach(l => {
                 if (l.editedBy && l.editedBy !== 'self' && l.editedBy !== 'admin' && l.editedBy !== '아이디미기록' && l.editedBy !== '-') {
@@ -8688,10 +8689,10 @@
             });
             const adminList = Array.from(adminSet).sort();
             
-            // 대상이 여러 명인지 확인하고 표시용 텍스트 생성
+
             function formatWho(who) {
                 if (!who || who === '-') return '-';
-                // 쉼표나 공백으로 여러 명 구분
+
                 const names = who.split(/[,\s]+/).filter(n => n.trim());
                 if (names.length > 2) {
                     return `${names[0]} 외 ${names.length - 1}명`;
@@ -8728,7 +8729,7 @@
                 
                 switch(type) {
                     case 'power':
-                        // JSON인지 확인
+
                         if (oldVal && oldVal.startsWith('{')) {
                             try {
                                 const oldData = JSON.parse(oldVal);
@@ -8741,7 +8742,7 @@
                         return `전투력: ${oldPower} → ${newPower}`;
                     
                     case 'guild_change':
-                        // JSON인지 확인
+
                         if (oldVal && oldVal.startsWith('{')) {
                             try {
                                 const oldData = JSON.parse(oldVal);
@@ -8784,7 +8785,7 @@
                 }
             }
             
-            // 관리자 옵션 HTML 생성
+
             let adminOptionsHtml = adminList.map(admin => 
                 `<option value="admin:${admin}">👑 ${admin}</option>`
             ).join('');
@@ -9015,7 +9016,7 @@
             html += '</tbody></table></div>';
             setModalBody(html);
             
-                       // 필터 함수
+
             function applyLogFilters() {
                 const searchText = document.getElementById('logSearchInput').value.toLowerCase();
                 const ipSearch = document.getElementById('logIpSearch').value.toLowerCase();
@@ -9035,7 +9036,7 @@
                     const matchIp = !ipSearch || rowIp.includes(ipSearch);
                     const matchType = types.length === 0 || types.includes(rowType);
                     
-                    // 작업자 필터 로직
+
                     let matchWorker = true;
                     if (workerFilter) {
                         if (workerFilter === 'self') {
@@ -9043,7 +9044,7 @@
                         } else if (workerFilter === 'admin') {
                             matchWorker = rowWorker === 'admin';
                         } else if (workerFilter.startsWith('admin:')) {
-                            // 특정 관리자 선택
+
                             const selectedAdmin = workerFilter.replace('admin:', '');
                             matchWorker = rowAdminId === selectedAdmin;
                         }
@@ -9070,7 +9071,7 @@
             }
         });
         
-        // 로그 상세보기 함수
+
         window.showLogDetail = function(index) {
             const log = window.currentLogs[index];
             if (!log) return;
@@ -9095,7 +9096,7 @@
             
             const logType = typeMap[log.type] || log.type;
             
-            // 작업자 표시
+
             let workerDisplay = '-';
             if (log.editedBy === 'self') {
                 workerDisplay = '👤 본인';
@@ -9105,19 +9106,19 @@
                 workerDisplay = `👑 ${log.editedBy}`;
             }
             
-            // 대상 목록 (여러 명인 경우 줄바꿈으로 표시)
+
             let whoDisplay = log.who;
             if (log.who && log.who.includes(',')) {
                 const names = log.who.split(',').map(n => n.trim()).filter(n => n);
                 whoDisplay = names.map(n => `<span style="display:inline-block; background:#f3f4f6; padding:2px 8px; margin:2px; border-radius:4px;">${n}</span>`).join(' ');
             }
             
-            // 수정전/수정후 값 파싱
+
             let oldDisplay = log.oldValue || '-';
             let newDisplay = log.newValue || '-';
             let contentDisplay = log.changes || '-';
             
-            // JSON 형태인 경우 파싱 (info_edit, guild_change, spec_edit, power)
+
             if (log.type === 'info_edit' || log.type === 'power' || log.type === 'guild_change' || log.type === 'spec_edit') {
                 try {
                     if (log.oldValue && log.oldValue.startsWith('{')) {
@@ -9142,14 +9143,14 @@
                 }
             }
             
-            // 길드 이동인 경우
+
             if (log.type === 'guild_move') {
                 oldDisplay = '-';
-                // newValue에서 길드명 추출 (예: "사신으로 1명 이동")
+
                 const match = log.newValue ? log.newValue.match(/(.+?)으로/) : null;
                 const targetGuild = match ? match[1] : '-';
                 
-                // who 필드에 이동된 유저 이름들이 있음
+
                 if (log.who && log.who !== 'Admin' && log.who !== '-') {
                     const names = log.who.split(',').map(n => n.trim()).filter(n => n);
                     newDisplay = `${targetGuild} 길드로 이동`;
@@ -9159,12 +9160,12 @@
                 }
             }
             
-            // 닉네임 변경인 경우
+
             if (log.type === 'nickname_change') {
                 contentDisplay = `${log.oldValue} → ${log.newValue}`;
             }
             
-            // 사용자 삭제인 경우
+
             if (log.type === 'user_deleted') {
                 oldDisplay = '등록됨';
                 newDisplay = '삭제됨';
@@ -9218,7 +9219,7 @@
                 </div>
             `;
             
-            // 모달 열기 (큰 사이즈)
+
             openSmallModal('📋 로그 상세', log.who.length > 20 ? log.who.substring(0, 20) + '...' : log.who, html);
             document.getElementById('modalFooter').innerHTML = `
                 <button class="btn btn-primary" onclick="closeModal()">닫기</button>
@@ -9251,18 +9252,18 @@
                 });
             });
             
-            // 전역 저장 (상세보기용)
+
             window.deletedUsersList = deletedUsers;
             
-            // 사유 목록 추출
+
             const reasonSet = new Set(deletedUsers.map(u => u.reason));
             const reasonOptions = Array.from(reasonSet).sort().map(r => `<option value="${r}">${r}</option>`).join('');
             
-            // 길드 목록 추출
+
             const guildSet = new Set(deletedUsers.map(u => u.guild));
             const guildOptions = Array.from(guildSet).sort().map(g => `<option value="${g}">${g}</option>`).join('');
             
-            // 삭제자 목록 추출
+
             const deletedBySet = new Set(deletedUsers.map(u => u.deletedBy));
             const deletedByOptions = Array.from(deletedBySet).sort().map(d => `<option value="${d}">${d}</option>`).join('');
             
@@ -9314,7 +9315,7 @@
             html += '</tbody></table></div>';
             setModalBody(html);
             
-            // 필터 함수
+
             function applyDeletedFilters() {
                 const searchText = document.getElementById('deletedSearchInput').value.toLowerCase();
                 const guildFilter = document.getElementById('deletedGuildFilter').value;
@@ -9349,7 +9350,7 @@
             document.getElementById('deletedByFilter').addEventListener('change', applyDeletedFilters);
         });
         
-        // 삭제된 사용자 상세보기
+
         window.showDeletedUserDetail = function(index) {
             const u = window.deletedUsersList[index];
             if (!u) return;
@@ -9480,7 +9481,7 @@
             
             setModalBody(html);
             
-            // 선택된 유저 목록 (검색해도 유지)
+
             const selectedUsers = new Set();
             
                        function renderTable() {
@@ -9510,7 +9511,7 @@
                         <td style="color: #3b82f6; font-weight: 600;">${u.power.toLocaleString()}</td>
                     `;
                     
-                    // 행 클릭 시 체크박스 토글
+
                     row.addEventListener('click', function(e) {
                         if (e.target.type === 'checkbox') return;
                         const checkbox = this.querySelector('.user-checkbox');
@@ -9518,7 +9519,7 @@
                         toggleSelection(checkbox.dataset.username, checkbox.checked);
                     });
                     
-                    // 체크박스 직접 클릭
+
                     row.querySelector('.user-checkbox').addEventListener('change', function() {
                         toggleSelection(this.dataset.username, this.checked);
                     });
@@ -9549,7 +9550,7 @@
             document.getElementById('bulkDeleteGuildFilter').addEventListener('change', renderTable);
             
                        document.getElementById('selectAllBtn').addEventListener('click', () => {
-                // 현재 보이는 항목만 선택
+
                 document.querySelectorAll('.user-checkbox').forEach(cb => {
                     cb.checked = true;
                     selectedUsers.add(cb.dataset.username);
@@ -9558,7 +9559,7 @@
             });
             
                        document.getElementById('deselectAllBtn').addEventListener('click', () => {
-                // 현재 보이는 항목만 해제
+
                 document.querySelectorAll('.user-checkbox').forEach(cb => {
                     cb.checked = false;
                     selectedUsers.delete(cb.dataset.username);
@@ -9787,7 +9788,7 @@
                     return; 
                 }
                 
-                // 비밀번호 중복 체크
+
                 try {
                     const usersSnap = await getDocs(collection(db, "users"));
                     let isDuplicate = false;
@@ -9847,7 +9848,7 @@
                         }));
                     }
                     
-                    // 비밀번호 중복 체크
+
                     let duplicateCount = 0;
                     try {
                         const usersSnap = await getDocs(collection(db, "users"));
@@ -9860,7 +9861,7 @@
                     
                     closeModal(); 
                     
-                    // 중복된 비밀번호 사용 중이면 경고
+
                     if (duplicateCount > 1) {
                         setTimeout(() => {
                             showAlert('⚠️ 해당 비밀번호는 타인과 함께 사용중입니다.\n보안에 매우 위협적이므로 관리자에게 변경요청 해주세요.', 'warning');
@@ -9908,17 +9909,16 @@
             };
         }
 
-               // 모달 스택 (중첩 모달 지원)
         let modalStack = [];
         
-        // 버튼 상태 리셋 함수 (정규표현식으로 처리)
+
         function resetButtonStates(htmlContent) {
             if (!htmlContent) return htmlContent;
             
-            // disabled 속성 제거
+
             let result = htmlContent.replace(/\s+disabled(=["'][^"']*["'])?/gi, '');
             
-            // "처리 중...", "저장 중...", "진행 중..." 텍스트 복원
+
             result = result.replace(/>처리 중\.\.\.</g, '>길드 이동 실행<');
             result = result.replace(/>저장 중\.\.\.</g, '>저장<');
             result = result.replace(/>진행 중\.\.\.</g, '>확인<');
@@ -9927,7 +9927,7 @@
         }
         
         function openLargeModal(t, s) {
-            // 현재 모달 상태 저장
+
             let currentContent = document.getElementById('modalBody').innerHTML;
             const currentTitle = document.getElementById('modalTitle').textContent;
             const currentSubtitle = document.getElementById('modalSubtitle').textContent;
@@ -9937,7 +9937,7 @@
             const isActive = document.getElementById('modalOverlay').classList.contains('active');
             
             if (isActive) {
-                // 저장 전 버튼 상태 리셋
+
                 currentContent = resetButtonStates(currentContent);
                 currentFooter = resetButtonStates(currentFooter);
                 modalStack.push({ title: currentTitle, subtitle: currentSubtitle, body: currentContent, footer: currentFooter, footerDisplay: currentFooterDisplay, isLarge });
@@ -9953,7 +9953,7 @@
         }
 
         function openSmallModal(t, s, b) {
-            // 현재 모달 상태 저장
+
             let currentContent = document.getElementById('modalBody').innerHTML;
             const currentTitle = document.getElementById('modalTitle').textContent;
             const currentSubtitle = document.getElementById('modalSubtitle').textContent;
@@ -9963,7 +9963,7 @@
             const isActive = document.getElementById('modalOverlay').classList.contains('active');
             
             if (isActive) {
-                // 저장 전 버튼 상태 리셋
+
                 currentContent = resetButtonStates(currentContent);
                 currentFooter = resetButtonStates(currentFooter);
                 modalStack.push({ title: currentTitle, subtitle: currentSubtitle, body: currentContent, footer: currentFooter, footerDisplay: currentFooterDisplay, isLarge });
@@ -9988,7 +9988,7 @@
 
         window.closeModal = () => {
             if (modalStack.length > 0) {
-                // 이전 모달로 복원
+
                 const prev = modalStack.pop();
                 document.getElementById('modalTitle').textContent = prev.title;
                 document.getElementById('modalSubtitle').textContent = prev.subtitle;
@@ -10002,21 +10002,21 @@
                     document.getElementById('modalContent').classList.remove('modal-lg');
                 }
                 
-                // 복원 후 버튼 활성화 (안전장치)
+
                 setTimeout(() => {
                     document.querySelectorAll('#modalBody button, #modalFooter button').forEach(btn => {
                         btn.disabled = false;
                     });
                 }, 10);
             } else {
-                // 모달 닫기
+
                 document.getElementById('modalOverlay').classList.remove('active');
                 document.getElementById('modalContent').style.maxWidth = ''; // 인라인 스타일 리셋
                 document.body.style.overflow = '';
             }
         };
         
-        // 모달 완전히 닫기 (스택 무시)
+
         window.closeAllModals = () => {
             modalStack = [];
             document.getElementById('modalOverlay').classList.remove('active');
@@ -10024,7 +10024,7 @@
             document.body.style.overflow = '';
         };
         
-        // 모달 스택 초기화 (작업 완료 후 호출)
+
         window.clearModalStack = () => {
             modalStack = [];
         };
@@ -10047,7 +10047,6 @@
             });
         };
 
-        // 커스텀 프롬프트 (입력창)
         window.showPrompt = (title, message, defaultValue = '') => {
             return new Promise((resolve) => {
                 openSmallModal(title, '', `
@@ -10059,7 +10058,7 @@
                     <button class="btn btn-primary" onclick="window.promptResolve(document.getElementById('promptInput').value)">확인</button>
                 `;
                 
-                // 포커스 및 엔터키 처리
+
                 setTimeout(() => {
                     const input = document.getElementById('promptInput');
                     if (input) {
@@ -10081,9 +10080,8 @@
             });
         };
 
-        // 진행률 표시 모달
         window.showProgress = (title, message = '') => {
-            // 기존 진행률 모달 제거
+
             const existing = document.getElementById('progressModal');
             if (existing) existing.remove();
             
@@ -10231,14 +10229,14 @@
             
             const lastBackupStr = lastBackupTime ? formatDateTime(lastBackupTime) : '없음';
             
-            // 비교 백업 선택 옵션 생성
+
             let compareOptions = '<option value="">최근 백업과 비교 (기본)</option>';
             backupsList.forEach(b => {
                 const name = b.backupName || formatDateTime(b.createdAt);
                 compareOptions += `<option value="${b.id}">${name}</option>`;
             });
             
-            // 최종관리자가 아니면 백업 생성 UI 숨김
+
             const backupCreateSection = isSuperAdmin ? `
                 <div style="background:#f9fafb; border-radius:12px; padding:16px; margin-bottom:20px;">
                     <div class="form-group" style="margin-bottom:12px;">
@@ -10328,7 +10326,7 @@
             let lastBackupData = {};
             let compareBackupName = '최근 백업';
             try {
-                // 비교할 백업 선택
+
                 if (compareBackupId) {
                     const compareDoc = await getDoc(doc(db, "backups", compareBackupId));
                     if (compareDoc.exists()) {
@@ -10341,7 +10339,7 @@
                         }
                     }
                 } else {
-                    // 기본: 최근 백업과 비교
+
                     const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
                     if (!backupsSnap.empty) {
                         const lastBackup = backupsSnap.docs[0].data();
@@ -10473,7 +10471,7 @@
             `;
         };
         
-        // 백업 이름 변경
+
         window.editBackupName = async function(backupId, currentName) {
             const newName = await showPrompt('백업 이름 변경', '새 백업 이름을 입력하세요:', currentName || '');
             if (newName === null) return; // 취소
@@ -10483,7 +10481,7 @@
                     backupName: newName.trim() || null
                 });
                 
-                // UI 즉시 업데이트
+
                 const nameSpan = document.getElementById(`backup-name-${backupId}`);
                 if (nameSpan) {
                     nameSpan.textContent = newName.trim() || '-';
@@ -10496,14 +10494,14 @@
             }
         };
         
-        // 백업 삭제
+
         window.deleteBackup = async function(backupId) {
             if (!await showConfirm('백업 삭제', '이 백업을 삭제하시겠습니까?\\n삭제된 백업은 복구할 수 없습니다.')) return;
             
             try {
                 await deleteDoc(doc(db, "backups", backupId));
                 
-                // UI에서 행 제거
+
                 const row = document.getElementById(`backup-row-${backupId}`);
                 if (row) {
                     row.remove();
@@ -10532,18 +10530,18 @@
                 const users = backup.users || [];
                 const guildStats = backup.guildStats || {};
                 
-                // 전역 저장 (필터용)
+
                 window.backupDetailUsers = users;
                 window.backupDetailGuilds = [...new Set(users.map(u => u.guild))].sort();
                 
                 let guildStatsHtml = '';
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
-                    // 해당 길드의 전투력 > 0인 유저만 카운트
+
                     const guildActiveUsers = users.filter(u => u.guild === guild && u.power > 0);
                     const activeCount = guildActiveUsers.length;
                     const avgPower = activeCount > 0 ? Math.round(stats.totalPower / activeCount).toLocaleString() : '0';
-                    // 평균 증감 계산
+
                     const avgDiff = activeCount > 0 ? Math.round(stats.totalDiff / activeCount) : 0;
                     const diffSign = avgDiff >= 0 ? '+' : '';
                     const diffColor = avgDiff >= 0 ? '#10b981' : '#ef4444';
@@ -10559,7 +10557,7 @@
                 const diffSign = totalDiff >= 0 ? '+' : '';
                 const diffColor = totalDiff >= 0 ? '#10b981' : '#ef4444';
                 
-                // 길드 옵션 생성
+
                 const guildOptions = window.backupDetailGuilds.map(g => `<option value="${g}">${g}</option>`).join('');
                 
                 const html = `
@@ -10653,10 +10651,10 @@
                 
                 setModalBody(html);
                 
-                // 초기 렌더링
+
                 renderBackupUserList();
                 
-                // 필터 이벤트 리스너
+
                 document.getElementById('backupSearchInput').addEventListener('input', renderBackupUserList);
                 document.getElementById('backupGuildFilter').addEventListener('change', renderBackupUserList);
                 document.getElementById('backupDiffFilter').addEventListener('change', renderBackupUserList);
@@ -10684,7 +10682,7 @@
             `;
         };
         
-        // 커스텀 전투력 필터 적용
+
         window.applyCustomPowerFilter = function() {
             const min = document.getElementById('customPowerMin').value;
             const max = document.getElementById('customPowerMax').value;
@@ -10693,7 +10691,7 @@
             renderBackupUserList();
         };
         
-        // 전투력 필터 초기화
+
         window.resetPowerFilter = function() {
             document.getElementById('backupPowerFilter').value = '';
             document.getElementById('customPowerFilterPanel').style.display = 'none';
@@ -10704,7 +10702,7 @@
             renderBackupUserList();
         };
         
-        // 백업 상세 유저 목록 렌더링 함수
+
         function renderBackupUserList() {
             const users = window.backupDetailUsers || [];
             const tbody = document.getElementById('backupUserTableBody');
@@ -10716,7 +10714,7 @@
             const powerFilter = document.getElementById('backupPowerFilter')?.value || '';
             const sortFilter = document.getElementById('backupSortFilter')?.value || 'power_desc';
             
-            // 필터링
+
             let filtered = users.filter(u => {
                 if (search && !u.name.toLowerCase().includes(search)) return false;
                 if (guildFilter && u.guild !== guildFilter) return false;
@@ -10724,7 +10722,7 @@
                 if (diffFilter === 'zero' && u.diff !== 0) return false;
                 if (diffFilter === 'minus' && u.diff >= 0) return false;
                 
-                // 전투력 필터 (일반 또는 커스텀)
+
                 if (powerFilter === 'custom') {
                     if (window.customPowerMin && u.power < window.customPowerMin) return false;
                     if (window.customPowerMax && u.power > window.customPowerMax) return false;
@@ -10734,7 +10732,7 @@
                 return true;
             });
             
-            // 정렬
+
             filtered.sort((a, b) => {
                 switch(sortFilter) {
                     case 'power_desc': return b.power - a.power;
@@ -10748,7 +10746,7 @@
                 }
             });
             
-            // 렌더링
+
             tbody.innerHTML = '';
             filtered.forEach((u, idx) => {
                 const diffSign = u.diff >= 0 ? '+' : '';
@@ -10767,12 +10765,12 @@
                 </tr>`;
             });
             
-            // 카운트 업데이트
+
             const countEl = document.getElementById('backupUserCount');
             if (countEl) countEl.textContent = filtered.length;
         }
         
-        // 공유 링크 생성 모달
+
         window.openShareBackupModal = async function(backupId) {
             try {
                 const backupDoc = await getDoc(doc(db, "backups", backupId));
@@ -10785,10 +10783,10 @@
                 const backupTime = formatDateTime(backup.createdAt);
                 const defaultTitle = backup.backupName || `오스카2 전투력 현황 (${backupTime})`;
                 
-                // 길드 목록 추출
+
                 const guilds = [...new Set((backup.users || []).map(u => u.guild))].sort();
                 
-                // 비교본 목록 가져오기
+
                 let backupOptions = '<option value="">없음 (증감 표시 안함)</option>';
                 try {
                     const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc")));
@@ -10802,7 +10800,7 @@
                     });
                 } catch(e) { console.error(e); }
                 
-                // 길드별 차감 입력 필드 생성
+
                 const guildDeductInputs = guilds.map(guild => `
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                         <span style="min-width:60px; font-weight:500; font-size:13px;">${guild}</span>
@@ -10820,7 +10818,7 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 16px;">
                             <label class="form-label">🏷️ 헤더 이름</label>
-                            <input type="text" id="shareHeaderName" class="form-input" value="🏆 오스카2 전투력 현황판" placeholder="페이지 상단에 표시될 이름">
+                            <input type="text" id="shareHeaderName" class="form-input" value="오스카2 전투력 현황판" placeholder="페이지 상단에 표시될 이름">
                         </div>
                         <div class="form-group" style="margin-bottom: 16px;">
                             <label class="form-label">📝 추가 설명 (선택)</label>
@@ -10859,14 +10857,14 @@
             }
         };
         
-        // 공유 링크 생성
+
         window.generateShareLink = async function(backupId) {
             const pageTitle = document.getElementById('sharePageTitle').value.trim() || '오스카2 전투력 현황';
-            const headerName = document.getElementById('shareHeaderName').value.trim() || '🏆 오스카2 전투력 현황판';
+            const headerName = document.getElementById('shareHeaderName').value.trim() || '오스카2 전투력 현황판';
             const description = document.getElementById('shareDescription').value.trim() || '';
             const compareBackupId = document.getElementById('shareCompareBackup')?.value || '';
             
-            // 길드별 차감 정보 수집
+
             const guildDeductions = {};
             document.querySelectorAll('.guild-deduct-input').forEach(input => {
                 const guild = input.dataset.guild;
@@ -10885,7 +10883,7 @@
                 
                 const backup = backupDoc.data();
                 
-                // 비교본 데이터 로드
+
                 let compareData = {};
                 if (compareBackupId) {
                     try {
@@ -10899,19 +10897,19 @@
                     } catch(e) { console.error('비교본 로드 오류:', e); }
                 }
                 
-                // 차감 및 비교 적용된 유저 데이터 생성
+
                 const modifiedUsers = (backup.users || []).map(u => {
                     const deduction = guildDeductions[u.guild] || 0;
                     const deductedPower = Math.max(0, u.power - deduction);
                     
-                    // 비교본이 있으면 비교본 기준 증감 계산
+
                     let diff = u.diff || 0;
                     if (compareBackupId && compareData[u.name] !== undefined) {
                         const oldPower = compareData[u.name];
                         const oldDeducted = Math.max(0, oldPower - deduction);
                         diff = deductedPower - oldDeducted;
                     } else if (compareBackupId) {
-                        // 비교본에 없는 유저는 신규로 간주
+
                         diff = deductedPower;
                     }
                     
@@ -10924,7 +10922,7 @@
                     };
                 });
                 
-                // 차감 적용된 길드 통계 재계산
+
                 const modifiedGuildStats = {};
                 modifiedUsers.forEach(u => {
                     if (!modifiedGuildStats[u.guild]) {
@@ -10938,7 +10936,7 @@
                     modifiedGuildStats[u.guild].totalDiff += u.diff;
                 });
                 
-                // 수정된 백업 데이터
+
                 const modifiedBackup = {
                     ...backup,
                     users: modifiedUsers,
@@ -10947,7 +10945,7 @@
                     totalDiff: modifiedUsers.reduce((sum, u) => sum + u.diff, 0)
                 };
                 
-                // 공유 데이터 저장
+
                 const shareId = `share_${Date.now()}`;
                 await setDoc(doc(db, "sharedBackups", shareId), {
                     backupId: backupId,
@@ -10961,7 +10959,7 @@
                     backupData: modifiedBackup
                 });
                 
-                // 공유 URL 생성 (현재 페이지 기준)
+
                 const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
                 
                 const html = `
@@ -10987,7 +10985,7 @@
             }
         };
         
-        // 공유 URL 복사
+
         window.copyShareUrl = function() {
             const input = document.getElementById('shareUrlInput');
             input.select();
@@ -11087,7 +11085,7 @@
                 });
                 console.log('자동 백업 완료!');
                 
-                // 게시판에 자동 등록
+
                 await createBackupPost(backupId, now, backupUsers.length, totalPower, totalDiff);
                 
             } catch(e) {
@@ -11095,7 +11093,7 @@
             }
         }
         
-        // 백업 게시글 자동 생성
+
         async function createBackupPost(backupId, createdAt, totalUsers, totalPower, totalDiff) {
             try {
                 const date = new Date(createdAt);
@@ -11106,14 +11104,14 @@
                 const diffSign = totalDiff >= 0 ? '+' : '';
                 const diffColor = totalDiff >= 0 ? '상승' : '하락';
                 
-                // 공유 링크 생성
+
                 const shareId = `share_${Date.now()}`;
                 const backupDoc = await getDoc(doc(db, "backups", backupId));
                 if (backupDoc.exists()) {
                     await setDoc(doc(db, "sharedBackups", shareId), {
                         backupId: backupId,
-                        pageTitle: `🏆 오스카2 ${monthName} 전투력 현황`,
-                        headerName: '🏆 오스카2 전투력 현황판',
+                        pageTitle: `오스카2 ${monthName} 전투력 현황`,
+                        headerName: '오스카2 전투력 현황판',
                         description: `${dateStr} 주간 백업`,
                         createdAt: Date.now(),
                         createdBy: '에비츄',
@@ -11144,7 +11142,6 @@
         
         setTimeout(checkAutoBackup, 3000);
 
-        // 접속 통계 기능
         document.getElementById('statsViewBtn').addEventListener('click', async () => {
             if (!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
@@ -11155,10 +11152,10 @@
             setModalBody('<p style="text-align:center; padding:40px;">📊 통계 데이터 수집 중...</p>');
             
             try {
-                // 로그 데이터 수집
+
                 const logsSnap = await getDocs(query(collection(db, "logs"), orderBy("createdAt", "desc")));
                 
-                // 유저별 통계 수집
+
                 const userStats = {};
                 
                 logsSnap.forEach(d => {
@@ -11166,16 +11163,16 @@
                     const who = l.who;
                     if (!who || who === '-' || who === 'Admin') return;
                     
-                    // 여러 명이 포함된 경우 (쉼표로 구분) - 스킵
+
                     if (who.includes(',') || who.includes('외')) return;
                     
-                    // 기기 정보 파싱
+
                     let deviceRaw = l.device || '';
                     if (deviceRaw.length > 30 || deviceRaw.includes('Mozilla')) {
                         deviceRaw = parseUserAgent(deviceRaw);
                     }
                     
-                    // 위치 정보 한글 변환
+
                     let locationRaw = translateLocation(l.location || '');
                     
                     if (!userStats[who]) {
@@ -11189,12 +11186,12 @@
                         };
                     }
                     
-                    // 위치 추가
+
                     if (locationRaw && locationRaw !== '-') {
                         userStats[who].locations.add(locationRaw);
                     }
                     
-                    // 기기 및 브라우저 파싱
+
                     if (deviceRaw && deviceRaw !== '-' && deviceRaw !== '알 수 없음') {
                         const parts = deviceRaw.split('-');
                         const device = parts[0] || '';
@@ -11203,7 +11200,7 @@
                         if (device) {
                             userStats[who].devices.add(device);
                             
-                            // 제조사 분류
+
                             if (device.includes('아이폰') || device.includes('아이패드') || device.includes('맥')) {
                                 userStats[who].manufacturers.add('애플');
                             } else if (device.includes('갤럭시') || device.includes('삼성')) {
@@ -11226,7 +11223,7 @@
                     }
                 });
                 
-                // 배열로 변환
+
                 const statsArray = Object.entries(userStats).map(([name, stats]) => ({
                     name,
                     locations: Array.from(stats.locations),
@@ -11237,16 +11234,16 @@
                     accessCount: stats.accessCount
                 }));
                 
-                // 전역 저장
+
                 window.allUserStats = statsArray;
                 
-                // 통계 요약
+
                 const totalUsers = statsArray.length;
                 const samsungUsers = statsArray.filter(s => s.manufacturers.includes('삼성')).length;
                 const appleUsers = statsArray.filter(s => s.manufacturers.includes('애플')).length;
                 const pcUsers = statsArray.filter(s => s.manufacturers.includes('PC')).length;
                 
-                // 브라우저별 사용자 수
+
                 const browserCounts = {};
                 statsArray.forEach(s => {
                     s.browsers.forEach(b => {
@@ -11254,11 +11251,11 @@
                     });
                 });
                 
-                // 지역별 사용자 수
+
                 const locationCounts = {};
                 statsArray.forEach(s => {
                     s.locations.forEach(loc => {
-                        // 시/도 단위로 추출
+
                         const parts = loc.split(' ');
                         let region = parts.length >= 2 ? parts[1] : parts[0];
                         if (region) {
@@ -11267,7 +11264,7 @@
                     });
                 });
                 
-                // 기기별 사용자 수
+
                 const deviceCounts = {};
                 statsArray.forEach(s => {
                     s.devices.forEach(dev => {
@@ -11275,7 +11272,7 @@
                     });
                 });
                 
-                // 정렬된 통계
+
                 const sortedBrowsers = Object.entries(browserCounts).sort((a,b) => b[1] - a[1]);
                 const sortedLocations = Object.entries(locationCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
                 const sortedDevices = Object.entries(deviceCounts).sort((a,b) => b[1] - a[1]).slice(0, 10);
@@ -11358,7 +11355,7 @@
                 setModalBody(html);
                 document.getElementById('modalFooter').innerHTML = '<button class="btn btn-primary" onclick="closeModal()">닫기</button>';
                 
-                // 테이블 데이터 렌더링 함수
+
                 function renderStatsTable(data) {
                     const tbody = document.getElementById('statsTableBody');
                     tbody.innerHTML = data.map(s => {
@@ -11380,26 +11377,26 @@
                     document.getElementById('statsResultCount').textContent = data.length;
                 }
                 
-                // 초기 렌더링
+
                 renderStatsTable(statsArray);
                 
-                // 필터 함수
+
                 function applyStatsFilters() {
                     const searchText = document.getElementById('statsSearchInput').value.toLowerCase();
                     const manufFilter = document.getElementById('statsManufFilter').value;
                     const browserFilter = document.getElementById('statsBrowserFilter').value;
                     
                     const filtered = window.allUserStats.filter(s => {
-                        // 검색어 체크 (닉네임, 위치, 기기)
+
                         const matchSearch = !searchText || 
                             s.name.toLowerCase().includes(searchText) ||
                             s.locations.some(l => l.toLowerCase().includes(searchText)) ||
                             s.devices.some(d => d.toLowerCase().includes(searchText));
                         
-                        // 제조사 체크
+
                         const matchManuf = !manufFilter || s.manufacturers.includes(manufFilter);
                         
-                        // 브라우저 체크
+
                         const matchBrowser = !browserFilter || s.browsers.includes(browserFilter);
                         
                         return matchSearch && matchManuf && matchBrowser;
@@ -11418,7 +11415,7 @@
             }
         });
         
-        // 유저 통계 상세보기
+
         window.showUserStatsDetail = function(userName) {
             const stats = window.allUserStats.find(s => s.name === userName);
             if (!stats) return;
@@ -11486,10 +11483,10 @@
             openLargeModal('관리자 관리', '일반 관리자 계정을 추가하거나 삭제합니다');
             
             try {
-                // 관리자 목록 로드
+
                 const adminSnapshot = await getDocs(collection(db, "admins"));
                 
-                // 전역 저장
+
                 window.adminsList = [];
                 adminSnapshot.forEach(docSnap => {
                     window.adminsList.push({
@@ -11523,7 +11520,7 @@
                     adminListHtml += '</tbody></table></div>';
                 }
                 
-                // 최종관리자 별명 로드
+
                 let superAdminNickname = '';
                 try {
                     const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
@@ -11565,12 +11562,12 @@
             }
         });
         
-        // 점검 모드 버튼 이벤트
+
         document.getElementById('maintenanceBtn').addEventListener('click', () => {
             openMaintenanceModal();
         });
         
-        // 최종관리자 별명 저장
+
         window.saveSuperAdminNickname = async function() {
             const nickname = document.getElementById('superAdminNickname').value.trim();
             try {
@@ -11582,7 +11579,7 @@
             }
         };
         
-        // 관리자 별명 저장
+
         window.saveNickname = async function(adminId) {
             const nickname = document.getElementById(`nickname-${adminId}`).value.trim();
             try {
@@ -11594,16 +11591,16 @@
             }
         };
         
-        // 관리자 상세 정보 + 접속 로그
+
         window.showAdminDetail = async function(adminId) {
             openSmallModal('👑 관리자 상세', adminId, '<p style="text-align:center; padding:20px;">로딩 중...</p>');
             
-            // 관리자 정보 가져오기
+
             const adminDoc = await getDoc(doc(db, "admins", adminId));
             const adminData = adminDoc.exists() ? adminDoc.data() : {};
             const createdAt = adminData.createdAt ? formatDateTime(adminData.createdAt) : '-';
             
-            // 접속 로그 가져오기
+
             const logsSnap = await getDocs(query(
                 collection(db, "adminLogs"),
                 orderBy("loginAt", "desc")
@@ -11613,13 +11610,13 @@
             logsSnap.forEach(d => {
                 const l = d.data();
                 if (l.adminId === adminId) {
-                    // 기기 정보: 긴 User Agent면 변환
+
                     let deviceDisplay = l.device || '-';
                     if (deviceDisplay.length > 30 || deviceDisplay.includes('Mozilla')) {
                         deviceDisplay = parseUserAgent(deviceDisplay);
                     }
                     
-                    // 위치 정보: 영어면 한글로 변환
+
                     let locationDisplay = translateLocation(l.location || '-');
                     
                     logs.push({
@@ -11728,7 +11725,6 @@
             }
         };
 
-
         window.deleteAdmin = async function(adminId) {
             if (!await showConfirm('관리자 삭제', `[${adminId}] 관리자를 삭제하시겠습니까?`)) return;
 
@@ -11752,7 +11748,6 @@
                 showAlert('삭제 중 오류가 발생했습니다', 'error');
             }
         };
-
 
         window.resetAdminPw = async function(adminId) {
             openSmallModal('비밀번호 초기화', `[${adminId}] 관리자`, `
@@ -11794,7 +11789,6 @@
             };
         };
 
-        // 버전 정보 모달 (최종관리자 전용)
         document.getElementById('versionInfoBtn').addEventListener('click', () => {
             if (!isSuperAdmin) {
                 showAlert('최종 관리자만 접근할 수 있습니다', 'error');
@@ -11847,4 +11841,3 @@
     </script>
 </body>
 </html>
-
