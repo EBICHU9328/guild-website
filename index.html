@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.2.9">
-    <meta name="build-date" content="2026-01-17 00:00">
+    <meta name="version" content="2.3.0">
+    <meta name="build-date" content="2026-01-17 00:10">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -28,6 +28,7 @@
     <meta name="keywords" content="오스카2, 뱀서, 연합, 길드, 게시판">
     
     <title>🏆 오스카2 전투력 현황판</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         
@@ -1095,9 +1096,14 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.2.9';
-        const APP_BUILD_DATE = '2026-01-17 00:00';
+        const APP_VERSION = '2.3.0';
+        const APP_BUILD_DATE = '2026-01-17 00:10';
         const APP_CHANGELOG = [
+            { version: '2.3.0', date: '2026-01-17 00:10', changes: [
+                '📊 공유 페이지 테이블 레이아웃 개선',
+                '📏 컬럼 너비 고정으로 정렬 깔끔하게',
+                '🔤 숫자 폰트 고정폭(monospace) 적용'
+            ]},
             { version: '2.2.9', date: '2026-01-17 00:00', changes: [
                 '⚠️ 로그인 시 비밀번호 중복 사용 경고 팝업',
                 '🔑 최종관리자 비밀번호 변경 기능 추가',
@@ -2296,16 +2302,16 @@
                     if (u.shape_myth > 0) icons += '👑';
                     if (u.mount_legend > 0) icons += '🐴';
                     if (u.mount_myth > 0) icons += '🦄';
-                    usersHtml += `<tr>
-                        <td style="padding: 10px; text-align: center;">${medal}</td>
-                        <td style="padding: 10px; font-weight: 500;">${u.name}</td>
-                        <td style="padding: 10px; text-align: center;">${u.guild}</td>
-                        <td style="padding: 10px; text-align: right; font-weight: 600;">${u.power.toLocaleString()}</td>
-                        <td style="padding: 10px; text-align: right; color: ${diffColor}; font-weight: 500;">${diffSign}${u.diff.toLocaleString()}</td>
-                        <td style="padding: 10px; text-align: center;">${u.shape_legend || 0}</td>
-                        <td style="padding: 10px; text-align: center;">${u.shape_myth || 0}</td>
-                        <td style="padding: 10px; text-align: center;">${u.mount_legend || 0}</td>
-                        <td style="padding: 10px; text-align: center;">${u.mount_myth || 0}</td>
+                    usersHtml += `<tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="padding: 10px 6px; text-align: center; font-size: 14px;">${medal}</td>
+                        <td style="padding: 10px 6px; font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.name}</td>
+                        <td style="padding: 10px 6px; text-align: center; font-size: 14px;">${u.guild}</td>
+                        <td style="padding: 10px 6px; text-align: right; font-weight: 600; font-size: 14px; font-family: monospace;">${u.power.toLocaleString()}</td>
+                        <td style="padding: 10px 6px; text-align: right; color: ${diffColor}; font-weight: 500; font-size: 14px; font-family: monospace;">${diffSign}${u.diff.toLocaleString()}</td>
+                        <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.shape_legend || 0}</td>
+                        <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.shape_myth || 0}</td>
+                        <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.mount_legend || 0}</td>
+                        <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.mount_myth || 0}</td>
                     </tr>`;
                 });
                 
@@ -2421,18 +2427,18 @@
                                 </div>
                                 
                                 <div style="max-height: 600px; overflow-x: auto; overflow-y: auto;">
-                                    <table id="shareUserTable" style="width: 100%; border-collapse: collapse; min-width: 900px;">
+                                    <table id="shareUserTable" style="width: 100%; border-collapse: collapse; min-width: 850px; table-layout: fixed;">
                                         <thead style="position: sticky; top: 0; background: white; z-index: 1;">
                                             <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                                                <th class="sortable-header" data-sort="rank" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">순위 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="name" style="padding: 10px; text-align: left; font-weight: 600; cursor: pointer; user-select: none;">닉네임 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="guild" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">길드 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="power" style="padding: 10px; text-align: right; font-weight: 600; cursor: pointer; user-select: none;">전투력 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="diff" style="padding: 10px; text-align: right; font-weight: 600; cursor: pointer; user-select: none;">증감 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="shape_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">🛡️ 형상 전설 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="shape_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">👑 형상 신화 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="mount_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">🐴 탈것 전설 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="mount_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">🦄 탈것 신화 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="rank" style="padding: 10px 6px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; width: 50px; font-size: 13px;">순위 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="name" style="padding: 10px 6px; text-align: left; font-weight: 600; cursor: pointer; user-select: none; width: 100px; font-size: 13px;">닉네임 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="guild" style="padding: 10px 6px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; width: 60px; font-size: 13px;">길드 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="power" style="padding: 10px 6px; text-align: right; font-weight: 600; cursor: pointer; user-select: none; width: 95px; font-size: 13px;">전투력 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="diff" style="padding: 10px 6px; text-align: right; font-weight: 600; cursor: pointer; user-select: none; width: 75px; font-size: 13px;">증감 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="shape_legend" style="padding: 10px 4px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; width: 80px; font-size: 12px; white-space: nowrap;">🛡️ 형상전설 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="shape_myth" style="padding: 10px 4px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; width: 80px; font-size: 12px; white-space: nowrap;">👑 형상신화 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="mount_legend" style="padding: 10px 4px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; width: 80px; font-size: 12px; white-space: nowrap;">🐴 탈것전설 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="mount_myth" style="padding: 10px 4px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; width: 80px; font-size: 12px; white-space: nowrap;">🦄 탈것신화 <span class="sort-icon">↕</span></th>
                                             </tr>
                                         </thead>
                                         <tbody id="shareUserTableBody">${usersHtml}</tbody>
@@ -2449,8 +2455,10 @@
                     <style>
                         .sortable-header { transition: background 0.15s; }
                         .sortable-header:hover { background: #e5e7eb !important; }
-                        .sort-icon { font-size: 10px; color: #9ca3af; margin-left: 4px; }
+                        .sort-icon { font-size: 10px; color: #9ca3af; margin-left: 2px; }
                         .sort-icon.active { color: #3b82f6; }
+                        #shareUserTable tbody tr:hover { background: #f9fafb; }
+                        #shareUserTable td, #shareUserTable th { vertical-align: middle; }
                     </style>
                 `;
                 
@@ -2526,16 +2534,16 @@
                         const diffSign = u.diff >= 0 ? '+' : '';
                         const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
                         const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
-                        html += '<tr>' +
-                            '<td style="padding: 10px; text-align: center;">' + medal + '</td>' +
-                            '<td style="padding: 10px; font-weight: 500;">' + u.name + '</td>' +
-                            '<td style="padding: 10px; text-align: center;">' + u.guild + '</td>' +
-                            '<td style="padding: 10px; text-align: right; font-weight: 600;">' + u.power.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px; text-align: right; color: ' + diffColor + '; font-weight: 500;">' + diffSign + u.diff.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px; text-align: center;">' + (u.shape_legend || 0) + '</td>' +
-                            '<td style="padding: 10px; text-align: center;">' + (u.shape_myth || 0) + '</td>' +
-                            '<td style="padding: 10px; text-align: center;">' + (u.mount_legend || 0) + '</td>' +
-                            '<td style="padding: 10px; text-align: center;">' + (u.mount_myth || 0) + '</td>' +
+                        html += '<tr style="border-bottom: 1px solid #f3f4f6;">' +
+                            '<td style="padding: 10px 6px; text-align: center; font-size: 14px;">' + medal + '</td>' +
+                            '<td style="padding: 10px 6px; font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + u.name + '</td>' +
+                            '<td style="padding: 10px 6px; text-align: center; font-size: 14px;">' + u.guild + '</td>' +
+                            '<td style="padding: 10px 6px; text-align: right; font-weight: 600; font-size: 14px; font-family: monospace;">' + u.power.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 6px; text-align: right; color: ' + diffColor + '; font-weight: 500; font-size: 14px; font-family: monospace;">' + diffSign + u.diff.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.shape_legend || 0) + '</td>' +
+                            '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.shape_myth || 0) + '</td>' +
+                            '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.mount_legend || 0) + '</td>' +
+                            '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.mount_myth || 0) + '</td>' +
                         '</tr>';
                     });
                     document.getElementById('shareUserTableBody').innerHTML = html;
@@ -3600,7 +3608,7 @@
                                     '<span class="comment-date">' + formatDateTime(c.createdAt) + '</span>' +
                                     '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:11px;">삭제됨</span>' +
                                 '</div>' +
-                                '<div class="comment-content" style="color:#9ca3af;text-decoration:line-through;">' + (c.content || '').replace(/\\n/g, '<br>') + '</div>' +
+                                '<div class="comment-content" style="color:#9ca3af;text-decoration:line-through;">' + (c.content || '').replace(/\n/g, '<br>') + '</div>' +
                                 '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">삭제자: ' + (c.deletedBy || '알 수 없음') + ' | ' + formatDateTime(c.deletedAt) + '</div>' +
                             '</div>';
                         }
@@ -3609,19 +3617,19 @@
                         let buttonsHtml = '';
                         if (isSuperAdmin) {
                             // 최종관리자는 모든 댓글 삭제 가능 + 수정 내역 보기
-                            buttonsHtml = '<button onclick="deleteComment(\\''+pid+'\\', '+idx+')" class="comment-delete-btn">삭제</button>';
+                            buttonsHtml = '<button onclick="deleteComment(\''+pid+'\', '+idx+')" class="comment-delete-btn">삭제</button>';
                             if (c.editHistory && c.editHistory.length > 0) {
-                                buttonsHtml += '<button onclick="showCommentEditHistory(\\''+pid+'\\', '+idx+')" class="comment-history-btn">수정내역</button>';
+                                buttonsHtml += '<button onclick="showCommentEditHistory(\''+pid+'\', '+idx+')" class="comment-history-btn">수정내역</button>';
                             }
                         } else if (isUserComment) {
                             // 사용자 댓글은 본인 인증 후 수정/삭제
                             buttonsHtml = '<div class="comment-user-actions" id="commentAuth_'+pid+'_'+idx+'">' +
                                 '<input type="password" maxlength="4" placeholder="비번" style="width:60px;padding:4px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;text-align:center;">' +
-                                '<button onclick="verifyCommentOwner(\\''+pid+'\\', '+idx+', \\''+c.authorPassword+'\\')" style="padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">확인</button>' +
+                                '<button onclick="verifyCommentOwner(\''+pid+'\', '+idx+', \''+c.authorPassword+'\')" style="padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">확인</button>' +
                             '</div>' +
                             '<div class="comment-action-btns" id="commentBtns_'+pid+'_'+idx+'" style="display:none;">' +
-                                '<button onclick="editComment(\\''+pid+'\\', '+idx+')" class="comment-edit-btn">수정</button>' +
-                                '<button onclick="deleteCommentByUser(\\''+pid+'\\', '+idx+')" class="comment-delete-btn">삭제</button>' +
+                                '<button onclick="editComment(\''+pid+'\', '+idx+')" class="comment-edit-btn">수정</button>' +
+                                '<button onclick="deleteCommentByUser(\''+pid+'\', '+idx+')" class="comment-delete-btn">삭제</button>' +
                             '</div>';
                         }
                         
@@ -3631,7 +3639,7 @@
                                 '<span class="comment-date">' + formatDateTime(c.createdAt) + ' ' + editedBadge + '</span>' +
                                 buttonsHtml +
                             '</div>' +
-                            '<div class="comment-content" id="commentContent_'+pid+'_'+idx+'">' + (c.content || '').replace(/\\n/g, '<br>') + '</div>' +
+                            '<div class="comment-content" id="commentContent_'+pid+'_'+idx+'">' + (c.content || '').replace(/\n/g, '<br>') + '</div>' +
                         '</div>';
                     }).join('');
                 };
