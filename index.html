@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.8.9">
-    <meta name="build-date" content="2026-01-13 13:00">
+    <meta name="version" content="1.9.0">
+    <meta name="build-date" content="2026-01-13 13:30">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -792,7 +792,7 @@
         </h1>
         <div class="top-actions">
             <a href="?page=dia" style="text-decoration: none;">
-                <button class="btn-common" style="padding: 8px 14px; background: #8b5cf6; color: white;">📋 공지</button>
+                <button class="btn-common" style="padding: 8px 14px; background: #8b5cf6; color: white;">📋 게시판</button>
             </a>
             <button id="addUserBtn" class="btn-common btn-user-add">➕ 사용자 등록</button>
             <div style="display: flex; gap: 4px;">
@@ -1030,9 +1030,15 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.8.9';
-        const APP_BUILD_DATE = '2026-01-13 13:00';
+        const APP_VERSION = '1.9.0';
+        const APP_BUILD_DATE = '2026-01-13 13:30';
         const APP_CHANGELOG = [
+            { version: '1.9.0', date: '2026-01-13 13:30', changes: [
+                '📋 게시판 전면 개편',
+                '⚙️ 카테고리 동적 관리 (추가/삭제)',
+                '📌 공지사항 고정 기능',
+                '🔧 버그 수정 (길드/버튼 작동 오류)'
+            ]},
             { version: '1.8.9', date: '2026-01-13 13:00', changes: [
                 '🔒 전투력 마스킹 설정 기능 (최종관리자 전용)',
                 '📋 게시판 카테고리 분류 (공지/주간백업/이벤트/가이드)',
@@ -1581,21 +1587,39 @@
             }
         }
         
+
         // 게시판 목록
         async function showBoardList() {
-            document.title = '📋 공지사항 - 오스카2';
+            document.title = '📋 게시판 - 오스카2';
             
-            // 게시판 카테고리 정의
-            const categories = [
-                { id: 'all', name: '전체', icon: '📋', color: '#6366f1' },
-                { id: 'notice', name: '공지', icon: '📢', color: '#ef4444' },
-                { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981' },
-                { id: 'event', name: '이벤트', icon: '🎉', color: '#f59e0b' },
-                { id: 'guide', name: '가이드', icon: '📖', color: '#8b5cf6' }
-            ];
+            // Firebase에서 카테고리 로드
+            let categories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }];
+            try {
+                const catDoc = await getDoc(doc(db, "config", "boardCategories"));
+                if (catDoc.exists() && catDoc.data().list) {
+                    categories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...catDoc.data().list];
+                } else {
+                    // 기본 카테고리 생성
+                    const defaultCats = [
+                        { id: 'notice', name: '공지사항', icon: '📢', color: '#ef4444' },
+                        { id: 'dia', name: '다이아', icon: '💎', color: '#3b82f6' },
+                        { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981' }
+                    ];
+                    await setDoc(doc(db, "config", "boardCategories"), { list: defaultCats });
+                    categories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...defaultCats];
+                }
+            } catch(e) { console.error('카테고리 로드 오류:', e); }
+            
+            // 카테고리를 window에 저장 (다른 함수에서 사용)
+            window.boardCategories = categories;
             
             const categoryTabs = categories.map(cat => 
                 `<button class="category-tab" data-category="${cat.id}" style="--cat-color: ${cat.color};">${cat.icon} ${cat.name}</button>`
+            ).join('');
+            
+            // 카테고리 옵션 (글쓰기용) - '전체' 제외
+            const categoryOptions = categories.filter(c => c.id !== 'all').map(cat => 
+                `<option value="${cat.id}">${cat.icon} ${cat.name}</option>`
             ).join('');
             
             document.body.innerHTML = `
@@ -1605,14 +1629,17 @@
                         <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                                 <div>
-                                    <h1 style="font-size: 24px; font-weight: 700; color: #1e40af; margin: 0 0 4px;">📋 공지사항</h1>
-                                    <p style="color: #64748b; font-size: 14px; margin: 0;">오스카2 길드 공지게시판</p>
+                                    <h1 style="font-size: 24px; font-weight: 700; color: #1e40af; margin: 0 0 4px;">📋 게시판</h1>
+                                    <p style="color: #64748b; font-size: 14px; margin: 0;">오스카2 길드 게시판</p>
                                 </div>
-                                <div style="display: flex; gap: 8px;">
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                     <a href="${window.location.pathname}" style="text-decoration: none;">
                                         <button style="padding: 10px 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🏠 메인으로</button>
                                     </a>
-                                    ${isSuperAdmin ? `<button onclick="openWritePostModal()" style="padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">✏️ 글쓰기</button>` : ''}
+                                    ${isSuperAdmin ? `
+                                        <button onclick="openCategoryManageModal()" style="padding: 10px 16px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">⚙️ 카테고리</button>
+                                        <button onclick="openWritePostModal()" style="padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">✏️ 글쓰기</button>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1646,21 +1673,20 @@
                     .post-row { display: flex; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; align-items: center; gap: 12px; }
                     .post-row:hover { background: #f8fafc; }
                     .post-row:last-child { border-bottom: none; }
+                    .post-row.pinned { background: #fef3c7; }
+                    .post-row.pinned:hover { background: #fde68a; }
                     .post-title { font-weight: 500; color: #1e293b; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                     .post-meta { display: flex; gap: 12px; font-size: 13px; color: #94a3b8; flex-shrink: 0; }
                     .post-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 8px; }
                     .post-badge.new { background: #dbeafe; color: #1d4ed8; }
-                    .post-badge.notice { background: #fee2e2; color: #dc2626; }
-                    .post-badge.backup { background: #d1fae5; color: #059669; }
-                    .post-badge.event { background: #fef3c7; color: #d97706; }
-                    .post-badge.guide { background: #ede9fe; color: #7c3aed; }
+                    .post-badge.pinned { background: #fef3c7; color: #d97706; }
                     .board-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto; }
                     .board-modal { background: white; border-radius: 16px; max-width: 600px; margin: 40px auto; padding: 24px; }
                     .board-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
                     .board-input:focus { outline: none; border-color: #3b82f6; }
                     .board-textarea { min-height: 200px; resize: vertical; font-family: inherit; }
                     .board-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
-                    .board-select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; }
+                    .board-select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; width: 100%; }
                 </style>
                 
                 <!-- 글쓰기/수정 모달 -->
@@ -1669,11 +1695,8 @@
                         <h2 id="boardModalTitle" style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">✏️ 글쓰기</h2>
                         <div style="margin-bottom: 16px;">
                             <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">카테고리</label>
-                            <select id="postCategoryInput" class="board-select" style="width: 100%;">
-                                <option value="notice">📢 공지</option>
-                                <option value="backup">💾 주간백업</option>
-                                <option value="event">🎉 이벤트</option>
-                                <option value="guide">📖 가이드</option>
+                            <select id="postCategoryInput" class="board-select">
+                                ${categoryOptions}
                             </select>
                         </div>
                         <div style="margin-bottom: 16px;">
@@ -1684,14 +1707,43 @@
                             <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">내용</label>
                             <textarea id="postContentInput" class="board-input board-textarea" placeholder="내용을 입력하세요"></textarea>
                         </div>
-                        <div style="margin-bottom: 20px;">
+                        <div style="margin-bottom: 16px;">
                             <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">🔗 링크 첨부 (선택)</label>
                             <input type="text" id="postLinkInput" class="board-input" placeholder="https://... (바로가기 버튼으로 표시됩니다)">
                             <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼 텍스트 (예: 전투력 현황 보기)" style="margin-top: 8px;">
                         </div>
+                        <div style="margin-bottom: 20px; padding: 12px; background: #fef3c7; border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="postPinnedInput" style="width: 18px; height: 18px;">
+                                <span style="font-size: 14px; font-weight: 500; color: #92400e;">📌 공지사항 (목록 상단에 고정)</span>
+                            </label>
+                        </div>
                         <div style="display: flex; justify-content: flex-end; gap: 8px;">
                             <button onclick="closeBoardModal()" class="board-btn" style="background: #f1f5f9; color: #475569;">취소</button>
                             <button id="boardSubmitBtn" onclick="submitPost()" class="board-btn" style="background: #3b82f6; color: white;">등록</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 카테고리 관리 모달 -->
+                <div id="categoryModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeCategoryModal()">
+                    <div class="board-modal">
+                        <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">⚙️ 카테고리 관리</h2>
+                        <div id="categoryList" style="margin-bottom: 20px;"></div>
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                            <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;">➕ 새 카테고리 추가</p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="newCatIcon" class="board-input" placeholder="아이콘 (예: 📢)" style="width: 80px;">
+                                <input type="text" id="newCatName" class="board-input" placeholder="카테고리 이름" style="flex: 1;">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="newCatId" class="board-input" placeholder="ID (영문)" style="flex: 1;">
+                                <input type="color" id="newCatColor" value="#6366f1" style="width: 50px; height: 44px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                <button onclick="addCategory()" class="board-btn" style="background: #10b981; color: white;">추가</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+                            <button onclick="closeCategoryModal()" class="board-btn" style="background: #f1f5f9; color: #475569;">닫기</button>
                         </div>
                     </div>
                 </div>
@@ -1730,6 +1782,13 @@
                     }
                 });
                 
+                // 공지사항(isPinned) 먼저, 그 다음 최신순
+                posts.sort((a, b) => {
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                    return b.createdAt - a.createdAt;
+                });
+                
                 if (posts.length === 0) {
                     boardList.innerHTML = `
                         <div style="text-align: center; padding: 60px 20px;">
@@ -1740,24 +1799,25 @@
                     return;
                 }
                 
-                const categoryNames = {
-                    'notice': { name: '공지', class: 'notice' },
-                    'backup': { name: '주간백업', class: 'backup' },
-                    'event': { name: '이벤트', class: 'event' },
-                    'guide': { name: '가이드', class: 'guide' }
+                // 카테고리 정보 가져오기
+                const categories = window.boardCategories || [];
+                const getCatInfo = (catId) => {
+                    const cat = categories.find(c => c.id === catId);
+                    return cat ? { name: cat.name, icon: cat.icon, color: cat.color } : { name: catId, icon: '📋', color: '#6366f1' };
                 };
                 
                 let html = '';
                 posts.forEach((post) => {
                     const date = new Date(post.createdAt).toLocaleDateString('ko-KR');
                     const isNew = (Date.now() - post.createdAt) < 3 * 24 * 60 * 60 * 1000;
-                    const catInfo = categoryNames[post.category] || { name: '공지', class: 'notice' };
+                    const catInfo = getCatInfo(post.category);
+                    const pinnedClass = post.isPinned ? ' pinned' : '';
                     
                     html += `
-                        <div class="post-row" onclick="location.href='?page=dia&post=${post.id}'">
-                            <span class="post-badge ${catInfo.class}">${catInfo.name}</span>
+                        <div class="post-row${pinnedClass}" onclick="location.href='?page=dia&post=${post.id}'">
+                            ${post.isPinned ? '<span class="post-badge pinned">📌 공지</span>' : `<span class="post-badge" style="background:${catInfo.color}20; color:${catInfo.color};">${catInfo.icon} ${catInfo.name}</span>`}
                             <div class="post-title">
-                                ${isNew ? '<span class="post-badge new">NEW</span>' : ''}
+                                ${isNew && !post.isPinned ? '<span class="post-badge new">NEW</span>' : ''}
                                 ${post.title}
                                 ${post.link ? '🔗' : ''}
                             </div>
@@ -1821,15 +1881,6 @@
                 const createdDate = formatDateTime(post.createdAt);
                 const updatedDate = post.updatedAt ? formatDateTime(post.updatedAt) : null;
                 
-                // 카테고리 이름
-                const categoryNames = {
-                    'notice': '📢 공지',
-                    'backup': '💾 주간백업',
-                    'event': '🎉 이벤트',
-                    'guide': '📖 가이드'
-                };
-                const categoryName = categoryNames[post.category] || '📢 공지';
-                
                 // 내용에서 줄바꿈 처리
                 const contentHtml = (post.content || '').replace(/\n/g, '<br>');
                 
@@ -1842,7 +1893,10 @@
                     </div>
                 ` : '';
                 
-                document.title = `${post.title} - 오스카2 공지`;
+                // 공지사항 배지
+                const pinnedBadge = post.isPinned ? `<span style="background: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">📌 공지사항</span>` : '';
+                
+                document.title = `${post.title} - 오스카2 게시판`;
                 document.body.innerHTML = `
                     <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
                         <div style="max-width: 900px; margin: 0 auto;">
@@ -1857,8 +1911,8 @@
                             <div style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
                                 <!-- 제목 영역 -->
                                 <div style="padding: 24px; border-bottom: 1px solid #f1f5f9;">
-                                    <div style="margin-bottom: 8px;">
-                                        <span style="font-size: 12px; color: #6b7280;">${categoryName}</span>
+                                    <div style="margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
+                                        ${pinnedBadge}
                                     </div>
                                     <h1 style="font-size: 22px; font-weight: 600; color: #1e293b; margin: 0 0 12px; line-height: 1.4;">${post.title}</h1>
                                     <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #94a3b8;">
@@ -1909,11 +1963,12 @@
         // 글쓰기 모달 열기
         window.openWritePostModal = function() {
             document.getElementById('boardModalTitle').textContent = '✏️ 글쓰기';
-            document.getElementById('postCategoryInput').value = 'notice';
+            document.getElementById('postCategoryInput').value = document.getElementById('postCategoryInput').options[0]?.value || 'notice';
             document.getElementById('postTitleInput').value = '';
             document.getElementById('postContentInput').value = '';
             document.getElementById('postLinkInput').value = '';
             document.getElementById('postLinkTextInput').value = '';
+            document.getElementById('postPinnedInput').checked = false;
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
         };
@@ -1929,18 +1984,41 @@
                 
                 const post = postDoc.data();
                 
+                // 카테고리 옵션
+                const categories = window.boardCategories || [];
+                const categoryOptions = categories.filter(c => c.id !== 'all').map(cat => 
+                    `<option value="${cat.id}" ${post.category === cat.id ? 'selected' : ''}>${cat.icon} ${cat.name}</option>`
+                ).join('');
+                
                 // 수정 모달 표시
                 document.body.innerHTML += `
                     <div id="editModalOverlay" style="display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto;">
                         <div style="background: white; border-radius: 16px; max-width: 600px; margin: 40px auto; padding: 24px;">
                             <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">✏️ 게시글 수정</h2>
                             <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">카테고리</label>
+                                <select id="editCategoryInput" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                                    ${categoryOptions}
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 16px;">
                                 <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">제목</label>
                                 <input type="text" id="editTitleInput" value="${post.title}" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" maxlength="100">
                             </div>
-                            <div style="margin-bottom: 20px;">
+                            <div style="margin-bottom: 16px;">
                                 <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">내용</label>
                                 <textarea id="editContentInput" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; min-height: 200px; resize: vertical; font-family: inherit;">${post.content}</textarea>
+                            </div>
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">🔗 링크</label>
+                                <input type="text" id="editLinkInput" value="${post.link || ''}" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+                                <input type="text" id="editLinkTextInput" value="${post.linkText || ''}" placeholder="버튼 텍스트" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-top: 8px;">
+                            </div>
+                            <div style="margin-bottom: 20px; padding: 12px; background: #fef3c7; border-radius: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="editPinnedInput" ${post.isPinned ? 'checked' : ''} style="width: 18px; height: 18px;">
+                                    <span style="font-size: 14px; font-weight: 500; color: #92400e;">📌 공지사항 (목록 상단에 고정)</span>
+                                </label>
                             </div>
                             <div style="display: flex; justify-content: flex-end; gap: 8px;">
                                 <button onclick="document.getElementById('editModalOverlay').remove()" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">취소</button>
@@ -1958,8 +2036,12 @@
         
         // 게시글 업데이트
         window.updatePost = async function(postId) {
+            const category = document.getElementById('editCategoryInput').value;
             const title = document.getElementById('editTitleInput').value.trim();
             const content = document.getElementById('editContentInput').value.trim();
+            const link = document.getElementById('editLinkInput').value.trim();
+            const linkText = document.getElementById('editLinkTextInput').value.trim();
+            const isPinned = document.getElementById('editPinnedInput').checked;
             
             if (!title) {
                 alert('제목을 입력해주세요.');
@@ -1967,11 +2049,23 @@
             }
             
             try {
-                await updateDoc(doc(db, "posts", postId), {
+                const updateData = {
+                    category: category,
                     title: title,
                     content: content,
+                    isPinned: isPinned,
                     updatedAt: Date.now()
-                });
+                };
+                
+                if (link) {
+                    updateData.link = link;
+                    updateData.linkText = linkText || '바로가기';
+                } else {
+                    updateData.link = null;
+                    updateData.linkText = null;
+                }
+                
+                await updateDoc(doc(db, "posts", postId), updateData);
                 
                 alert('수정되었습니다.');
                 location.reload();
@@ -2009,6 +2103,7 @@
             const content = document.getElementById('postContentInput').value.trim();
             const link = document.getElementById('postLinkInput').value.trim();
             const linkText = document.getElementById('postLinkTextInput').value.trim();
+            const isPinned = document.getElementById('postPinnedInput').checked;
             
             if (!title) {
                 alert('제목을 입력해주세요.');
@@ -2023,6 +2118,7 @@
                     content: content,
                     author: '에비츄',
                     views: 0,
+                    isPinned: isPinned,
                     createdAt: Date.now()
                 };
                 
@@ -2043,8 +2139,108 @@
                 alert('등록 중 오류가 발생했습니다.');
             }
         };
+        
+        // 카테고리 관리 모달
+        window.openCategoryManageModal = async function() {
+            document.getElementById('categoryModalOverlay').style.display = 'block';
+            await loadCategoryList();
+        };
+        
+        window.closeCategoryModal = function() {
+            document.getElementById('categoryModalOverlay').style.display = 'none';
+        };
+        
+        // 카테고리 목록 로드
+        async function loadCategoryList() {
+            const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+            const listEl = document.getElementById('categoryList');
+            
+            if (categories.length === 0) {
+                listEl.innerHTML = '<p style="color: #6b7280; text-align: center;">등록된 카테고리가 없습니다.</p>';
+                return;
+            }
+            
+            let html = '';
+            categories.forEach((cat, idx) => {
+                html += `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 20px;">${cat.icon}</span>
+                        <span style="flex: 1; font-weight: 500;">${cat.name}</span>
+                        <span style="font-size: 12px; color: #6b7280;">${cat.id}</span>
+                        <span style="width: 24px; height: 24px; border-radius: 4px; background: ${cat.color};"></span>
+                        <button onclick="deleteCategory('${cat.id}')" style="padding: 6px 10px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">삭제</button>
+                    </div>
+                `;
+            });
+            
+            listEl.innerHTML = html;
+        }
+        
+        // 카테고리 추가
+        window.addCategory = async function() {
+            const icon = document.getElementById('newCatIcon').value.trim();
+            const name = document.getElementById('newCatName').value.trim();
+            const id = document.getElementById('newCatId').value.trim().toLowerCase();
+            const color = document.getElementById('newCatColor').value;
+            
+            if (!icon || !name || !id) {
+                alert('모든 항목을 입력해주세요.');
+                return;
+            }
+            
+            if (!/^[a-z0-9]+$/.test(id)) {
+                alert('ID는 영문 소문자와 숫자만 가능합니다.');
+                return;
+            }
+            
+            try {
+                const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+                
+                if (categories.find(c => c.id === id)) {
+                    alert('이미 존재하는 ID입니다.');
+                    return;
+                }
+                
+                categories.push({ id, name, icon, color });
+                await setDoc(doc(db, "config", "boardCategories"), { list: categories });
+                
+                window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
+                
+                // 입력창 초기화
+                document.getElementById('newCatIcon').value = '';
+                document.getElementById('newCatName').value = '';
+                document.getElementById('newCatId').value = '';
+                
+                await loadCategoryList();
+                alert('카테고리가 추가되었습니다. 페이지를 새로고침해주세요.');
+                
+            } catch(e) {
+                console.error('카테고리 추가 오류:', e);
+                alert('오류가 발생했습니다.');
+            }
+        };
+        
+        // 카테고리 삭제
+        window.deleteCategory = async function(catId) {
+            if (!confirm(`'${catId}' 카테고리를 삭제하시겠습니까?\n해당 카테고리의 게시글은 유지됩니다.`)) return;
+            
+            try {
+                const categories = (window.boardCategories || []).filter(c => c.id !== 'all' && c.id !== catId);
+                await setDoc(doc(db, "config", "boardCategories"), { list: categories });
+                
+                window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
+                
+                await loadCategoryList();
+                alert('삭제되었습니다. 페이지를 새로고침해주세요.');
+                
+            } catch(e) {
+                console.error('카테고리 삭제 오류:', e);
+                alert('오류가 발생했습니다.');
+            }
+        };
         // ==================== 게시판 기능 끝 ====================
        
+        async function checkDuplicateNicknames() {
             if (!isAdmin) return;
             
             try {
