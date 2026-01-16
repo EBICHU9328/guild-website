@@ -1756,10 +1756,6 @@
             const minutesEl = document.getElementById('minutes');
             const secondsEl = document.getElementById('seconds');
             
-            const formatDate = (d) => {
-                return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-            };
-            
             const updateCountdown = async () => {
                 const now = Date.now();
                 const remaining = endTimeMs - now;
