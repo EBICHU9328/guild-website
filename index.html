@@ -76,7 +76,7 @@
             animation: petalFloat 3s ease-in-out infinite;
             pointer-events: none;
         }
-        /* 상단 타이틀 반짝이 */
+        
         .newyear-title .title-sparkle {
             position: absolute;
             width: 4px;
@@ -182,7 +182,7 @@
             50% { opacity: 1; transform: translateY(-5px) scale(1.1); }
         }
         
-        /* 떨어지는 꽃잎 컨테이너 */
+        
         .guild-select-title .petal-container {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -212,7 +212,7 @@
             100% { top: 100%; opacity: 0; transform: rotate(360deg) translateX(20px); }
         }
         
-        /* 반짝이 효과 */
+        
         .guild-select-title .sparkle {
             position: absolute;
             width: 6px;
@@ -303,7 +303,7 @@
         .guild-btn-arrow { font-size: 24px; color: #9ca3af; transition: transform 0.3s; }
         .guild-btn:hover .guild-btn-arrow { transform: translateX(4px); color: #3b82f6; }
 
-        /* 관리자 드롭다운 메뉴 */
+        
         .admin-dropdown { position: relative; display: none; }
         .admin-dropdown.active { display: inline-block; }
         .admin-dropdown-btn { 
@@ -444,7 +444,7 @@
         .common-table td { text-align: center; padding: 10px 8px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
         .common-table tbody tr:hover { background: #f9fafb; }
         .common-table tbody tr:active { background: #f3f4f6; }
-        /* 넓은 테이블용 */
+        
         .common-table.table-wide { min-width: 800px; }
         .common-table.table-wide td { white-space: nowrap; }
         .form-group { margin-bottom: 20px; }
@@ -608,7 +608,7 @@
             }
         }
         
-        /* 작은 스마트폰 (480px 이하) */
+        
         @media (max-width: 480px) {
             .top-bar { padding: 12px; }
             .top-actions { gap: 8px; }
@@ -640,12 +640,12 @@
             .alert-title { font-size: 13px; }
             .alert-message { font-size: 12px; }
             
-            /* 작은 화면에서 꽃잎 효과 줄이기 */
+            
             .guild-select-title .falling-petal:nth-child(n+4) { display: none; }
             .guild-select-title .sparkle:nth-child(n+3) { display: none; }
         }
         
-        /* 폴드 접힘 / 소형 태블릿 (768px ~ 1024px) */
+        
         @media (min-width: 768px) and (max-width: 1024px) {
             .top-bar { padding: 16px 20px; flex-direction: row; }
             .top-actions { width: auto; }
@@ -660,41 +660,41 @@
             .modal-body { max-height: calc(100vh - 200px); }
         }
         
-        /* 폴드 펼침 / 중형 태블릿 (1024px ~ 1440px) */
+        
         @media (min-width: 1024px) and (max-width: 1440px) {
             .container { grid-template-columns: repeat(3, 1fr); max-width: 1200px; }
             .guild-buttons { grid-template-columns: repeat(3, 1fr); }
         }
         
-        /* 대형 화면 */
+        
         @media (min-width: 1024px) { .container { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1440px) { .container { grid-template-columns: repeat(4, 1fr); max-width: 1440px; } }
         
-        /* 터치 디바이스 최적화 */
+        
         @media (hover: none) and (pointer: coarse) {
             .btn, .guild-btn, .admin-dropdown-item { 
-                min-height: 44px; /* iOS 권장 터치 타겟 */
+                min-height: 44px; 
             }
             .form-input, .form-select {
                 min-height: 44px;
-                font-size: 16px; /* iOS 줌 방지 */
+                font-size: 16px; 
             }
             .modal-close-btn {
                 width: 36px;
                 height: 36px;
                 font-size: 24px;
             }
-            /* 호버 효과 비활성화 */
+            
             .btn:hover, .guild-btn:hover { transform: none; }
             .admin-dropdown-item:hover { background: transparent; }
-            /* 터치 시 효과 */
+            
             .btn:active, .guild-btn:active { 
                 transform: scale(0.98); 
                 opacity: 0.9;
             }
         }
         
-        /* 가로 모드 (Landscape) */
+        
         @media (max-height: 500px) and (orientation: landscape) {
             .modal { max-height: 95vh; }
             .modal-body { max-height: calc(95vh - 120px); }
@@ -702,14 +702,14 @@
             .guild-select-title { margin-bottom: 20px; }
         }
         
-        /* 애니메이션 성능 최적화 */
+        
         .newyear-title, .newyear-box, .plum-left, .plum-right, .falling-petal, .sparkle {
             will-change: transform, opacity;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
         }
         
-        /* 모션 감소 선호 시 */
+        
         @media (prefers-reduced-motion: reduce) {
             .plum-left, .plum-right, .falling-petal, .sparkle, .newyear-title, .newyear-box {
                 animation: none !important;
@@ -719,13 +719,13 @@
             }
         }
         
-        /* 폴드 화면 전환 대응 */
+        
         @media (horizontal-viewport-segments: 2) {
-            /* 폴드 펼침 시 2단 레이아웃 */
+            
             .container { grid-template-columns: repeat(2, 1fr); }
         }
         
-        /* 세이프 에어리어 (노치/펀치홀 대응) */
+        
         @supports (padding: max(0px)) {
             .top-bar {
                 padding-left: max(16px, env(safe-area-inset-left));
