@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.9.0">
-    <meta name="build-date" content="2026-01-13 13:30">
+    <meta name="version" content="1.9.1">
+    <meta name="build-date" content="2026-01-13 14:00">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -1030,9 +1030,14 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.9.0';
-        const APP_BUILD_DATE = '2026-01-13 13:30';
+        const APP_VERSION = '1.9.1';
+        const APP_BUILD_DATE = '2026-01-13 14:00';
         const APP_CHANGELOG = [
+            { version: '1.9.1', date: '2026-01-13 14:00', changes: [
+                '📋 게시판 UI/UX 전면 개편',
+                '✨ 모던하고 깔끔한 디자인',
+                '📱 모바일 최적화 개선'
+            ]},
             { version: '1.9.0', date: '2026-01-13 13:30', changes: [
                 '📋 게시판 전면 개편',
                 '⚙️ 카테고리 동적 관리 (추가/삭제)',
@@ -1615,7 +1620,7 @@
             window.boardCategories = categories;
             
             const categoryTabs = categories.map(cat => 
-                `<button class="category-tab" data-category="${cat.id}" style="--cat-color: ${cat.color};">${cat.icon} ${cat.name}</button>`
+                `<button class="cat-tab" data-category="${cat.id}" style="--c: ${cat.color};">${cat.name}</button>`
             ).join('');
             
             // 카테고리 옵션 (글쓰기용) - '전체' 제외
@@ -1624,147 +1629,193 @@
             ).join('');
             
             document.body.innerHTML = `
-                <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
-                    <div style="max-width: 900px; margin: 0 auto;">
+                <div class="board-wrap">
+                    <div class="board-container">
                         <!-- 헤더 -->
-                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                                <div>
-                                    <h1 style="font-size: 24px; font-weight: 700; color: #1e40af; margin: 0 0 4px;">📋 게시판</h1>
-                                    <p style="color: #64748b; font-size: 14px; margin: 0;">오스카2 길드 게시판</p>
-                                </div>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <a href="${window.location.pathname}" style="text-decoration: none;">
-                                        <button style="padding: 10px 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🏠 메인으로</button>
-                                    </a>
-                                    ${isSuperAdmin ? `
-                                        <button onclick="openCategoryManageModal()" style="padding: 10px 16px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">⚙️ 카테고리</button>
-                                        <button onclick="openWritePostModal()" style="padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">✏️ 글쓰기</button>
-                                    ` : ''}
-                                </div>
+                        <div class="board-header">
+                            <div class="header-left">
+                                <h1>게시판</h1>
+                            </div>
+                            <div class="header-right">
+                                <a href="${window.location.pathname}" class="header-btn home">홈</a>
+                                ${isSuperAdmin ? `
+                                    <button onclick="openCategoryManageModal()" class="header-btn settings">설정</button>
+                                    <button onclick="openWritePostModal()" class="header-btn write">글쓰기</button>
+                                ` : ''}
                             </div>
                         </div>
                         
                         <!-- 카테고리 탭 -->
-                        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;" id="categoryTabs">
+                        <div class="cat-tabs" id="categoryTabs">
                             ${categoryTabs}
                         </div>
                         
                         <!-- 게시글 목록 -->
-                        <div style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
-                            <div id="boardList" style="min-height: 200px;">
-                                <div style="text-align: center; padding: 40px;">
-                                    <div style="width:40px; height:40px; border:4px solid #f3f4f6; border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
-                                    <p style="margin-top: 16px; color: #6b7280;">로딩 중...</p>
+                        <div class="post-list-wrap">
+                            <div id="boardList" class="post-list">
+                                <div class="loading">
+                                    <div class="spinner"></div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- 푸터 -->
-                        <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-                            Made with ❤️ by 에비츄
-                        </div>
+                        <div class="board-footer">Made with ❤️ by 에비츄</div>
                     </div>
                 </div>
                 <style>
                     @keyframes spin { to { transform: rotate(360deg); } }
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                     @keyframes boardAlertIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-                    @keyframes boardAlertOut { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }
-                    .board-alert-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 2000; }
-                    .board-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; padding: 24px 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 2001; min-width: 280px; max-width: 400px; text-align: center; animation: boardAlertIn 0.2s ease-out; }
+                    @keyframes boardAlertOut { from { opacity: 1; } to { opacity: 0; } }
+                    
+                    .board-wrap { min-height: 100vh; background: #f8fafc; }
+                    .board-container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+                    
+                    .board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+                    .header-left h1 { font-size: 28px; font-weight: 800; color: #0f172a; margin: 0; }
+                    .header-right { display: flex; gap: 8px; }
+                    .header-btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+                    .header-btn.home { background: #f1f5f9; color: #475569; }
+                    .header-btn.home:hover { background: #e2e8f0; }
+                    .header-btn.settings { background: #fef3c7; color: #b45309; }
+                    .header-btn.settings:hover { background: #fde68a; }
+                    .header-btn.write { background: #0f172a; color: white; }
+                    .header-btn.write:hover { background: #1e293b; }
+                    
+                    .cat-tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+                    .cat-tabs::-webkit-scrollbar { height: 0; }
+                    .cat-tab { padding: 10px 20px; border: none; background: white; border-radius: 100px; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+                    .cat-tab:hover { color: var(--c); background: #f8fafc; }
+                    .cat-tab.active { background: var(--c); color: white; box-shadow: 0 4px 12px color-mix(in srgb, var(--c) 40%, transparent); }
+                    
+                    .post-list-wrap { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+                    .post-list { min-height: 300px; }
+                    
+                    .loading { display: flex; justify-content: center; align-items: center; height: 300px; }
+                    .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+                    
+                    .post-item { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.3s ease-out; }
+                    .post-item:hover { background: #fafbfc; }
+                    .post-item:last-child { border-bottom: none; }
+                    .post-item.pinned { background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%); }
+                    .post-item.pinned:hover { background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%); }
+                    
+                    .post-num { width: 36px; font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
+                    .post-cat { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-right: 12px; flex-shrink: 0; }
+                    .post-cat.pinned { background: #fbbf24; color: white; }
+                    
+                    .post-info { flex: 1; min-width: 0; }
+                    .post-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+                    .post-title { font-size: 15px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .post-new { font-size: 10px; font-weight: 700; color: #3b82f6; background: #dbeafe; padding: 2px 6px; border-radius: 4px; }
+                    .post-link-icon { font-size: 12px; color: #94a3b8; }
+                    .post-meta { font-size: 12px; color: #94a3b8; }
+                    
+                    .post-stats { display: flex; gap: 16px; font-size: 12px; color: #94a3b8; flex-shrink: 0; margin-left: 16px; }
+                    .post-stats span { display: flex; align-items: center; gap: 4px; }
+                    
+                    .empty-state { text-align: center; padding: 60px 20px; }
+                    .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+                    .empty-state p { color: #94a3b8; font-size: 15px; }
+                    
+                    .board-footer { text-align: center; padding: 24px; color: #cbd5e1; font-size: 12px; }
+                    
+                    .board-alert-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.5); z-index: 2000; backdrop-filter: blur(4px); }
+                    .board-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 20px; padding: 32px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); z-index: 2001; min-width: 300px; max-width: 400px; text-align: center; animation: boardAlertIn 0.2s ease-out; }
                     .board-alert.closing { animation: boardAlertOut 0.15s ease-in forwards; }
-                    .board-alert-icon { font-size: 48px; margin-bottom: 12px; }
-                    .board-alert-msg { font-size: 16px; color: #1e293b; font-weight: 500; margin-bottom: 20px; line-height: 1.5; }
-                    .board-alert-btn { padding: 10px 32px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-                    .board-alert-btn:hover { background: #2563eb; }
+                    .board-alert-icon { font-size: 56px; margin-bottom: 16px; }
+                    .board-alert-msg { font-size: 16px; color: #1e293b; font-weight: 500; margin-bottom: 24px; line-height: 1.6; }
+                    .board-alert-btn { padding: 12px 40px; background: #0f172a; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+                    .board-alert-btn:hover { background: #1e293b; transform: translateY(-1px); }
                     .board-alert-btn.error { background: #ef4444; }
                     .board-alert-btn.error:hover { background: #dc2626; }
-                    .category-tab { padding: 8px 16px; border: 2px solid #e2e8f0; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
-                    .category-tab:hover { border-color: var(--cat-color); color: var(--cat-color); }
-                    .category-tab.active { background: var(--cat-color); color: white; border-color: var(--cat-color); }
-                    .post-row { display: flex; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; align-items: center; gap: 12px; }
-                    .post-row:hover { background: #f8fafc; }
-                    .post-row:last-child { border-bottom: none; }
-                    .post-row.pinned { background: #fef3c7; }
-                    .post-row.pinned:hover { background: #fde68a; }
-                    .post-title { font-weight: 500; color: #1e293b; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                    .post-meta { display: flex; gap: 12px; font-size: 13px; color: #94a3b8; flex-shrink: 0; }
-                    .post-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 8px; }
-                    .post-badge.new { background: #dbeafe; color: #1d4ed8; }
-                    .post-badge.pinned { background: #fef3c7; color: #d97706; }
-                    .board-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto; }
-                    .board-modal { background: white; border-radius: 16px; max-width: 600px; margin: 40px auto; padding: 24px; }
-                    .board-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-                    .board-input:focus { outline: none; border-color: #3b82f6; }
-                    .board-textarea { min-height: 200px; resize: vertical; font-family: inherit; }
-                    .board-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
-                    .board-select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; width: 100%; }
+                    
+                    .board-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.5); z-index: 1000; padding: 20px; overflow-y: auto; backdrop-filter: blur(4px); }
+                    .board-modal { background: white; border-radius: 20px; max-width: 560px; margin: 40px auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+                    .board-input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box; transition: border-color 0.15s; }
+                    .board-input:focus { outline: none; border-color: #0f172a; }
+                    .board-textarea { min-height: 180px; resize: vertical; font-family: inherit; line-height: 1.6; }
+                    .board-btn { padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.15s; }
+                    .board-select { padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: white; width: 100%; transition: border-color 0.15s; }
+                    .board-select:focus { outline: none; border-color: #0f172a; }
+                    
+                    @media (max-width: 640px) {
+                        .board-container { padding: 16px 12px; }
+                        .board-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+                        .header-right { width: 100%; }
+                        .header-btn { flex: 1; text-align: center; }
+                        .post-item { padding: 14px 16px; }
+                        .post-num { width: 28px; font-size: 12px; }
+                        .post-stats { display: none; }
+                        .post-meta { display: flex; gap: 8px; }
+                    }
                 </style>
                 
                 <!-- 글쓰기/수정 모달 -->
-                <div id="boardModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeBoardModal()">
+                <div id="boardModalOverlay" class="board-modal-overlay">
                     <div class="board-modal">
-                        <h2 id="boardModalTitle" style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">✏️ 글쓰기</h2>
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">카테고리</label>
+                        <h2 id="boardModalTitle" style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">글쓰기</h2>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">카테고리</label>
                             <select id="postCategoryInput" class="board-select">
                                 ${categoryOptions}
                             </select>
                         </div>
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">제목</label>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">제목</label>
                             <input type="text" id="postTitleInput" class="board-input" placeholder="제목을 입력하세요" maxlength="100">
                         </div>
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">내용</label>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">내용</label>
                             <textarea id="postContentInput" class="board-input board-textarea" placeholder="내용을 입력하세요"></textarea>
                         </div>
-                        <div style="margin-bottom: 16px;">
-                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">🔗 링크 첨부 (선택)</label>
-                            <input type="text" id="postLinkInput" class="board-input" placeholder="https://... (바로가기 버튼으로 표시됩니다)">
-                            <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼 텍스트 (예: 전투력 현황 보기)" style="margin-top: 8px;">
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">링크 첨부 (선택)</label>
+                            <input type="text" id="postLinkInput" class="board-input" placeholder="https://...">
+                            <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼에 표시될 텍스트" style="margin-top: 8px;">
                         </div>
-                        <div style="margin-bottom: 20px; padding: 12px; background: #fef3c7; border-radius: 8px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" id="postPinnedInput" style="width: 18px; height: 18px;">
-                                <span style="font-size: 14px; font-weight: 500; color: #92400e;">📌 공지사항 (목록 상단에 고정)</span>
+                        <div style="margin-bottom: 24px; padding: 14px 16px; background: #fefce8; border: 2px solid #fef08a; border-radius: 12px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" id="postPinnedInput" style="width: 20px; height: 20px; accent-color: #eab308;">
+                                <span style="font-size: 14px; font-weight: 600; color: #a16207;">📌 공지사항으로 등록 (상단 고정)</span>
                             </label>
                         </div>
-                        <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                            <button onclick="closeBoardModal()" class="board-btn" style="background: #f1f5f9; color: #475569;">취소</button>
-                            <button id="boardSubmitBtn" onclick="submitPost()" class="board-btn" style="background: #3b82f6; color: white;">등록</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="closeBoardModal()" class="board-btn" style="flex: 1; background: #f1f5f9; color: #475569;">취소</button>
+                            <button id="boardSubmitBtn" onclick="submitPost()" class="board-btn" style="flex: 2; background: #0f172a; color: white;">등록</button>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 카테고리 관리 모달 -->
-                <div id="categoryModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeCategoryModal()">
+                <div id="categoryModalOverlay" class="board-modal-overlay">
                     <div class="board-modal">
-                        <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">⚙️ 카테고리 관리</h2>
-                        <div id="categoryList" style="margin-bottom: 20px;"></div>
-                        <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
-                            <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 12px;">➕ 새 카테고리 추가</p>
-                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                <input type="text" id="newCatIcon" class="board-input" placeholder="아이콘 (예: 📢)" style="width: 80px;">
+                        <h2 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">카테고리 관리</h2>
+                        <div id="categoryList" style="margin-bottom: 24px;"></div>
+                        <div style="border-top: 2px solid #f1f5f9; padding-top: 20px;">
+                            <p style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">새 카테고리 추가</p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                <input type="text" id="newCatIcon" class="board-input" placeholder="📢" style="width: 60px; text-align: center;">
                                 <input type="text" id="newCatName" class="board-input" placeholder="카테고리 이름" style="flex: 1;">
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <input type="text" id="newCatId" class="board-input" placeholder="ID (영문)" style="flex: 1;">
-                                <input type="color" id="newCatColor" value="#6366f1" style="width: 50px; height: 44px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                                <button onclick="addCategory()" class="board-btn" style="background: #10b981; color: white;">추가</button>
+                                <input type="text" id="newCatId" class="board-input" placeholder="ID (영문소문자)" style="flex: 1;">
+                                <input type="color" id="newCatColor" value="#6366f1" style="width: 48px; height: 48px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer;">
+                                <button onclick="addCategory()" class="board-btn" style="background: #0f172a; color: white; padding: 12px 20px;">추가</button>
                             </div>
                         </div>
-                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
-                            <button onclick="closeCategoryModal()" class="board-btn" style="background: #f1f5f9; color: #475569;">닫기</button>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                            <button onclick="closeCategoryModal()" class="board-btn" style="background: #f1f5f9; color: #475569; padding: 12px 32px;">닫기</button>
                         </div>
                     </div>
                 </div>
             `;
             
             // 카테고리 탭 이벤트
-            document.querySelectorAll('.category-tab').forEach(tab => {
+            document.querySelectorAll('.cat-tab').forEach(tab => {
                 tab.addEventListener('click', function() {
-                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
                     const cat = this.dataset.category;
                     
@@ -1779,11 +1830,11 @@
             });
             
             // 해당 카테고리 탭 활성화
-            const targetTab = document.querySelector(`.category-tab[data-category="${initialCategory}"]`);
+            const targetTab = document.querySelector(`.cat-tab[data-category="${initialCategory}"]`);
             if (targetTab) {
                 targetTab.classList.add('active');
             } else {
-                document.querySelector('.category-tab[data-category="all"]').classList.add('active');
+                document.querySelector('.cat-tab[data-category="all"]').classList.add('active');
             }
             
             await loadBoardList(initialCategory);
@@ -1794,8 +1845,8 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('page') === 'board') {
                 const cat = urlParams.get('cat') || 'all';
-                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-                const tab = document.querySelector(`.category-tab[data-category="${cat}"]`);
+                document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+                const tab = document.querySelector(`.cat-tab[data-category="${cat}"]`);
                 if (tab) tab.classList.add('active');
                 loadBoardList(cat);
             }
@@ -1828,9 +1879,9 @@
                 
                 if (posts.length === 0) {
                     boardList.innerHTML = `
-                        <div style="text-align: center; padding: 60px 20px;">
-                            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-                            <p style="color: #64748b; font-size: 16px;">등록된 게시글이 없습니다.</p>
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <p>등록된 게시글이 없습니다.</p>
                         </div>
                     `;
                     return;
@@ -1843,24 +1894,41 @@
                     return cat ? { name: cat.name, icon: cat.icon, color: cat.color } : { name: catId, icon: '📋', color: '#6366f1' };
                 };
                 
+                // 전체 게시글에 번호 매기기 (createdAt 기준, 오래된 글이 1번)
+                // 먼저 createdAt 기준 오름차순 정렬하여 번호 부여
+                const postNumbers = {};
+                const sortedByDate = [...posts].sort((a, b) => a.createdAt - b.createdAt);
+                sortedByDate.forEach((post, idx) => {
+                    postNumbers[post.id] = idx + 1;
+                });
+                
                 let html = '';
-                posts.forEach((post) => {
-                    const date = new Date(post.createdAt).toLocaleDateString('ko-KR');
+                posts.forEach((post, idx) => {
+                    const date = new Date(post.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
                     const isNew = (Date.now() - post.createdAt) < 3 * 24 * 60 * 60 * 1000;
                     const catInfo = getCatInfo(post.category);
                     const pinnedClass = post.isPinned ? ' pinned' : '';
                     
+                    // 글 번호 (공지사항은 번호 숨김, 하지만 내부적으로는 있음)
+                    const postNumber = postNumbers[post.id];
+                    
                     html += `
-                        <div class="post-row${pinnedClass}" onclick="location.href='?page=board&post=${post.id}'">
-                            ${post.isPinned ? '<span class="post-badge pinned">📌 공지</span>' : `<span class="post-badge" style="background:${catInfo.color}20; color:${catInfo.color};">${catInfo.icon} ${catInfo.name}</span>`}
-                            <div class="post-title">
-                                ${isNew && !post.isPinned ? '<span class="post-badge new">NEW</span>' : ''}
-                                ${post.title}
-                                ${post.link ? '🔗' : ''}
+                        <div class="post-item${pinnedClass}" onclick="location.href='?page=board&post=${post.id}'" style="animation-delay: ${idx * 0.03}s;">
+                            <span class="post-num">${post.isPinned ? '' : postNumber}</span>
+                            ${post.isPinned 
+                                ? '<span class="post-cat pinned">📌 공지</span>' 
+                                : `<span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`
+                            }
+                            <div class="post-info">
+                                <div class="post-title-row">
+                                    <span class="post-title">${post.title}</span>
+                                    ${isNew && !post.isPinned ? '<span class="post-new">NEW</span>' : ''}
+                                    ${post.link ? '<span class="post-link-icon">🔗</span>' : ''}
+                                </div>
+                                <div class="post-meta">${date}</div>
                             </div>
-                            <div class="post-meta">
-                                <span>👁️ ${post.views || 0}</span>
-                                <span>${date}</span>
+                            <div class="post-stats">
+                                <span>👁 ${post.views || 0}</span>
                             </div>
                         </div>
                     `;
@@ -1881,15 +1949,16 @@
         // 게시글 상세
         async function showPostDetail(postId) {
             document.body.innerHTML = `
-                <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
-                    <div style="max-width: 900px; margin: 0 auto;">
-                        <div style="text-align: center; padding: 40px;">
-                            <div style="width:40px; height:40px; border:4px solid #f3f4f6; border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
-                            <p style="margin-top: 16px; color: #6b7280;">로딩 중...</p>
-                        </div>
+                <div class="board-wrap">
+                    <div class="board-container" style="display: flex; justify-content: center; align-items: center; min-height: 60vh;">
+                        <div class="spinner" style="width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
                     </div>
                 </div>
-                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                <style>
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                    .board-wrap { min-height: 100vh; background: #f8fafc; }
+                    .board-container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+                </style>
             `;
             
             try {
@@ -1898,23 +1967,37 @@
                 
                 if (!postDoc.exists()) {
                     document.body.innerHTML = `
-                        <div style="min-height: 100vh; background: #f9fafb; display: flex; align-items: center; justify-content: center;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
-                                <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">게시글을 찾을 수 없습니다</h1>
-                                <a href="?page=board" style="color: #3b82f6;">목록으로 돌아가기</a>
+                        <div class="board-wrap" style="display: flex; align-items: center; justify-content: center;">
+                            <div style="text-align: center; padding: 60px;">
+                                <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.5;">🔍</div>
+                                <h1 style="font-size: 20px; color: #1e293b; margin-bottom: 8px; font-weight: 600;">게시글을 찾을 수 없습니다</h1>
+                                <a href="?page=board" style="color: #3b82f6; font-size: 14px;">← 목록으로 돌아가기</a>
                             </div>
                         </div>
+                        <style>.board-wrap { min-height: 100vh; background: #f8fafc; }</style>
                     `;
                     return;
                 }
                 
-                // 조회수 증가
-                await updateDoc(postRef, {
-                    views: (postDoc.data().views || 0) + 1
-                });
+                // 조회수 증가 (관리자 제외, 1시간 딜레이)
+                let viewIncremented = false;
+                if (!isAdmin) {
+                    const viewKey = `post_view_${postId}`;
+                    const lastView = localStorage.getItem(viewKey);
+                    const now = Date.now();
+                    const oneHour = 60 * 60 * 1000;
+                    
+                    if (!lastView || (now - parseInt(lastView)) > oneHour) {
+                        await updateDoc(postRef, {
+                            views: (postDoc.data().views || 0) + 1
+                        });
+                        localStorage.setItem(viewKey, now.toString());
+                        viewIncremented = true;
+                    }
+                }
                 
                 const post = postDoc.data();
+                const currentViews = viewIncremented ? (post.views || 0) + 1 : (post.views || 0);
                 const createdDate = formatDateTime(post.createdAt);
                 const updatedDate = post.updatedAt ? formatDateTime(post.updatedAt) : null;
                 
@@ -1923,83 +2006,104 @@
                 
                 // 링크 버튼
                 const linkButtonHtml = post.link ? `
-                    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed #e2e8f0; text-align: center;">
-                        <a href="${post.link}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); transition: transform 0.2s, box-shadow 0.2s;">
-                            🔗 ${post.linkText || '바로가기'}
+                    <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #f1f5f9; text-align: center;">
+                        <a href="${post.link}" target="_blank" class="link-btn">
+                            ${post.linkText || '바로가기'} →
                         </a>
                     </div>
                 ` : '';
                 
                 // 공지사항 배지
-                const pinnedBadge = post.isPinned ? `<span style="background: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">📌 공지사항</span>` : '';
+                const pinnedBadge = post.isPinned ? `<span class="pinned-badge">📌 공지사항</span>` : '';
                 
                 document.title = `${post.title} - 오스카2 게시판`;
                 document.body.innerHTML = `
-                    <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
-                        <div style="max-width: 900px; margin: 0 auto;">
-                            <!-- 헤더 -->
-                            <div style="margin-bottom: 20px;">
-                                <a href="?page=board" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px;">
-                                    ← 목록으로
-                                </a>
-                            </div>
+                    <div class="board-wrap">
+                        <div class="board-container">
+                            <!-- 뒤로가기 -->
+                            <a href="?page=board" class="back-link">← 목록</a>
                             
                             <!-- 게시글 -->
-                            <div style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
-                                <!-- 제목 영역 -->
-                                <div style="padding: 24px; border-bottom: 1px solid #f1f5f9;">
-                                    <div style="margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
-                                        ${pinnedBadge}
+                            <article class="post-detail">
+                                <header class="post-header">
+                                    ${pinnedBadge}
+                                    <h1 class="post-detail-title">${post.title}</h1>
+                                    <div class="post-detail-meta">
+                                        <span>${post.author || '관리자'}</span>
+                                        <span>•</span>
+                                        <span>${createdDate}</span>
+                                        <span>•</span>
+                                        <span>조회 ${currentViews}</span>
+                                        ${updatedDate ? `<span class="edited">수정됨</span>` : ''}
                                     </div>
-                                    <h1 style="font-size: 22px; font-weight: 600; color: #1e293b; margin: 0 0 12px; line-height: 1.4;">${post.title}</h1>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #94a3b8;">
-                                        <span>✍️ ${post.author || '관리자'}</span>
-                                        <span>📅 ${createdDate}</span>
-                                        <span>👁️ ${(post.views || 0) + 1}</span>
-                                        ${updatedDate ? `<span style="color: #f59e0b;">✏️ 수정됨 ${updatedDate}</span>` : ''}
-                                    </div>
-                                </div>
+                                </header>
                                 
-                                <!-- 내용 영역 -->
-                                <div style="padding: 24px; min-height: 200px; line-height: 1.8; color: #374151; font-size: 15px;">
+                                <div class="post-content">
                                     ${contentHtml}
                                     ${linkButtonHtml}
                                 </div>
                                 
-                                <!-- 버튼 영역 -->
                                 ${isSuperAdmin ? `
-                                <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px;">
-                                    <button onclick="editPost('${postId}')" style="padding: 8px 16px; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">✏️ 수정</button>
-                                    <button onclick="deletePost('${postId}')" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">🗑️ 삭제</button>
-                                </div>
+                                <footer class="post-actions">
+                                    <button onclick="editPost('${postId}')" class="action-btn edit">수정</button>
+                                    <button onclick="deletePost('${postId}')" class="action-btn delete">삭제</button>
+                                </footer>
                                 ` : ''}
-                            </div>
-                            
-                            <!-- 푸터 -->
-                            <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-                                Made with ❤️ by 에비츄
-                            </div>
+                            </article>
                         </div>
                     </div>
+                    <style>
+                        .board-wrap { min-height: 100vh; background: #f8fafc; }
+                        .board-container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+                        
+                        .back-link { display: inline-block; color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 20px; transition: color 0.15s; }
+                        .back-link:hover { color: #0f172a; }
+                        
+                        .post-detail { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+                        
+                        .post-header { padding: 28px 28px 24px; border-bottom: 2px solid #f8fafc; }
+                        .pinned-badge { display: inline-block; background: #fef3c7; color: #b45309; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
+                        .post-detail-title { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 16px; line-height: 1.4; }
+                        .post-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #94a3b8; }
+                        .post-detail-meta .edited { color: #f59e0b; }
+                        
+                        .post-content { padding: 28px; line-height: 1.8; color: #334155; font-size: 15px; min-height: 200px; }
+                        
+                        .link-btn { display: inline-block; padding: 14px 28px; background: #0f172a; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 14px; transition: all 0.15s; }
+                        .link-btn:hover { background: #1e293b; transform: translateY(-1px); }
+                        
+                        .post-actions { padding: 16px 28px; background: #fafbfc; border-top: 2px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px; }
+                        .action-btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+                        .action-btn.edit { background: #fef3c7; color: #b45309; }
+                        .action-btn.edit:hover { background: #fde68a; }
+                        .action-btn.delete { background: #fee2e2; color: #dc2626; }
+                        .action-btn.delete:hover { background: #fecaca; }
+                        
+                        @media (max-width: 640px) {
+                            .post-header, .post-content { padding: 20px; }
+                            .post-detail-title { font-size: 20px; }
+                        }
+                    </style>
                 `;
                 
             } catch(e) {
                 console.error('게시글 상세 오류:', e);
                 document.body.innerHTML = `
-                    <div style="min-height: 100vh; background: #f9fafb; display: flex; align-items: center; justify-content: center;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
-                            <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">오류가 발생했습니다</h1>
-                            <a href="?page=board" style="color: #3b82f6;">목록으로 돌아가기</a>
+                    <div class="board-wrap" style="display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; padding: 60px;">
+                            <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.5;">⚠️</div>
+                            <h1 style="font-size: 20px; color: #1e293b; margin-bottom: 8px; font-weight: 600;">오류가 발생했습니다</h1>
+                            <a href="?page=board" style="color: #3b82f6; font-size: 14px;">← 목록으로 돌아가기</a>
                         </div>
                     </div>
+                    <style>.board-wrap { min-height: 100vh; background: #f8fafc; }</style>
                 `;
             }
         }
         
         // 글쓰기 모달 열기
         window.openWritePostModal = function() {
-            document.getElementById('boardModalTitle').textContent = '✏️ 글쓰기';
+            document.getElementById('boardModalTitle').textContent = '글쓰기';
             document.getElementById('postCategoryInput').value = document.getElementById('postCategoryInput').options[0]?.value || 'notice';
             document.getElementById('postTitleInput').value = '';
             document.getElementById('postContentInput').value = '';
@@ -2172,7 +2276,7 @@
                 closeBoardModal();
                 showBoardAlert('등록되었습니다!', 'success', () => {
                     // 현재 선택된 카테고리로 목록 새로고침
-                    const activeTab = document.querySelector('.category-tab.active');
+                    const activeTab = document.querySelector('.cat-tab.active');
                     const currentCat = activeTab ? activeTab.dataset.category : 'all';
                     loadBoardList(currentCat);
                 });
