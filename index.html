@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.0.6">
-    <meta name="build-date" content="2026-01-16 20:45">
+    <meta name="version" content="2.2.0">
+    <meta name="build-date" content="2026-01-16 22:00">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1081,9 +1081,24 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.0.6';
-        const APP_BUILD_DATE = '2026-01-16 20:45';
+        const APP_VERSION = '2.2.0';
+        const APP_BUILD_DATE = '2026-01-16 22:00';
         const APP_CHANGELOG = [
+            { version: '2.2.0', date: '2026-01-16 22:00', changes: [
+                '📄 게시판 페이지네이션 추가 (10/20/30/50개씩)',
+                '🔧 점검 모드 시작시간 자동 설정 (현재 KST)',
+                '⏰ 점검 종료시간 자동 설정 (시작 +2시간)',
+                '🔄 점검 자동 연장 기능 (종료 1분전 → +1시간)',
+                '⚠️ 연장점검 알림 표시 및 사과 멘트'
+            ]},
+            { version: '2.1.0', date: '2026-01-16 21:30', changes: [
+                '✏️ 일반 사용자 글쓰기 기능 추가 (비밀번호 인증)',
+                '📝 카테고리별 기본 양식 설정 기능',
+                '🔒 비공개 게시판 기능 (작성자만 열람)',
+                '👁️ 게시글 숨기기 기능 (관리자)',
+                '✅ 처리 상태 기능 (처리중/처리완료)',
+                '📊 카테고리 설정 UI 개선'
+            ]},
             { version: '2.0.6', date: '2026-01-16 20:45', changes: [
                 '📊 길드별 현황 → 클랜별 현황으로 명칭 변경',
                 '📈 클랜별 주간 증감을 평균 기준으로 변경',
@@ -1364,6 +1379,7 @@
             const startTime = new Date(data.startTime);
             const endTime = new Date(data.endTime);
             const reason = data.reason || '시스템 점검';
+            const isExtended = data.isExtended || false;
             
             const formatDate = (d) => {
                 return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -1394,6 +1410,13 @@
                             <span class="gradient-text">서비스 점검</span> 중입니다
                         </h2>
                         
+                        <!-- 연장 알림 -->
+                        <div id="extendedNotice" class="extended-notice" style="display: ${isExtended ? 'block' : 'none'};">
+                            <div class="extended-icon">⚠️</div>
+                            <p class="extended-text">점검이 연장되었습니다</p>
+                            <p class="extended-sorry">이용에 불편을 드려 대단히 죄송합니다</p>
+                        </div>
+                        
                         <!-- 메인 카드 -->
                         <div class="glass-card">
                             <p class="card-desc">더 나은 서비스를 위해 잠시 점검 중입니다</p>
@@ -1403,7 +1426,7 @@
                                 <div class="info-icon">🕐</div>
                                 <div class="info-content">
                                     <span class="info-label">점검 시간</span>
-                                    <span class="info-value">${formatDate(startTime)} ~ ${formatDate(endTime)}</span>
+                                    <span class="info-value" id="maintenanceTimeDisplay">${formatDate(startTime)} ~ ${formatDate(endTime)}</span>
                                 </div>
                             </div>
                             
@@ -1479,6 +1502,23 @@
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                         position: relative;
                         overflow: hidden;
+                    }
+                    
+                    /* 연장 알림 스타일 */
+                    .extended-notice {
+                        background: linear-gradient(135deg, rgba(251,146,60,0.2), rgba(234,88,12,0.2));
+                        border: 2px solid rgba(251,146,60,0.5);
+                        border-radius: 16px;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        animation: pulse 2s ease-in-out infinite;
+                    }
+                    .extended-icon { font-size: 32px; margin-bottom: 8px; }
+                    .extended-text { color: #fb923c; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+                    .extended-sorry { color: rgba(255,255,255,0.8); font-size: 14px; }
+                    @keyframes pulse {
+                        0%, 100% { box-shadow: 0 0 20px rgba(251,146,60,0.3); }
+                        50% { box-shadow: 0 0 40px rgba(251,146,60,0.5); }
                     }
                     
                     /* 파티클 배경 */
@@ -1710,14 +1750,48 @@
             `;
             
             // 카운트다운 시작
-            const endTimeMs = data.endTime;
+            let endTimeMs = data.endTime;
+            let hasAutoExtended = data.isExtended || false;
             const hoursEl = document.getElementById('hours');
             const minutesEl = document.getElementById('minutes');
             const secondsEl = document.getElementById('seconds');
             
-            const updateCountdown = () => {
+            const formatDate = (d) => {
+                return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            };
+            
+            const updateCountdown = async () => {
                 const now = Date.now();
                 const remaining = endTimeMs - now;
+                
+                // 1분 남았을 때 자동 연장 (아직 연장되지 않은 경우에만)
+                if (remaining <= 60 * 1000 && remaining > 0 && !hasAutoExtended) {
+                    hasAutoExtended = true;
+                    // 1시간 연장
+                    const newEndTime = endTimeMs + (60 * 60 * 1000);
+                    endTimeMs = newEndTime;
+                    
+                    // Firebase에 연장 정보 저장
+                    try {
+                        await setDoc(doc(db, "config", "maintenance"), {
+                            ...data,
+                            endTime: newEndTime,
+                            isExtended: true,
+                            extendedAt: Date.now()
+                        });
+                        
+                        // UI 업데이트
+                        document.getElementById('extendedNotice').style.display = 'block';
+                        const newEndDate = new Date(newEndTime);
+                        const startDate = new Date(data.startTime);
+                        document.getElementById('maintenanceTimeDisplay').textContent = 
+                            `${formatDate(startDate)} ~ ${formatDate(newEndDate)}`;
+                        
+                        console.log('점검 시간이 자동으로 1시간 연장되었습니다.');
+                    } catch(e) {
+                        console.error('자동 연장 저장 오류:', e);
+                    }
+                }
                 
                 if (remaining <= 0) {
                     hoursEl.textContent = '00';
@@ -1794,7 +1868,7 @@
             }
             
             // 현재 설정 로드
-            let currentData = { enabled: false, startTime: 0, endTime: 0, reason: '' };
+            let currentData = { enabled: false, startTime: 0, endTime: 0, reason: '', isExtended: false };
             try {
                 const maintenanceDoc = await getDoc(doc(db, "config", "maintenance"));
                 if (maintenanceDoc.exists()) {
@@ -1802,9 +1876,11 @@
                 }
             } catch(e) { console.error(e); }
             
+            // 현재 KST 시간
             const now = new Date();
-            const defaultStart = currentData.startTime ? new Date(currentData.startTime) : now;
-            const defaultEnd = currentData.endTime ? new Date(currentData.endTime) : new Date(now.getTime() + 2 * 60 * 60 * 1000);
+            // 새로 설정할 때는 항상 현재 시간으로, 기존 설정이 있으면 그대로
+            const defaultStart = currentData.enabled && currentData.startTime ? new Date(currentData.startTime) : now;
+            const defaultEnd = currentData.enabled && currentData.endTime ? new Date(currentData.endTime) : new Date(now.getTime() + 2 * 60 * 60 * 1000);
             
             const formatDateTimeLocal = (d) => {
                 return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -1814,7 +1890,7 @@
                 <div style="text-align: left;">
                     <div style="margin-bottom: 20px; padding: 16px; background: ${currentData.enabled ? '#fef2f2' : '#f0fdf4'}; border-radius: 12px; border: 2px solid ${currentData.enabled ? '#fecaca' : '#bbf7d0'};">
                         <p style="font-size: 14px; font-weight: 600; color: ${currentData.enabled ? '#dc2626' : '#16a34a'};">
-                            ${currentData.enabled ? '🔴 현재 점검 모드 활성화됨' : '🟢 현재 정상 운영 중'}
+                            ${currentData.enabled ? '🔴 현재 점검 모드 활성화됨' + (currentData.isExtended ? ' (연장됨)' : '') : '🟢 현재 정상 운영 중'}
                         </p>
                     </div>
                     
@@ -1879,6 +1955,7 @@
                     startTime: startTime,
                     endTime: endTime,
                     reason: reason,
+                    isExtended: false,
                     updatedAt: Date.now(),
                     updatedBy: loggedInAdminId || '최종관리자'
                 });
@@ -2391,10 +2468,10 @@
                 } else {
                     // 기본 카테고리 생성
                     const defaultCats = [
-                        { id: 'notice', name: '공지사항', icon: '📢', color: '#ef4444' },
-                        { id: 'dia', name: '다이아', icon: '💎', color: '#3b82f6' },
-                        { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981' },
-                        { id: 'nickname', name: '닉네임 변경', icon: '✏️', color: '#8b5cf6' }
+                        { id: 'notice', name: '공지사항', icon: '📢', color: '#ef4444', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
+                        { id: 'dia', name: '다이아', icon: '💎', color: '#3b82f6', allowUserWrite: true, isPrivate: false, requireStatus: false, defaultTemplate: '💰 매입 단가\n10,000 다이아 당 : 00,000원 지급\n\n🍊 매입 수량\n최소 : 1,000개부터 소량도 OK\n최대 : 10만 개까지\n\n수량 상관없이 깔끔하게 매입해 드립니다.\n판매 원하시면 아래 버튼을 눌러주세요!\n\n👇 [판매 문의 바로가기]' },
+                        { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
+                        { id: 'nickname', name: '닉네임 변경', icon: '✏️', color: '#8b5cf6', allowUserWrite: true, isPrivate: true, requireStatus: true, defaultTemplate: '📝 닉네임 변경 신청\n\n현재 닉네임:\n변경할 닉네임:\n\n사유:' }
                     ];
                     await setDoc(doc(db, "config", "boardCategories"), { list: defaultCats });
                     categories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...defaultCats];
@@ -2425,8 +2502,8 @@
                                 <a href="${window.location.pathname}" class="header-btn home">홈</a>
                                 ${isSuperAdmin ? `
                                     <button onclick="openCategoryManageModal()" class="header-btn settings">설정</button>
-                                    <button onclick="openWritePostModal()" class="header-btn write">글쓰기</button>
                                 ` : ''}
+                                <button onclick="openWritePostModal()" class="header-btn write">글쓰기</button>
                             </div>
                         </div>
                         
@@ -2442,6 +2519,7 @@
                                     <div class="spinner"></div>
                                 </div>
                             </div>
+                            <div id="boardPagination" class="board-pagination"></div>
                         </div>
                         
                         <!-- 푸터 -->
@@ -2477,6 +2555,17 @@
                     .post-list-wrap { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
                     .post-list { min-height: 300px; }
                     
+                    /* 페이지네이션 스타일 */
+                    .board-pagination { padding: 16px 20px; border-top: 1px solid #f1f5f9; background: #fafbfc; }
+                    .pagination-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; color: #64748b; }
+                    .page-size-select { padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; }
+                    .pagination-btns { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
+                    .page-btn { min-width: 36px; height: 36px; padding: 0 10px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; font-size: 14px; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.15s; }
+                    .page-btn:hover:not(.disabled):not(.active) { background: #f1f5f9; border-color: #cbd5e1; }
+                    .page-btn.active { background: #0f172a; color: white; border-color: #0f172a; }
+                    .page-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+                    .page-dots { display: flex; align-items: center; padding: 0 8px; color: #94a3b8; }
+                    
                     .loading { display: flex; justify-content: center; align-items: center; height: 300px; }
                     .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
                     
@@ -2508,6 +2597,14 @@
                     .post-item.pinned .post-title { font-weight: 700; color: #1f2937; }
                     .post-new { font-size: 10px; font-weight: 700; color: #3b82f6; background: #dbeafe; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
                     .post-link-icon { font-size: 12px; color: #94a3b8; flex-shrink: 0; }
+                    
+                    /* 목록 배지 스타일 */
+                    .hidden-badge { font-size: 9px; font-weight: 700; color: #d97706; background: #fef3c7; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+                    .status-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+                    .status-badge.pending { color: #4338ca; background: #e0e7ff; }
+                    .status-badge.completed { color: #059669; background: #d1fae5; }
+                    .blurred-post { opacity: 0.7; }
+                    .blurred-post .post-title { filter: blur(4px); pointer-events: none; }
                     
                     .post-author { width: 80px; font-size: 12px; color: #64748b; text-align: center; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                     .post-date { width: 80px; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
@@ -2637,9 +2734,20 @@
                 <div id="boardModalOverlay" class="board-modal-overlay">
                     <div class="board-modal">
                         <h2 id="boardModalTitle" style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">글쓰기</h2>
+                        
+                        <!-- 사용자 인증 섹션 (비로그인 사용자만 표시) -->
+                        <div id="userAuthSection" style="display: none; margin-bottom: 20px; padding: 16px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px;">
+                            <p style="font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 12px;">🔐 작성자 인증</p>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="password" id="postUserPassword" maxlength="4" placeholder="비밀번호 4자리" style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; text-align: center; letter-spacing: 8px;">
+                                <button type="button" onclick="verifyUserPassword()" style="padding: 12px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">인증</button>
+                            </div>
+                            <p id="verifiedUserName" style="margin-top: 10px; font-size: 14px; color: #065f46; font-weight: 600; display: none;">✅ 인증됨: <span></span></p>
+                        </div>
+                        
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">카테고리</label>
-                            <select id="postCategoryInput" class="board-select">
+                            <select id="postCategoryInput" class="board-select" onchange="onCategoryChange(this)">
                                 ${categoryOptions}
                             </select>
                         </div>
@@ -2713,8 +2821,8 @@
                             <input type="text" id="postLinkInput" class="board-input" placeholder="https://...">
                             <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼에 표시될 텍스트" style="margin-top: 8px;">
                         </div>
-                        <!-- 고정 옵션 -->
-                        <div style="margin-bottom: 24px; padding: 16px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
+                        <!-- 고정 옵션 (관리자만 표시) -->
+                        <div id="pinOptionsSection" style="margin-bottom: 24px; padding: 16px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
                             <p style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 12px;">📌 상단 고정 설정</p>
                             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 10px;">
                                 <input type="checkbox" id="postPinnedInput" style="width: 18px; height: 18px; accent-color: #ef4444;">
@@ -2750,20 +2858,34 @@
                 
                 <!-- 카테고리 관리 모달 -->
                 <div id="categoryModalOverlay" class="board-modal-overlay">
-                    <div class="board-modal">
+                    <div class="board-modal" style="max-width: 700px;">
                         <h2 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">카테고리 관리</h2>
-                        <div id="categoryList" style="margin-bottom: 24px;"></div>
+                        <div id="categoryList" style="margin-bottom: 24px; max-height: 400px; overflow-y: auto;"></div>
                         <div style="border-top: 2px solid #f1f5f9; padding-top: 20px;">
                             <p style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">새 카테고리 추가</p>
                             <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                                 <input type="text" id="newCatIcon" class="board-input" placeholder="📢" style="width: 60px; text-align: center;">
                                 <input type="text" id="newCatName" class="board-input" placeholder="카테고리 이름" style="flex: 1;">
                             </div>
-                            <div style="display: flex; gap: 8px;">
+                            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                                 <input type="text" id="newCatId" class="board-input" placeholder="ID (영문소문자)" style="flex: 1;">
                                 <input type="color" id="newCatColor" value="#6366f1" style="width: 48px; height: 48px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer;">
-                                <button onclick="addCategory()" class="board-btn" style="background: #0f172a; color: white; padding: 12px 20px;">추가</button>
                             </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; padding: 12px; background: #f8fafc; border-radius: 8px;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                                    <input type="checkbox" id="newCatAllowUserWrite"> 사용자 작성 허용
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                                    <input type="checkbox" id="newCatIsPrivate"> 비공개 (작성자만 열람)
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                                    <input type="checkbox" id="newCatRequireStatus"> 처리상태 표시
+                                </label>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <textarea id="newCatTemplate" class="board-input" placeholder="기본 양식 (선택)" style="width: 100%; min-height: 80px; resize: vertical;"></textarea>
+                            </div>
+                            <button onclick="addCategory()" class="board-btn" style="background: #0f172a; color: white; padding: 12px 20px; width: 100%;">추가</button>
                         </div>
                         <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
                             <button onclick="closeCategoryModal()" class="board-btn" style="background: #f1f5f9; color: #475569; padding: 12px 32px;">닫기</button>
@@ -2820,8 +2942,17 @@
         });
         
         // 게시글 목록 로드
-        async function loadBoardList(category = 'all') {
+        // 페이지네이션 상태
+        window.boardPageSize = parseInt(localStorage.getItem('boardPageSize') || '20');
+        window.boardCurrentPage = 1;
+        window.boardAllPosts = [];
+        window.boardCurrentCategory = 'all';
+        
+        async function loadBoardList(category = 'all', page = 1) {
             try {
+                window.boardCurrentCategory = category;
+                window.boardCurrentPage = page;
+                
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
                 const snap = await getDocs(q);
                 
@@ -2833,6 +2964,8 @@
                     const post = docSnap.data();
                     post.id = docSnap.id;
                     if (category === 'all' || post.category === category) {
+                        // 숨김 처리된 게시글은 관리자만 볼 수 있음
+                        if (post.isHidden && !isAdmin) return;
                         posts.push(post);
                     }
                 });
@@ -2857,6 +2990,8 @@
                     return b.createdAt - a.createdAt;
                 });
                 
+                window.boardAllPosts = posts;
+                
                 if (posts.length === 0) {
                     boardList.innerHTML = `
                         <div class="empty-state">
@@ -2864,18 +2999,34 @@
                             <p>등록된 게시글이 없습니다.</p>
                         </div>
                     `;
+                    // 페이지네이션 숨기기
+                    const paginationEl = document.getElementById('boardPagination');
+                    if (paginationEl) paginationEl.innerHTML = '';
                     return;
                 }
+                
+                // 페이지네이션 계산
+                const pageSize = window.boardPageSize;
+                const totalPages = Math.ceil(posts.length / pageSize);
+                const startIdx = (page - 1) * pageSize;
+                const endIdx = startIdx + pageSize;
+                const pagePosts = posts.slice(startIdx, endIdx);
                 
                 // 카테고리 정보 가져오기
                 const categories = window.boardCategories || [];
                 const getCatInfo = (catId) => {
                     const cat = categories.find(c => c.id === catId);
-                    return cat ? { name: cat.name, icon: cat.icon, color: cat.color } : { name: catId, icon: '📋', color: '#6366f1' };
+                    return cat ? { 
+                        name: cat.name, 
+                        icon: cat.icon, 
+                        color: cat.color, 
+                        isPrivate: cat.isPrivate || false, 
+                        requireStatus: cat.requireStatus || false,
+                        allowUserWrite: cat.allowUserWrite || false
+                    } : { name: catId, icon: '📋', color: '#6366f1', isPrivate: false, requireStatus: false, allowUserWrite: false };
                 };
                 
                 // 전체 게시글에 번호 매기기 (createdAt 기준, 오래된 글이 1번)
-                // 먼저 createdAt 기준 오름차순 정렬하여 번호 부여
                 const postNumbers = {};
                 const sortedByDate = [...posts].sort((a, b) => a.createdAt - b.createdAt);
                 sortedByDate.forEach((post, idx) => {
@@ -2909,14 +3060,18 @@
                     </div>
                 `;
                 
-                posts.forEach((post, idx) => {
+                pagePosts.forEach((post, idx) => {
                     const date = getRelativeTime(post.createdAt);
                     const isNew = (Date.now() - post.createdAt) < 3 * 24 * 60 * 60 * 1000;
                     const catInfo = getCatInfo(post.category);
                     const isPinned = isPinnedInCategory(post);
                     const pinnedClass = isPinned ? ' pinned' : '';
                     
-                    // 글 번호 (공지사항은 번호 숨김, 하지만 내부적으로는 있음)
+                    // 비공개 카테고리 처리 (관리자 또는 작성자만 내용 열람 가능)
+                    const isPrivateCategory = catInfo.isPrivate;
+                    const shouldBlur = isPrivateCategory && !isAdmin;
+                    
+                    // 글 번호
                     const postNumber = postNumbers[post.id];
                     
                     // 고정 게시글이면 번호+분류를 하나로 합침
@@ -2927,19 +3082,38 @@
                     // 제목 색상
                     const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
                     
+                    // 블러 처리된 제목
+                    const displayTitle = shouldBlur ? '🔒 비공개 글입니다' : post.title;
+                    const blurClass = shouldBlur ? ' blurred-post' : '';
+                    
+                    // 숨김 표시 (관리자에게만)
+                    const hiddenBadge = post.isHidden && isAdmin ? '<span class="hidden-badge">숨김</span>' : '';
+                    
+                    // 처리 상태 표시
+                    let statusBadge = '';
+                    if (post.status && catInfo.requireStatus) {
+                        if (post.status === 'pending') {
+                            statusBadge = '<span class="status-badge pending">처리 중</span>';
+                        } else if (post.status === 'completed') {
+                            statusBadge = '<span class="status-badge completed">처리 완료</span>';
+                        }
+                    }
+                    
                     html += `
-                        <div class="post-item${pinnedClass}" onclick="location.href='?page=board&post=${post.id}'" style="animation-delay: ${idx * 0.03}s;">
+                        <div class="post-item${pinnedClass}${blurClass}" onclick="location.href='?page=board&post=${post.id}'" style="animation-delay: ${idx * 0.03}s;">
                             ${numCatHtml}
                             <div class="post-info">
                                 <div class="post-title-row">
-                                    <span class="post-title" style="${titleStyle}">${post.title}</span>
-                                    ${isNew && !isPinned ? '<span class="post-new">NEW</span>' : ''}
-                                    ${post.link ? '<span class="post-link-icon">🔗</span>' : ''}
-                                    ${post.image ? '<span class="post-link-icon">🖼️</span>' : ''}
+                                    <span class="post-title" style="${titleStyle}">${displayTitle}</span>
+                                    ${hiddenBadge}
+                                    ${statusBadge}
+                                    ${isNew && !isPinned && !shouldBlur ? '<span class="post-new">NEW</span>' : ''}
+                                    ${post.link && !shouldBlur ? '<span class="post-link-icon">🔗</span>' : ''}
+                                    ${post.image && !shouldBlur ? '<span class="post-link-icon">🖼️</span>' : ''}
                                 </div>
                             </div>
                             <div class="post-meta-row">
-                                <span class="post-author">${post.author || '관리자'}</span>
+                                <span class="post-author">${shouldBlur ? '***' : (post.author || '관리자')}</span>
                                 <span class="post-date">${date}</span>
                                 <span class="post-views">${post.views || 0}</span>
                             </div>
@@ -2948,6 +3122,9 @@
                 });
                 
                 boardList.innerHTML = html;
+                
+                // 페이지네이션 UI 렌더링
+                renderBoardPagination(page, totalPages, posts.length);
                 
             } catch(e) {
                 console.error('게시글 로드 오류:', e);
@@ -2958,6 +3135,83 @@
                 `;
             }
         }
+        
+        // 페이지네이션 UI 렌더링
+        function renderBoardPagination(currentPage, totalPages, totalPosts) {
+            const paginationEl = document.getElementById('boardPagination');
+            if (!paginationEl) return;
+            
+            if (totalPages <= 1) {
+                paginationEl.innerHTML = `
+                    <div class="pagination-info">
+                        <span>총 ${totalPosts}개</span>
+                        <select class="page-size-select" onchange="changeBoardPageSize(this.value)">
+                            <option value="10" ${window.boardPageSize === 10 ? 'selected' : ''}>10개씩</option>
+                            <option value="20" ${window.boardPageSize === 20 ? 'selected' : ''}>20개씩</option>
+                            <option value="30" ${window.boardPageSize === 30 ? 'selected' : ''}>30개씩</option>
+                            <option value="50" ${window.boardPageSize === 50 ? 'selected' : ''}>50개씩</option>
+                        </select>
+                    </div>
+                `;
+                return;
+            }
+            
+            let pagesHtml = '';
+            
+            // 이전 버튼
+            pagesHtml += `<button class="page-btn ${currentPage === 1 ? 'disabled' : ''}" onclick="goToBoardPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+            
+            // 페이지 번호들
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                pagesHtml += `<button class="page-btn" onclick="goToBoardPage(1)">1</button>`;
+                if (startPage > 2) pagesHtml += `<span class="page-dots">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                pagesHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToBoardPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) pagesHtml += `<span class="page-dots">...</span>`;
+                pagesHtml += `<button class="page-btn" onclick="goToBoardPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            // 다음 버튼
+            pagesHtml += `<button class="page-btn ${currentPage === totalPages ? 'disabled' : ''}" onclick="goToBoardPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+            
+            paginationEl.innerHTML = `
+                <div class="pagination-info">
+                    <span>총 ${totalPosts}개 (${currentPage}/${totalPages} 페이지)</span>
+                    <select class="page-size-select" onchange="changeBoardPageSize(this.value)">
+                        <option value="10" ${window.boardPageSize === 10 ? 'selected' : ''}>10개씩</option>
+                        <option value="20" ${window.boardPageSize === 20 ? 'selected' : ''}>20개씩</option>
+                        <option value="30" ${window.boardPageSize === 30 ? 'selected' : ''}>30개씩</option>
+                        <option value="50" ${window.boardPageSize === 50 ? 'selected' : ''}>50개씩</option>
+                    </select>
+                </div>
+                <div class="pagination-btns">
+                    ${pagesHtml}
+                </div>
+            `;
+        }
+        
+        // 페이지 이동
+        window.goToBoardPage = function(page) {
+            loadBoardList(window.boardCurrentCategory, page);
+            // 스크롤 맨 위로
+            document.querySelector('.post-list-wrap')?.scrollTo(0, 0);
+        };
+        
+        // 페이지 크기 변경
+        window.changeBoardPageSize = function(size) {
+            window.boardPageSize = parseInt(size);
+            localStorage.setItem('boardPageSize', size);
+            window.boardCurrentPage = 1;
+            loadBoardList(window.boardCurrentCategory, 1);
+        };
         
         // 게시글 상세
         async function showPostDetail(postId) {
@@ -3014,6 +3268,58 @@
                 const createdDate = formatDateTime(post.createdAt);
                 const updatedDate = post.updatedAt ? formatDateTime(post.updatedAt) : null;
                 
+                // 카테고리 정보 가져오기
+                const categories = window.boardCategories || [];
+                const catInfo = categories.find(c => c.id === post.category) || { isPrivate: false, requireStatus: false };
+                
+                // 비공개 글 접근 제어
+                const isPrivatePost = catInfo.isPrivate;
+                let canViewContent = isAdmin; // 관리자는 항상 볼 수 있음
+                
+                // 비공개 글이면서 관리자가 아닌 경우 비밀번호 확인 필요
+                if (isPrivatePost && !isAdmin) {
+                    // 작성자 본인인지 확인할 비밀번호 입력 요청
+                    document.body.innerHTML = `
+                        <div class="board-wrap">
+                            <div class="board-container">
+                                <a href="?page=board" class="back-link">← 목록</a>
+                                <div style="background: white; border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                                    <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+                                    <h2 style="font-size: 20px; color: #0f172a; margin-bottom: 12px;">비공개 글입니다</h2>
+                                    <p style="color: #64748b; margin-bottom: 24px; font-size: 14px;">작성자만 열람할 수 있습니다.<br>본인 확인을 위해 비밀번호를 입력해주세요.</p>
+                                    <div style="max-width: 280px; margin: 0 auto;">
+                                        <input type="password" id="privatePostPw" maxlength="4" placeholder="비밀번호 4자리" style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; text-align: center; letter-spacing: 8px; margin-bottom: 16px;">
+                                        <button onclick="verifyPrivatePost('${postId}', '${post.authorPassword || ''}')" style="width: 100%; padding: 14px; background: #0f172a; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">확인</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <style>
+                            .board-wrap { min-height: 100vh; background: #f8fafc; }
+                            .board-container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+                            .back-link { display: inline-block; color: #64748b; text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 20px; }
+                        </style>
+                    `;
+                    
+                    window.verifyPrivatePost = async function(pid, authorPw) {
+                        const inputPw = document.getElementById('privatePostPw').value;
+                        if (inputPw === authorPw) {
+                            // 인증 성공 - 실제 내용 표시
+                            sessionStorage.setItem('verifiedPost_' + pid, 'true');
+                            location.reload();
+                        } else {
+                            showBoardAlert('비밀번호가 일치하지 않습니다.', 'error');
+                        }
+                    };
+                    
+                    // 이미 인증된 경우 통과
+                    if (sessionStorage.getItem('verifiedPost_' + postId) === 'true') {
+                        canViewContent = true;
+                    } else {
+                        return;
+                    }
+                }
+                
                 // 내용에서 줄바꿈 처리 (HTML 태그가 없으면 줄바꿈 처리)
                 let contentHtml = post.content || '';
                 if (!contentHtml.includes('<') && !contentHtml.includes('>')) {
@@ -3038,6 +3344,19 @@
                 
                 // 공지사항 배지
                 const pinnedBadge = post.isPinned ? `<span class="pinned-badge">📌 공지사항</span>` : '';
+                
+                // 숨김 배지
+                const hiddenBadge = post.isHidden ? `<span class="hidden-badge-detail">👁️ 숨김 상태</span>` : '';
+                
+                // 처리 상태 배지
+                let statusBadge = '';
+                if (catInfo.requireStatus && post.status) {
+                    if (post.status === 'pending') {
+                        statusBadge = '<span class="status-badge-detail pending">⏳ 처리 중</span>';
+                    } else if (post.status === 'completed') {
+                        statusBadge = '<span class="status-badge-detail completed">✅ 처리 완료</span>';
+                    }
+                }
                 
                 // 색상
                 const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
@@ -3089,7 +3408,11 @@
                             <!-- 게시글 -->
                             <article class="post-detail">
                                 <header class="post-header">
-                                    ${pinnedBadge}
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                                        ${pinnedBadge}
+                                        ${hiddenBadge}
+                                        ${statusBadge}
+                                    </div>
                                     <h1 class="post-detail-title" style="${titleStyle}">${post.title}</h1>
                                     <div class="post-detail-meta">
                                         <span>${post.author || '관리자'}</span>
@@ -3107,8 +3430,14 @@
                                     ${linkButtonHtml}
                                 </div>
                                 
-                                ${isSuperAdmin ? `
+                                ${isAdmin ? `
                                 <footer class="post-actions">
+                                    ${catInfo.requireStatus && post.status === 'pending' ? `
+                                        <button onclick="completePostStatus('${postId}')" class="action-btn complete">✅ 처리완료</button>
+                                    ` : ''}
+                                    <button onclick="togglePostHidden('${postId}', ${post.isHidden ? 'false' : 'true'})" class="action-btn hide">
+                                        ${post.isHidden ? '👁️ 숨김 해제' : '🙈 숨기기'}
+                                    </button>
                                     <button onclick="editPost('${postId}')" class="action-btn edit">수정</button>
                                     <button onclick="deletePost('${postId}')" class="action-btn delete">삭제</button>
                                 </footer>
@@ -3163,6 +3492,16 @@
                         .action-btn.edit:hover { background: #fde68a; }
                         .action-btn.delete { background: #fee2e2; color: #dc2626; }
                         .action-btn.delete:hover { background: #fecaca; }
+                        .action-btn.hide { background: #f3e8ff; color: #7c3aed; }
+                        .action-btn.hide:hover { background: #e9d5ff; }
+                        .action-btn.complete { background: #d1fae5; color: #059669; }
+                        .action-btn.complete:hover { background: #a7f3d0; }
+                        
+                        /* 숨김/상태 배지 */
+                        .hidden-badge-detail { display: inline-block; background: #fef3c7; color: #d97706; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+                        .status-badge-detail { display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+                        .status-badge-detail.pending { background: #e0e7ff; color: #4338ca; }
+                        .status-badge-detail.completed { background: #d1fae5; color: #059669; }
                         
                         /* 댓글 스타일 */
                         .comments-section { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-top: 20px; padding: 24px 28px; }
@@ -3245,10 +3584,24 @@
         
         // 글쓰기 모달 열기
         window.openWritePostModal = function() {
+            const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+            
+            // 사용자가 작성 가능한 카테고리만 필터링 (관리자는 모두 가능)
+            const writableCategories = isAdmin ? categories : categories.filter(c => c.allowUserWrite === true);
+            
+            if (writableCategories.length === 0) {
+                showBoardAlert('작성 가능한 게시판이 없습니다.', 'error');
+                return;
+            }
+            
+            // 카테고리 옵션 재생성
+            const catOptionsHtml = writableCategories.map(cat => 
+                `<option value="${cat.id}" data-template="${encodeURIComponent(cat.defaultTemplate || '')}">${cat.icon} ${cat.name}</option>`
+            ).join('');
+            document.getElementById('postCategoryInput').innerHTML = catOptionsHtml;
+            
             document.getElementById('boardModalTitle').textContent = '글쓰기';
-            document.getElementById('postCategoryInput').value = document.getElementById('postCategoryInput').options[0]?.value || 'notice';
             document.getElementById('postTitleInput').value = '';
-            document.getElementById('postContentEditor').innerHTML = '';
             document.getElementById('postLinkInput').value = '';
             document.getElementById('postLinkTextInput').value = '';
             document.getElementById('postPinnedInput').checked = false;
@@ -3256,8 +3609,25 @@
             document.getElementById('postTitleColor').value = '#1e293b';
             clearImage();
             
+            // 제목 색상 버튼은 관리자만 표시
+            document.getElementById('postTitleColor').style.display = isAdmin ? 'block' : 'none';
+            
+            // 고정 옵션은 관리자만 표시
+            document.getElementById('pinOptionsSection').style.display = isAdmin ? 'block' : 'none';
+            
+            // 비밀번호 입력은 비로그인 사용자만 표시
+            document.getElementById('userAuthSection').style.display = isAdmin ? 'none' : 'flex';
+            document.getElementById('postUserPassword').value = '';
+            
+            // 첫번째 카테고리의 기본 양식 적용
+            const firstCat = writableCategories[0];
+            if (firstCat && firstCat.defaultTemplate) {
+                document.getElementById('postContentEditor').innerHTML = firstCat.defaultTemplate.replace(/\n/g, '<br>');
+            } else {
+                document.getElementById('postContentEditor').innerHTML = '';
+            }
+            
             // 카테고리별 고정 옵션 생성
-            const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
             const pinOptionsHtml = categories.map(cat => `
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
                     <input type="checkbox" class="categoryPinCheckbox" data-cat="${cat.id}" style="width: 16px; height: 16px; accent-color: ${cat.color};">
@@ -3268,6 +3638,15 @@
             
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
+        };
+        
+        // 카테고리 변경시 기본 양식 적용
+        window.onCategoryChange = function(selectEl) {
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const template = selectedOption.dataset.template ? decodeURIComponent(selectedOption.dataset.template) : '';
+            if (template) {
+                document.getElementById('postContentEditor').innerHTML = template.replace(/\n/g, '<br>');
+            }
         };
         
         // WYSIWYG 에디터 명령 실행
@@ -3532,6 +3911,38 @@
             }
         };
         
+        // 게시글 숨기기/해제
+        window.togglePostHidden = async function(postId, hide) {
+            try {
+                await updateDoc(doc(db, "posts", postId), {
+                    isHidden: hide === 'true' || hide === true
+                });
+                showBoardAlert(hide === 'true' || hide === true ? '게시글이 숨겨졌습니다.' : '숨김이 해제되었습니다.', 'success', () => {
+                    location.reload();
+                });
+            } catch(e) {
+                console.error('숨기기 오류:', e);
+                showBoardAlert('오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        // 처리 완료 상태로 변경
+        window.completePostStatus = async function(postId) {
+            if (!confirm('처리 완료로 변경하시겠습니까?')) return;
+            try {
+                await updateDoc(doc(db, "posts", postId), {
+                    status: 'completed',
+                    completedAt: Date.now()
+                });
+                showBoardAlert('처리 완료로 변경되었습니다.', 'success', () => {
+                    location.reload();
+                });
+            } catch(e) {
+                console.error('상태 변경 오류:', e);
+                showBoardAlert('오류가 발생했습니다.', 'error');
+            }
+        };
+        
         // 댓글 등록
         window.submitComment = async function(postId) {
             if (!isAdmin) {
@@ -3642,33 +4053,74 @@
             const content = contentEditor ? contentEditor.innerHTML.trim() : '';
             const link = document.getElementById('postLinkInput').value.trim();
             const linkText = document.getElementById('postLinkTextInput').value.trim();
-            const isPinned = document.getElementById('postPinnedInput').checked;
+            const isPinned = isAdmin ? document.getElementById('postPinnedInput').checked : false;
             const imageInput = document.getElementById('postImageInput');
-            const titleColor = document.getElementById('postTitleColor').value;
+            const titleColor = isAdmin ? document.getElementById('postTitleColor').value : '#1e293b';
             
-            // 카테고리별 고정 수집
+            // 카테고리별 고정 수집 (관리자만)
             const pinnedCategories = [];
-            document.querySelectorAll('.categoryPinCheckbox:checked').forEach(cb => {
-                pinnedCategories.push(cb.dataset.cat);
-            });
+            if (isAdmin) {
+                document.querySelectorAll('.categoryPinCheckbox:checked').forEach(cb => {
+                    pinnedCategories.push(cb.dataset.cat);
+                });
+            }
             
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
                 return;
             }
             
+            // 비로그인 사용자는 인증 필요
+            let authorName = '관리자';
+            let authorPassword = null;
+            
+            if (!isAdmin) {
+                if (!window.verifiedPostUser) {
+                    showBoardAlert('먼저 비밀번호 인증을 해주세요.', 'error');
+                    return;
+                }
+                authorName = window.verifiedPostUser.name;
+                authorPassword = window.verifiedPostUser.password;
+            } else {
+                // 관리자 이름 설정
+                if (isSuperAdmin) {
+                    try {
+                        const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
+                        if (superAdminDoc.exists() && superAdminDoc.data().nickname) {
+                            authorName = `최종관리자(${superAdminDoc.data().nickname})`;
+                        } else {
+                            authorName = '최종관리자';
+                        }
+                    } catch(e) { authorName = '최종관리자'; }
+                } else if (loggedInAdminId) {
+                    try {
+                        const adminDoc = await getDoc(doc(db, "admins", loggedInAdminId));
+                        if (adminDoc.exists() && adminDoc.data().nickname) {
+                            authorName = `관리자(${adminDoc.data().nickname})`;
+                        } else {
+                            authorName = `관리자(${loggedInAdminId})`;
+                        }
+                    } catch(e) { authorName = '관리자'; }
+                }
+            }
+            
             try {
                 const postId = `post_${Date.now()}`;
+                const catInfo = (window.boardCategories || []).find(c => c.id === category);
+                
                 const postData = {
                     category: category,
                     title: title,
                     content: content,
-                    author: '에비츄',
+                    author: authorName,
+                    authorPassword: authorPassword, // 사용자 글 확인용
                     views: 0,
                     isPinned: isPinned,
                     pinnedCategories: pinnedCategories,
                     createdAt: Date.now(),
-                    titleColor: titleColor !== '#1e293b' ? titleColor : null
+                    titleColor: titleColor !== '#1e293b' ? titleColor : null,
+                    isHidden: false, // 숨김 상태
+                    status: catInfo?.requireStatus ? 'pending' : null // 처리 상태 (닉변 등)
                 };
                 
                 // 링크가 있으면 추가
@@ -3690,6 +4142,9 @@
                 
                 await setDoc(doc(db, "posts", postId), postData);
                 
+                // 인증 정보 초기화
+                window.verifiedPostUser = null;
+                
                 closeBoardModal();
                 showBoardAlert('등록되었습니다!', 'success', () => {
                     // 현재 선택된 카테고리로 목록 새로고침
@@ -3702,6 +4157,80 @@
                 console.error('게시글 등록 오류:', e);
                 showBoardAlert('등록 중 오류가 발생했습니다.\n' + (e.message || ''), 'error');
             }
+        };
+        
+        // 비밀번호로 사용자 인증
+        window.verifyUserPassword = async function() {
+            const password = document.getElementById('postUserPassword').value.trim();
+            if (!password || password.length !== 4) {
+                showBoardAlert('비밀번호 4자리를 입력해주세요.', 'error');
+                return;
+            }
+            
+            try {
+                // users 컬렉션에서 해당 비밀번호를 가진 사용자 찾기
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                const matchedUsers = [];
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    if (userData.password === password) {
+                        matchedUsers.push({ id: doc.id, name: userData.name, password: password });
+                    }
+                });
+                
+                if (matchedUsers.length === 0) {
+                    showBoardAlert('일치하는 사용자가 없습니다.', 'error');
+                    return;
+                }
+                
+                if (matchedUsers.length === 1) {
+                    // 단일 사용자 - 바로 인증
+                    window.verifiedPostUser = matchedUsers[0];
+                    document.getElementById('verifiedUserName').style.display = 'block';
+                    document.getElementById('verifiedUserName').querySelector('span').textContent = matchedUsers[0].name;
+                    showBoardAlert(`${matchedUsers[0].name}님으로 인증되었습니다.`, 'success');
+                } else {
+                    // 다중 사용자 - 선택창 표시
+                    showUserSelectModal(matchedUsers);
+                }
+                
+            } catch(e) {
+                console.error('사용자 인증 오류:', e);
+                showBoardAlert('인증 중 오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        // 다중 사용자 선택 모달
+        window.showUserSelectModal = function(users) {
+            const overlay = document.createElement('div');
+            overlay.id = 'userSelectOverlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;';
+            
+            let optionsHtml = users.map(u => `
+                <button onclick="selectVerifiedUser('${u.name}', '${u.password}')" style="width:100%;padding:14px;margin-bottom:8px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.15s;">
+                    ${u.name}
+                </button>
+            `).join('');
+            
+            overlay.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:24px;max-width:320px;width:90%;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+                    <h3 style="font-size:18px;font-weight:700;margin:0 0 16px;color:#0f172a;">👤 사용자 선택</h3>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:16px;">동일한 비밀번호를 사용하는 사용자가 여러명입니다.<br>본인을 선택해주세요.</p>
+                    ${optionsHtml}
+                    <button onclick="document.getElementById('userSelectOverlay').remove()" style="width:100%;padding:12px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:8px;">취소</button>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+        };
+        
+        window.selectVerifiedUser = function(name, password) {
+            window.verifiedPostUser = { name, password };
+            document.getElementById('verifiedUserName').style.display = 'block';
+            document.getElementById('verifiedUserName').querySelector('span').textContent = name;
+            document.getElementById('userSelectOverlay').remove();
+            showBoardAlert(`${name}님으로 인증되었습니다.`, 'success');
         };
         
         // 카테고리 관리 모달
@@ -3727,13 +4256,31 @@
             let html = '';
             categories.forEach((cat, idx) => {
                 html += `
-                    <div id="cat-row-${cat.id}" style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
-                        <input type="text" id="cat-icon-${cat.id}" value="${cat.icon}" style="width: 50px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; text-align: center;">
-                        <input type="text" id="cat-name-${cat.id}" value="${cat.name}" style="flex: 1; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
-                        <span style="font-size: 12px; color: #6b7280; min-width: 50px;">${cat.id}</span>
-                        <input type="color" id="cat-color-${cat.id}" value="${cat.color}" style="width: 36px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;">
-                        <button onclick="updateCategory('${cat.id}')" style="padding: 6px 10px; background: #dbeafe; color: #1d4ed8; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">저장</button>
-                        <button onclick="deleteCategory('${cat.id}')" style="padding: 6px 10px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">삭제</button>
+                    <div id="cat-row-${cat.id}" style="padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <input type="text" id="cat-icon-${cat.id}" value="${cat.icon}" style="width: 50px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; text-align: center;">
+                            <input type="text" id="cat-name-${cat.id}" value="${cat.name}" style="flex: 1; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                            <span style="font-size: 11px; color: #6b7280; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">${cat.id}</span>
+                            <input type="color" id="cat-color-${cat.id}" value="${cat.color}" style="width: 36px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;">
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; padding: 10px; background: white; border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: #475569;">
+                                <input type="checkbox" id="cat-userwrite-${cat.id}" ${cat.allowUserWrite ? 'checked' : ''}> 사용자 작성
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: #475569;">
+                                <input type="checkbox" id="cat-private-${cat.id}" ${cat.isPrivate ? 'checked' : ''}> 비공개
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: #475569;">
+                                <input type="checkbox" id="cat-status-${cat.id}" ${cat.requireStatus ? 'checked' : ''}> 처리상태
+                            </label>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <textarea id="cat-template-${cat.id}" placeholder="기본 양식" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; resize: vertical;">${cat.defaultTemplate || ''}</textarea>
+                        </div>
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <button onclick="updateCategory('${cat.id}')" style="padding: 8px 16px; background: #dbeafe; color: #1d4ed8; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">저장</button>
+                            <button onclick="deleteCategory('${cat.id}')" style="padding: 8px 16px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">삭제</button>
+                        </div>
                     </div>
                 `;
             });
@@ -3746,6 +4293,10 @@
             const icon = document.getElementById(`cat-icon-${catId}`).value.trim();
             const name = document.getElementById(`cat-name-${catId}`).value.trim();
             const color = document.getElementById(`cat-color-${catId}`).value;
+            const allowUserWrite = document.getElementById(`cat-userwrite-${catId}`).checked;
+            const isPrivate = document.getElementById(`cat-private-${catId}`).checked;
+            const requireStatus = document.getElementById(`cat-status-${catId}`).checked;
+            const defaultTemplate = document.getElementById(`cat-template-${catId}`).value;
             
             if (!icon || !name) {
                 showBoardAlert('아이콘과 이름을 입력해주세요.', 'error');
@@ -3761,7 +4312,7 @@
                     return;
                 }
                 
-                categories[idx] = { ...categories[idx], icon, name, color };
+                categories[idx] = { ...categories[idx], icon, name, color, allowUserWrite, isPrivate, requireStatus, defaultTemplate };
                 await setDoc(doc(db, "config", "boardCategories"), { list: categories });
                 
                 window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
@@ -3780,6 +4331,10 @@
             const name = document.getElementById('newCatName').value.trim();
             const id = document.getElementById('newCatId').value.trim().toLowerCase();
             const color = document.getElementById('newCatColor').value;
+            const allowUserWrite = document.getElementById('newCatAllowUserWrite').checked;
+            const isPrivate = document.getElementById('newCatIsPrivate').checked;
+            const requireStatus = document.getElementById('newCatRequireStatus').checked;
+            const defaultTemplate = document.getElementById('newCatTemplate').value;
             
             if (!icon || !name || !id) {
                 showBoardAlert('모든 항목을 입력해주세요.', 'error');
@@ -3799,7 +4354,7 @@
                     return;
                 }
                 
-                categories.push({ id, name, icon, color });
+                categories.push({ id, name, icon, color, allowUserWrite, isPrivate, requireStatus, defaultTemplate });
                 await setDoc(doc(db, "config", "boardCategories"), { list: categories });
                 
                 window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
@@ -3808,6 +4363,10 @@
                 document.getElementById('newCatIcon').value = '';
                 document.getElementById('newCatName').value = '';
                 document.getElementById('newCatId').value = '';
+                document.getElementById('newCatAllowUserWrite').checked = false;
+                document.getElementById('newCatIsPrivate').checked = false;
+                document.getElementById('newCatRequireStatus').checked = false;
+                document.getElementById('newCatTemplate').value = '';
                 
                 await loadCategoryList();
                 showBoardAlert('카테고리가 추가되었습니다.\n페이지를 새로고침해주세요.', 'success');
