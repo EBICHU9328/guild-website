@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.2.0">
-    <meta name="build-date" content="2026-01-16 22:00">
+    <meta name="version" content="2.2.2">
+    <meta name="build-date" content="2026-01-16 22:30">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1081,9 +1081,21 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.2.0';
-        const APP_BUILD_DATE = '2026-01-16 22:00';
+        const APP_VERSION = '2.2.2';
+        const APP_BUILD_DATE = '2026-01-16 22:30';
         const APP_CHANGELOG = [
+            { version: '2.2.2', date: '2026-01-16 22:30', changes: [
+                '📊 공유 링크 생성 시 비교본 선택 기능 추가',
+                '📊 백업 공유 링크에도 비교본 선택 추가',
+                '⚔️ 비교본 기반 증감 계산 개선'
+            ]},
+            { version: '2.2.1', date: '2026-01-16 22:15', changes: [
+                '🔍 전체 명단 필터 기능 추가',
+                '🏰 길드별 필터',
+                '⚔️ 전투력별 필터 (50만~100만 이상)',
+                '👑 신화 유저 필터',
+                '🔎 닉네임 검색 기능'
+            ]},
             { version: '2.2.0', date: '2026-01-16 22:00', changes: [
                 '📄 게시판 페이지네이션 추가 (10/20/30/50개씩)',
                 '🔧 점검 모드 시작시간 자동 설정 (현재 KST)',
@@ -2312,9 +2324,56 @@
                             
                             <!-- 전체 명단 -->
                             <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-                                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">👥 전체 명단 (${users.length}명)</h3>
+                                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin: 0 0 16px;">👥 전체 명단 (<span id="filteredUserCount">${users.length}</span>명)</h3>
+                                
+                                <!-- 필터 영역 -->
+                                <div id="shareFilterArea" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding: 16px; background: #f8fafc; border-radius: 12px;">
+                                    <!-- 닉네임 검색 -->
+                                    <div style="flex: 1; min-width: 200px;">
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">🔍 닉네임 검색</label>
+                                        <input type="text" id="filterNickname" placeholder="닉네임 입력..." oninput="applyShareFilter()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
+                                    </div>
+                                    
+                                    <!-- 길드 필터 -->
+                                    <div style="min-width: 130px;">
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">🏰 길드</label>
+                                        <select id="filterGuild" onchange="applyShareFilter()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;">
+                                            <option value="">전체</option>
+                                            ${[...new Set(users.map(u => u.guild))].sort((a,b) => a.localeCompare(b, 'ko')).map(g => '<option value="' + g + '">' + g + '</option>').join('')}
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- 전투력 필터 -->
+                                    <div style="min-width: 150px;">
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">⚔️ 전투력</label>
+                                        <select id="filterPower" onchange="applyShareFilter()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;">
+                                            <option value="">전체</option>
+                                            <option value="100">100만 이상</option>
+                                            <option value="90">90만 이상</option>
+                                            <option value="80">80만 이상</option>
+                                            <option value="70">70만 이상</option>
+                                            <option value="60">60만 이상</option>
+                                            <option value="50">50만 이상</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- 신화 필터 -->
+                                    <div style="min-width: 130px;">
+                                        <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">👑 신화</label>
+                                        <select id="filterMyth" onchange="applyShareFilter()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: white;">
+                                            <option value="">전체</option>
+                                            <option value="any">신화 보유</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- 초기화 버튼 -->
+                                    <div style="display: flex; align-items: flex-end;">
+                                        <button onclick="resetShareFilter()" style="padding: 8px 14px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #64748b; cursor: pointer;">↺ 초기화</button>
+                                    </div>
+                                </div>
+                                
                                 <div style="max-height: 600px; overflow-x: auto; overflow-y: auto;">
-                                    <table id="shareUserTable" style="width: 100%; border-collapse: collapse; min-width: 700px;">
+                                    <table id="shareUserTable" style="width: 100%; border-collapse: collapse; min-width: 900px;">
                                         <thead style="position: sticky; top: 0; background: white; z-index: 1;">
                                             <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
                                                 <th class="sortable-header" data-sort="rank" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">순위 <span class="sort-icon">↕</span></th>
@@ -2322,10 +2381,10 @@
                                                 <th class="sortable-header" data-sort="guild" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">길드 <span class="sort-icon">↕</span></th>
                                                 <th class="sortable-header" data-sort="power" style="padding: 10px; text-align: right; font-weight: 600; cursor: pointer; user-select: none;">전투력 <span class="sort-icon">↕</span></th>
                                                 <th class="sortable-header" data-sort="diff" style="padding: 10px; text-align: right; font-weight: 600; cursor: pointer; user-select: none;">증감 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="shape_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">🛡️형상전 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="shape_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">👑형상신 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="mount_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">🐴탈것전 <span class="sort-icon">↕</span></th>
-                                                <th class="sortable-header" data-sort="mount_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none;">🦄탈것신 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="shape_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">🛡️ 형상 전설 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="shape_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">👑 형상 신화 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="mount_legend" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">🐴 탈것 전설 <span class="sort-icon">↕</span></th>
+                                                <th class="sortable-header" data-sort="mount_myth" style="padding: 10px; text-align: center; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap;">🦄 탈것 신화 <span class="sort-icon">↕</span></th>
                                             </tr>
                                         </thead>
                                         <tbody id="shareUserTableBody">${usersHtml}</tbody>
@@ -2349,7 +2408,90 @@
                 
                 // 정렬 기능을 위한 전역 데이터 저장
                 window.shareUsers = users;
+                window.shareFilteredUsers = users;
                 window.shareSortState = { column: 'rank', direction: 'asc' };
+                
+                // 필터 적용 함수
+                window.applyShareFilter = function() {
+                    const nickname = document.getElementById('filterNickname').value.trim().toLowerCase();
+                    const guild = document.getElementById('filterGuild').value;
+                    const power = document.getElementById('filterPower').value;
+                    const myth = document.getElementById('filterMyth').value;
+                    
+                    let filtered = [...window.shareUsers];
+                    
+                    // 닉네임 필터
+                    if (nickname) {
+                        filtered = filtered.filter(u => u.name.toLowerCase().includes(nickname));
+                    }
+                    
+                    // 길드 필터
+                    if (guild) {
+                        filtered = filtered.filter(u => u.guild === guild);
+                    }
+                    
+                    // 전투력 필터
+                    if (power) {
+                        const minPower = parseInt(power) * 10000;
+                        filtered = filtered.filter(u => u.power >= minPower);
+                    }
+                    
+                    // 신화 필터 (1개라도 있으면)
+                    if (myth === 'any') {
+                        filtered = filtered.filter(u => (u.shape_myth || 0) > 0 || (u.mount_myth || 0) > 0);
+                    }
+                    
+                    window.shareFilteredUsers = filtered;
+                    
+                    // 인원수 업데이트
+                    document.getElementById('filteredUserCount').textContent = filtered.length;
+                    
+                    // 테이블 다시 렌더링
+                    renderShareTable(filtered);
+                };
+                
+                // 필터 초기화
+                window.resetShareFilter = function() {
+                    document.getElementById('filterNickname').value = '';
+                    document.getElementById('filterGuild').value = '';
+                    document.getElementById('filterPower').value = '';
+                    document.getElementById('filterMyth').value = '';
+                    window.shareFilteredUsers = window.shareUsers;
+                    window.shareSortState = { column: 'rank', direction: 'asc' };
+                    document.getElementById('filteredUserCount').textContent = window.shareUsers.length;
+                    renderShareTable(window.shareUsers);
+                    
+                    // 정렬 아이콘 초기화
+                    document.querySelectorAll('.sortable-header .sort-icon').forEach(icon => {
+                        icon.textContent = '↕';
+                        icon.classList.remove('active');
+                    });
+                };
+                
+                // 테이블 렌더링 함수
+                window.renderShareTable = function(users) {
+                    let html = '';
+                    // 전투력 순 정렬 (순위 부여용)
+                    const sortedByPower = [...users].sort((a, b) => b.power - a.power);
+                    
+                    sortedByPower.forEach((u, idx) => {
+                        const diffSign = u.diff >= 0 ? '+' : '';
+                        const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
+                        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                        html += '<tr>' +
+                            '<td style="padding: 10px; text-align: center;">' + medal + '</td>' +
+                            '<td style="padding: 10px; font-weight: 500;">' + u.name + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + u.guild + '</td>' +
+                            '<td style="padding: 10px; text-align: right; font-weight: 600;">' + u.power.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px; text-align: right; color: ' + diffColor + '; font-weight: 500;">' + diffSign + u.diff.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.shape_legend || 0) + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.shape_myth || 0) + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.mount_legend || 0) + '</td>' +
+                            '<td style="padding: 10px; text-align: center;">' + (u.mount_myth || 0) + '</td>' +
+                        '</tr>';
+                    });
+                    document.getElementById('shareUserTableBody').innerHTML = html;
+                };
                 
                 // 정렬 함수
                 window.sortShareTable = function(column) {
@@ -2361,7 +2503,10 @@
                         state.direction = column === 'name' || column === 'guild' ? 'asc' : 'desc';
                     }
                     
-                    const sorted = [...window.shareUsers].sort((a, b) => {
+                    // 필터된 데이터 사용
+                    const dataToSort = window.shareFilteredUsers || window.shareUsers;
+                    
+                    const sorted = [...dataToSort].sort((a, b) => {
                         let valA, valB;
                         if (column === 'rank') {
                             valA = a.power; valB = b.power;
@@ -6679,33 +6824,60 @@
             if(!isAdmin || allGuildData.length === 0) return;
             
             // 공유 링크 생성 모달
-            openSmallModal('🔗 공유 링크 생성', '현재 전투력 현황을 공유합니다', `
+            // 먼저 백업 목록 가져오기
+            let backupOptions = '<option value="">없음 (증감 표시 안함)</option>';
+            try {
+                const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc")));
+                backupsSnap.forEach(docSnap => {
+                    const b = docSnap.data();
+                    const date = new Date(b.createdAt);
+                    const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+                    const name = b.backupName || dateStr;
+                    backupOptions += `<option value="${docSnap.id}">${name} (${dateStr})</option>`;
+                });
+            } catch(e) { console.error(e); }
+            
+            // 길드별 차감 입력 필드 생성
+            const guildDeductInputs = guildList.map(guild => `
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <span style="min-width:60px; font-weight:500; font-size:13px;">${guild}</span>
+                    <input type="number" class="form-input guild-deduct-input" data-guild="${guild}" 
+                           placeholder="0" style="width:100px; padding:6px 10px;" min="0">
+                    <span style="font-size:12px; color:#6b7280;">차감</span>
+                </div>
+            `).join('');
+            
+            openSmallModal('🔗 공유 링크 생성', new Date().toLocaleString('ko-KR'), `
                 <div class="form-group">
-                    <label class="form-label">페이지 제목</label>
-                    <input type="text" id="shareTitle" class="form-input" value="🏆 오스카2 전투력 현황판" placeholder="카카오톡에 표시될 제목">
+                    <label class="form-label">📌 페이지 제목</label>
+                    <input type="text" id="shareTitle" class="form-input" value="오스카2 전투력 현황" placeholder="페이지 제목">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">설명 (선택)</label>
-                    <input type="text" id="shareDesc" class="form-input" placeholder="추가 설명 입력">
+                    <label class="form-label">🏷️ 헤더 이름</label>
+                    <input type="text" id="shareHeaderName" class="form-input" value="🏆 오스카2 전투력 현황판" placeholder="페이지 상단에 표시될 이름">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">정렬 기준</label>
-                    <select id="shareSortType" class="form-input">
-                        <option value="power">전투력순 (높은순)</option>
-                        <option value="guild">길드별 (전투력순)</option>
-                        <option value="name">이름순 (가나다)</option>
+                    <label class="form-label">📝 추가 설명 (선택)</label>
+                    <input type="text" id="shareDesc" class="form-input" placeholder="공유 페이지에 표시할 추가 설명">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📊 비교본 선택</label>
+                    <p style="font-size:11px; color:#6b7280; margin:4px 0 8px;">주간 증감을 계산할 기준 백업을 선택합니다</p>
+                    <select id="shareCompareBackup" class="form-input">
+                        ${backupOptions}
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">포함할 길드</label>
-                    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
-                        ${guildList.map(g => `
-                            <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
-                                <input type="checkbox" class="share-guild-check" value="${g}" checked>
-                                <span style="font-size:13px;">${g}</span>
-                            </label>
-                        `).join('')}
+                    <label class="form-label">⚔️ 길드별 클랜 묘실 차감</label>
+                    <p style="font-size:11px; color:#6b7280; margin:4px 0 12px;">각 길드의 클랜 묘실 수치를 차감하여 표시합니다 (예: 4400)</p>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                        ${guildDeductInputs}
                     </div>
+                </div>
+                <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-top: 16px;">
+                    <p style="font-size: 12px; color: #0369a1; margin: 0;">
+                        💡 생성된 링크는 누구나 볼 수 있으며, 링크만 있으면 전투력 현황을 확인할 수 있습니다.
+                    </p>
                 </div>
             `);
             
@@ -6718,42 +6890,83 @@
         // 현재 전투력 공유 링크 생성
         window.generateShareLinkCurrent = async function() {
             const pageTitle = document.getElementById('shareTitle').value.trim() || '🏆 오스카2 전투력 현황판';
+            const headerName = document.getElementById('shareHeaderName').value.trim() || '🏆 오스카2 전투력 현황판';
             const description = document.getElementById('shareDesc').value.trim() || '';
-            const sortType = document.getElementById('shareSortType').value;
-            const selectedGuilds = Array.from(document.querySelectorAll('.share-guild-check:checked')).map(c => c.value);
+            const compareBackupId = document.getElementById('shareCompareBackup').value;
             
-            if (selectedGuilds.length === 0) {
-                showAlert('최소 1개 길드를 선택해주세요', 'error');
-                return;
+            // 길드별 차감 정보 수집
+            const guildDeductions = {};
+            document.querySelectorAll('.guild-deduct-input').forEach(input => {
+                const guild = input.dataset.guild;
+                const value = parseInt(input.value) || 0;
+                if (value > 0) {
+                    guildDeductions[guild] = value;
+                }
+            });
+            
+            // 비교본 데이터 로드
+            let compareData = {};
+            if (compareBackupId) {
+                try {
+                    const compareDoc = await getDoc(doc(db, "backups", compareBackupId));
+                    if (compareDoc.exists()) {
+                        const compareBackup = compareDoc.data();
+                        (compareBackup.users || []).forEach(u => {
+                            compareData[u.name] = u.power;
+                        });
+                    }
+                } catch(e) { console.error('비교본 로드 오류:', e); }
             }
             
-            // 데이터 필터링 및 정렬
-            let data = allGuildData.filter(u => selectedGuilds.includes(u.guild));
-            
-            if (sortType === 'power') {
-                data.sort((a, b) => b.power - a.power);
-            } else if (sortType === 'guild') {
-                data.sort((a, b) => {
-                    if (a.guild !== b.guild) return guildList.indexOf(a.guild) - guildList.indexOf(b.guild);
-                    return b.power - a.power;
-                });
-            } else if (sortType === 'name') {
-                data.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-            }
+            // 데이터 정렬 (전투력순)
+            let data = [...allGuildData].sort((a, b) => b.power - a.power);
             
             // 길드별 통계 계산
             const guildStats = {};
-            selectedGuilds.forEach(guild => {
+            const guildNames = [...new Set(data.map(u => u.guild))];
+            guildNames.forEach(guild => {
                 const guildUsers = data.filter(u => u.guild === guild);
-                const totalPower = guildUsers.reduce((sum, u) => sum + u.power, 0);
+                const deduction = guildDeductions[guild] || 0;
+                let totalPower = 0;
+                let totalDiff = 0;
+                guildUsers.forEach(u => {
+                    const deductedPower = Math.max(0, u.power - deduction);
+                    const oldPower = compareData[u.name] || u.power;
+                    const oldDeducted = Math.max(0, oldPower - deduction);
+                    const diff = deductedPower - oldDeducted;
+                    totalPower += deductedPower;
+                    totalDiff += diff;
+                });
                 guildStats[guild] = {
                     count: guildUsers.length,
                     totalPower: totalPower,
-                    totalDiff: 0
+                    totalDiff: totalDiff
                 };
             });
             
-            const totalPower = data.reduce((sum, u) => sum + u.power, 0);
+            // 유저 데이터에 차감 및 증감 적용
+            const modifiedUsers = data.map(u => {
+                const deduction = guildDeductions[u.guild] || 0;
+                const deductedPower = Math.max(0, u.power - deduction);
+                const oldPower = compareData[u.name] || u.power;
+                const oldDeducted = Math.max(0, oldPower - deduction);
+                const diff = deductedPower - oldDeducted;
+                return {
+                    name: u.name,
+                    guild: u.guild,
+                    power: deductedPower,
+                    originalPower: u.power,
+                    diff: diff,
+                    deduction: deduction,
+                    shape_legend: u.shape_legend || 0,
+                    shape_myth: u.shape_myth || 0,
+                    mount_legend: u.mount_legend || 0,
+                    mount_myth: u.mount_myth || 0
+                };
+            });
+            
+            const totalPower = modifiedUsers.reduce((sum, u) => sum + u.power, 0);
+            const totalDiff = modifiedUsers.reduce((sum, u) => sum + u.diff, 0);
             
             try {
                 // 공유 데이터 저장
@@ -6761,25 +6974,17 @@
                 await setDoc(doc(db, "sharedBackups", shareId), {
                     type: 'current',
                     pageTitle: pageTitle,
-                    headerName: pageTitle,
+                    headerName: headerName,
                     description: description,
-                    sortType: sortType,
+                    compareBackupId: compareBackupId || null,
+                    guildDeductions: guildDeductions,
                     createdAt: Date.now(),
                     createdBy: '에비츄',
                     backupData: {
-                        users: data.map(u => ({
-                            name: u.name,
-                            guild: u.guild,
-                            power: u.power,
-                            diff: 0,
-                            shape_legend: u.shape_legend || 0,
-                            shape_myth: u.shape_myth || 0,
-                            mount_legend: u.mount_legend || 0,
-                            mount_myth: u.mount_myth || 0
-                        })),
-                        totalUsers: data.length,
+                        users: modifiedUsers,
+                        totalUsers: modifiedUsers.length,
                         totalPower: totalPower,
-                        totalDiff: 0,
+                        totalDiff: totalDiff,
                         guildStats: guildStats,
                         createdAt: Date.now()
                     }
@@ -9873,6 +10078,20 @@
                 // 길드 목록 추출
                 const guilds = [...new Set((backup.users || []).map(u => u.guild))].sort();
                 
+                // 비교본 목록 가져오기
+                let backupOptions = '<option value="">없음 (증감 표시 안함)</option>';
+                try {
+                    const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc")));
+                    backupsSnap.forEach(docSnap => {
+                        if (docSnap.id === backupId) return; // 현재 백업은 제외
+                        const b = docSnap.data();
+                        const date = new Date(b.createdAt);
+                        const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+                        const name = b.backupName || dateStr;
+                        backupOptions += `<option value="${docSnap.id}">${name} (${dateStr})</option>`;
+                    });
+                } catch(e) { console.error(e); }
+                
                 // 길드별 차감 입력 필드 생성
                 const guildDeductInputs = guilds.map(guild => `
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
@@ -9896,6 +10115,13 @@
                         <div class="form-group" style="margin-bottom: 16px;">
                             <label class="form-label">📝 추가 설명 (선택)</label>
                             <textarea id="shareDescription" class="form-input" rows="2" placeholder="공유 페이지에 표시할 추가 설명"></textarea>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">📊 비교본 선택</label>
+                            <p style="font-size:11px; color:#6b7280; margin:4px 0 8px;">주간 증감을 계산할 기준 백업을 선택합니다</p>
+                            <select id="shareCompareBackup" class="form-input">
+                                ${backupOptions}
+                            </select>
                         </div>
                         <div class="form-group" style="margin-bottom: 16px;">
                             <label class="form-label">⚔️ 길드별 클랜 묘실 차감</label>
@@ -9928,6 +10154,7 @@
             const pageTitle = document.getElementById('sharePageTitle').value.trim() || '오스카2 전투력 현황';
             const headerName = document.getElementById('shareHeaderName').value.trim() || '🏆 오스카2 전투력 현황판';
             const description = document.getElementById('shareDescription').value.trim() || '';
+            const compareBackupId = document.getElementById('shareCompareBackup')?.value || '';
             
             // 길드별 차감 정보 수집
             const guildDeductions = {};
@@ -9948,13 +10175,41 @@
                 
                 const backup = backupDoc.data();
                 
-                // 차감 적용된 유저 데이터 생성
+                // 비교본 데이터 로드
+                let compareData = {};
+                if (compareBackupId) {
+                    try {
+                        const compareDoc = await getDoc(doc(db, "backups", compareBackupId));
+                        if (compareDoc.exists()) {
+                            const compareBackup = compareDoc.data();
+                            (compareBackup.users || []).forEach(u => {
+                                compareData[u.name] = u.power;
+                            });
+                        }
+                    } catch(e) { console.error('비교본 로드 오류:', e); }
+                }
+                
+                // 차감 및 비교 적용된 유저 데이터 생성
                 const modifiedUsers = (backup.users || []).map(u => {
                     const deduction = guildDeductions[u.guild] || 0;
+                    const deductedPower = Math.max(0, u.power - deduction);
+                    
+                    // 비교본이 있으면 비교본 기준 증감 계산
+                    let diff = u.diff || 0;
+                    if (compareBackupId && compareData[u.name] !== undefined) {
+                        const oldPower = compareData[u.name];
+                        const oldDeducted = Math.max(0, oldPower - deduction);
+                        diff = deductedPower - oldDeducted;
+                    } else if (compareBackupId) {
+                        // 비교본에 없는 유저는 신규로 간주
+                        diff = deductedPower;
+                    }
+                    
                     return {
                         ...u,
-                        power: Math.max(0, u.power - deduction),
+                        power: deductedPower,
                         originalPower: u.power,
+                        diff: diff,
                         deduction: deduction
                     };
                 });
@@ -9978,13 +10233,15 @@
                     ...backup,
                     users: modifiedUsers,
                     guildStats: modifiedGuildStats,
-                    totalPower: modifiedUsers.reduce((sum, u) => sum + u.power, 0)
+                    totalPower: modifiedUsers.reduce((sum, u) => sum + u.power, 0),
+                    totalDiff: modifiedUsers.reduce((sum, u) => sum + u.diff, 0)
                 };
                 
                 // 공유 데이터 저장
                 const shareId = `share_${Date.now()}`;
                 await setDoc(doc(db, "sharedBackups", shareId), {
                     backupId: backupId,
+                    compareBackupId: compareBackupId || null,
                     pageTitle: pageTitle,
                     headerName: headerName,
                     description: description,
