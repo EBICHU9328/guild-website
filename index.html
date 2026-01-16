@@ -791,7 +791,7 @@
             </svg>
         </h1>
         <div class="top-actions">
-            <a href="?page=dia" style="text-decoration: none;">
+            <a href="?page=board" style="text-decoration: none;">
                 <button class="btn-common" style="padding: 8px 14px; background: #8b5cf6; color: white;">📋 게시판</button>
             </a>
             <button id="addUserBtn" class="btn-common btn-user-add">➕ 사용자 등록</button>
@@ -1321,7 +1321,7 @@
             
             // 게시판 페이지 체크
             const page = urlParams.get('page');
-            if (page === 'dia') {
+            if (page === 'board') {
                 await showBoardPage();
                 return;
             }
@@ -1579,17 +1579,18 @@
             
             const urlParams = new URLSearchParams(window.location.search);
             const postId = urlParams.get('post');
+            const categoryParam = urlParams.get('cat') || 'all';
             
             if (postId) {
                 await showPostDetail(postId);
             } else {
-                await showBoardList();
+                await showBoardList(categoryParam);
             }
         }
         
 
         // 게시판 목록
-        async function showBoardList() {
+        async function showBoardList(initialCategory = 'all') {
             document.title = '📋 게시판 - 오스카2';
             
             // Firebase에서 카테고리 로드
@@ -1754,15 +1755,40 @@
                 tab.addEventListener('click', function() {
                     document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
-                    loadBoardList(this.dataset.category);
+                    const cat = this.dataset.category;
+                    
+                    // URL 파라미터 업데이트 (히스토리에 추가)
+                    const newUrl = cat === 'all' 
+                        ? `${window.location.pathname}?page=board`
+                        : `${window.location.pathname}?page=board&cat=${cat}`;
+                    history.pushState({ cat: cat }, '', newUrl);
+                    
+                    loadBoardList(cat);
                 });
             });
             
-            // 기본 '전체' 활성화
-            document.querySelector('.category-tab[data-category="all"]').classList.add('active');
+            // 해당 카테고리 탭 활성화
+            const targetTab = document.querySelector(`.category-tab[data-category="${initialCategory}"]`);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            } else {
+                document.querySelector('.category-tab[data-category="all"]').classList.add('active');
+            }
             
-            await loadBoardList('all');
+            await loadBoardList(initialCategory);
         }
+        
+        // 브라우저 뒤로가기/앞으로가기 대응
+        window.addEventListener('popstate', function(e) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('page') === 'board') {
+                const cat = urlParams.get('cat') || 'all';
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                const tab = document.querySelector(`.category-tab[data-category="${cat}"]`);
+                if (tab) tab.classList.add('active');
+                loadBoardList(cat);
+            }
+        });
         
         // 게시글 목록 로드
         async function loadBoardList(category = 'all') {
@@ -1814,7 +1840,7 @@
                     const pinnedClass = post.isPinned ? ' pinned' : '';
                     
                     html += `
-                        <div class="post-row${pinnedClass}" onclick="location.href='?page=dia&post=${post.id}'">
+                        <div class="post-row${pinnedClass}" onclick="location.href='?page=board&post=${post.id}'">
                             ${post.isPinned ? '<span class="post-badge pinned">📌 공지</span>' : `<span class="post-badge" style="background:${catInfo.color}20; color:${catInfo.color};">${catInfo.icon} ${catInfo.name}</span>`}
                             <div class="post-title">
                                 ${isNew && !post.isPinned ? '<span class="post-badge new">NEW</span>' : ''}
@@ -1865,7 +1891,7 @@
                             <div style="text-align: center;">
                                 <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
                                 <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">게시글을 찾을 수 없습니다</h1>
-                                <a href="?page=dia" style="color: #3b82f6;">목록으로 돌아가기</a>
+                                <a href="?page=board" style="color: #3b82f6;">목록으로 돌아가기</a>
                             </div>
                         </div>
                     `;
@@ -1902,7 +1928,7 @@
                         <div style="max-width: 900px; margin: 0 auto;">
                             <!-- 헤더 -->
                             <div style="margin-bottom: 20px;">
-                                <a href="?page=dia" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px;">
+                                <a href="?page=board" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px;">
                                     ← 목록으로
                                 </a>
                             </div>
@@ -1953,7 +1979,7 @@
                         <div style="text-align: center;">
                             <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
                             <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">오류가 발생했습니다</h1>
-                            <a href="?page=dia" style="color: #3b82f6;">목록으로 돌아가기</a>
+                            <a href="?page=board" style="color: #3b82f6;">목록으로 돌아가기</a>
                         </div>
                     </div>
                 `;
@@ -2083,7 +2109,7 @@
             try {
                 await deleteDoc(doc(db, "posts", postId));
                 alert('삭제되었습니다.');
-                location.href = '?page=dia';
+                location.href = '?page=board';
                 
             } catch(e) {
                 console.error('게시글 삭제 오류:', e);
@@ -2163,11 +2189,12 @@
             let html = '';
             categories.forEach((cat, idx) => {
                 html += `
-                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
-                        <span style="font-size: 20px;">${cat.icon}</span>
-                        <span style="flex: 1; font-weight: 500;">${cat.name}</span>
-                        <span style="font-size: 12px; color: #6b7280;">${cat.id}</span>
-                        <span style="width: 24px; height: 24px; border-radius: 4px; background: ${cat.color};"></span>
+                    <div id="cat-row-${cat.id}" style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
+                        <input type="text" id="cat-icon-${cat.id}" value="${cat.icon}" style="width: 50px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; text-align: center;">
+                        <input type="text" id="cat-name-${cat.id}" value="${cat.name}" style="flex: 1; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <span style="font-size: 12px; color: #6b7280; min-width: 50px;">${cat.id}</span>
+                        <input type="color" id="cat-color-${cat.id}" value="${cat.color}" style="width: 36px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer;">
+                        <button onclick="updateCategory('${cat.id}')" style="padding: 6px 10px; background: #dbeafe; color: #1d4ed8; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">저장</button>
                         <button onclick="deleteCategory('${cat.id}')" style="padding: 6px 10px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">삭제</button>
                     </div>
                 `;
@@ -2175,6 +2202,39 @@
             
             listEl.innerHTML = html;
         }
+        
+        // 카테고리 수정
+        window.updateCategory = async function(catId) {
+            const icon = document.getElementById(`cat-icon-${catId}`).value.trim();
+            const name = document.getElementById(`cat-name-${catId}`).value.trim();
+            const color = document.getElementById(`cat-color-${catId}`).value;
+            
+            if (!icon || !name) {
+                alert('아이콘과 이름을 입력해주세요.');
+                return;
+            }
+            
+            try {
+                const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+                const idx = categories.findIndex(c => c.id === catId);
+                
+                if (idx === -1) {
+                    alert('카테고리를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                categories[idx] = { ...categories[idx], icon, name, color };
+                await setDoc(doc(db, "config", "boardCategories"), { list: categories });
+                
+                window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
+                
+                alert('저장되었습니다.');
+                
+            } catch(e) {
+                console.error('카테고리 수정 오류:', e);
+                alert('오류가 발생했습니다.');
+            }
+        };
         
         // 카테고리 추가
         window.addCategory = async function() {
