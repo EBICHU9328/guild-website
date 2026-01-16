@@ -1668,6 +1668,17 @@
                 </div>
                 <style>
                     @keyframes spin { to { transform: rotate(360deg); } }
+                    @keyframes boardAlertIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+                    @keyframes boardAlertOut { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }
+                    .board-alert-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 2000; }
+                    .board-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; padding: 24px 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 2001; min-width: 280px; max-width: 400px; text-align: center; animation: boardAlertIn 0.2s ease-out; }
+                    .board-alert.closing { animation: boardAlertOut 0.15s ease-in forwards; }
+                    .board-alert-icon { font-size: 48px; margin-bottom: 12px; }
+                    .board-alert-msg { font-size: 16px; color: #1e293b; font-weight: 500; margin-bottom: 20px; line-height: 1.5; }
+                    .board-alert-btn { padding: 10px 32px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+                    .board-alert-btn:hover { background: #2563eb; }
+                    .board-alert-btn.error { background: #ef4444; }
+                    .board-alert-btn.error:hover { background: #dc2626; }
                     .category-tab { padding: 8px 16px; border: 2px solid #e2e8f0; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
                     .category-tab:hover { border-color: var(--cat-color); color: var(--cat-color); }
                     .category-tab.active { background: var(--cat-color); color: white; border-color: var(--cat-color); }
@@ -2004,7 +2015,7 @@
             try {
                 const postDoc = await getDoc(doc(db, "posts", postId));
                 if (!postDoc.exists()) {
-                    alert('게시글을 찾을 수 없습니다.');
+                    showBoardAlert('게시글을 찾을 수 없습니다.', 'error');
                     return;
                 }
                 
@@ -2056,7 +2067,7 @@
                 
             } catch(e) {
                 console.error('게시글 수정 오류:', e);
-                alert('오류가 발생했습니다.');
+                showBoardAlert('오류가 발생했습니다.', 'error');
             }
         };
         
@@ -2070,7 +2081,7 @@
             const isPinned = document.getElementById('editPinnedInput').checked;
             
             if (!title) {
-                alert('제목을 입력해주세요.');
+                showBoardAlert('제목을 입력해주세요.', 'error');
                 return;
             }
             
@@ -2093,12 +2104,13 @@
                 
                 await updateDoc(doc(db, "posts", postId), updateData);
                 
-                alert('수정되었습니다.');
-                location.reload();
+                showBoardAlert('수정되었습니다!', 'success', () => {
+                    location.reload();
+                });
                 
             } catch(e) {
                 console.error('게시글 업데이트 오류:', e);
-                alert('수정 중 오류가 발생했습니다.');
+                showBoardAlert('수정 중 오류가 발생했습니다.', 'error');
             }
         };
         
@@ -2108,12 +2120,13 @@
             
             try {
                 await deleteDoc(doc(db, "posts", postId));
-                alert('삭제되었습니다.');
-                location.href = '?page=board';
+                showBoardAlert('삭제되었습니다!', 'success', () => {
+                    location.href = '?page=board';
+                });
                 
             } catch(e) {
                 console.error('게시글 삭제 오류:', e);
-                alert('삭제 중 오류가 발생했습니다.');
+                showBoardAlert('삭제 중 오류가 발생했습니다.', 'error');
             }
         };
         
@@ -2132,7 +2145,7 @@
             const isPinned = document.getElementById('postPinnedInput').checked;
             
             if (!title) {
-                alert('제목을 입력해주세요.');
+                showBoardAlert('제목을 입력해주세요.', 'error');
                 return;
             }
             
@@ -2156,13 +2169,17 @@
                 
                 await setDoc(doc(db, "posts", postId), postData);
                 
-                alert('등록되었습니다.');
                 closeBoardModal();
-                await loadBoardList('all');
+                showBoardAlert('등록되었습니다!', 'success', () => {
+                    // 현재 선택된 카테고리로 목록 새로고침
+                    const activeTab = document.querySelector('.category-tab.active');
+                    const currentCat = activeTab ? activeTab.dataset.category : 'all';
+                    loadBoardList(currentCat);
+                });
                 
             } catch(e) {
                 console.error('게시글 등록 오류:', e);
-                alert('등록 중 오류가 발생했습니다.');
+                showBoardAlert('등록 중 오류가 발생했습니다.\n' + (e.message || ''), 'error');
             }
         };
         
@@ -2210,7 +2227,7 @@
             const color = document.getElementById(`cat-color-${catId}`).value;
             
             if (!icon || !name) {
-                alert('아이콘과 이름을 입력해주세요.');
+                showBoardAlert('아이콘과 이름을 입력해주세요.', 'error');
                 return;
             }
             
@@ -2219,7 +2236,7 @@
                 const idx = categories.findIndex(c => c.id === catId);
                 
                 if (idx === -1) {
-                    alert('카테고리를 찾을 수 없습니다.');
+                    showBoardAlert('카테고리를 찾을 수 없습니다.', 'error');
                     return;
                 }
                 
@@ -2228,11 +2245,11 @@
                 
                 window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
                 
-                alert('저장되었습니다.');
+                showBoardAlert('저장되었습니다!', 'success');
                 
             } catch(e) {
                 console.error('카테고리 수정 오류:', e);
-                alert('오류가 발생했습니다.');
+                showBoardAlert('오류가 발생했습니다.', 'error');
             }
         };
         
@@ -2244,12 +2261,12 @@
             const color = document.getElementById('newCatColor').value;
             
             if (!icon || !name || !id) {
-                alert('모든 항목을 입력해주세요.');
+                showBoardAlert('모든 항목을 입력해주세요.', 'error');
                 return;
             }
             
             if (!/^[a-z0-9]+$/.test(id)) {
-                alert('ID는 영문 소문자와 숫자만 가능합니다.');
+                showBoardAlert('ID는 영문 소문자와 숫자만 가능합니다.', 'error');
                 return;
             }
             
@@ -2257,7 +2274,7 @@
                 const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
                 
                 if (categories.find(c => c.id === id)) {
-                    alert('이미 존재하는 ID입니다.');
+                    showBoardAlert('이미 존재하는 ID입니다.', 'error');
                     return;
                 }
                 
@@ -2272,11 +2289,11 @@
                 document.getElementById('newCatId').value = '';
                 
                 await loadCategoryList();
-                alert('카테고리가 추가되었습니다. 페이지를 새로고침해주세요.');
+                showBoardAlert('카테고리가 추가되었습니다.\n페이지를 새로고침해주세요.', 'success');
                 
             } catch(e) {
                 console.error('카테고리 추가 오류:', e);
-                alert('오류가 발생했습니다.');
+                showBoardAlert('오류가 발생했습니다.', 'error');
             }
         };
         
@@ -2291,13 +2308,51 @@
                 window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
                 
                 await loadCategoryList();
-                alert('삭제되었습니다. 페이지를 새로고침해주세요.');
+                showBoardAlert('삭제되었습니다.\n페이지를 새로고침해주세요.', 'success');
                 
             } catch(e) {
                 console.error('카테고리 삭제 오류:', e);
-                alert('오류가 발생했습니다.');
+                showBoardAlert('오류가 발생했습니다.', 'error');
             }
         };
+        
+        // 게시판 전용 알림 함수
+        function showBoardAlert(message, type = 'success', callback = null) {
+            // 기존 알림 제거
+            const existingOverlay = document.querySelector('.board-alert-overlay');
+            const existingAlert = document.querySelector('.board-alert');
+            if (existingOverlay) existingOverlay.remove();
+            if (existingAlert) existingAlert.remove();
+            
+            const icon = type === 'success' ? '✅' : '❌';
+            const btnClass = type === 'success' ? '' : ' error';
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'board-alert-overlay';
+            
+            const alertBox = document.createElement('div');
+            alertBox.className = 'board-alert';
+            alertBox.innerHTML = `
+                <div class="board-alert-icon">${icon}</div>
+                <div class="board-alert-msg">${message.replace(/\n/g, '<br>')}</div>
+                <button class="board-alert-btn${btnClass}" onclick="closeBoardAlert()">확인</button>
+            `;
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(alertBox);
+            
+            window.closeBoardAlert = function() {
+                alertBox.classList.add('closing');
+                setTimeout(() => {
+                    overlay.remove();
+                    alertBox.remove();
+                    if (callback) callback();
+                }, 150);
+            };
+            
+            // 오버레이 클릭 시 닫기
+            overlay.addEventListener('click', closeBoardAlert);
+        }
         // ==================== 게시판 기능 끝 ====================
        
         async function checkDuplicateNicknames() {
