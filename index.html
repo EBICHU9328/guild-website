@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.2.5">
-    <meta name="build-date" content="2026-01-16 23:15">
+    <meta name="version" content="2.2.9">
+    <meta name="build-date" content="2026-01-17 00:00">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1095,9 +1095,29 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.2.5';
-        const APP_BUILD_DATE = '2026-01-16 23:15';
+        const APP_VERSION = '2.2.9';
+        const APP_BUILD_DATE = '2026-01-17 00:00';
         const APP_CHANGELOG = [
+            { version: '2.2.9', date: '2026-01-17 00:00', changes: [
+                '⚠️ 로그인 시 비밀번호 중복 사용 경고 팝업',
+                '🔑 최종관리자 비밀번호 변경 기능 추가',
+                '📝 비밀번호 변경 시 로그 저장'
+            ]},
+            { version: '2.2.8', date: '2026-01-16 23:50', changes: [
+                '🔐 비밀번호 설정 시 중복 체크 추가',
+                '⚠️ 타인이 사용 중인 비밀번호 사용 방지'
+            ]},
+            { version: '2.2.7', date: '2026-01-16 23:45', changes: [
+                '📷 이미지 드래그 앤 드롭 첨부 지원',
+                '📋 이미지 Ctrl+V 붙여넣기 첨부 지원'
+            ]},
+            { version: '2.2.6', date: '2026-01-16 23:30', changes: [
+                '💬 일반 사용자 댓글 등록 기능 추가',
+                '🔐 댓글 작성 전 비밀번호 인증',
+                '✏️ 본인 댓글 수정/삭제 기능',
+                '📝 관리자용 댓글 수정 내역 보기',
+                '🗑️ 관리자용 삭제된 댓글 보기'
+            ]},
             { version: '2.2.5', date: '2026-01-16 23:15', changes: [
                 '🔄 게시글 등록/수정 후 해당 게시글로 자동 이동',
                 '🔄 게시글 삭제 후 목록으로 자동 이동'
@@ -2997,7 +3017,8 @@
                                 </div>
                                 <div id="imagePlaceholder">
                                     <div style="font-size: 32px; margin-bottom: 8px;">📷</div>
-                                    <p style="color: #94a3b8; font-size: 13px;">클릭하여 이미지 선택 (최대 2MB)</p>
+                                    <p style="color: #94a3b8; font-size: 13px; margin: 0;">클릭, 드래그 앤 드롭, 또는 Ctrl+V로 이미지 첨부</p>
+                                    <p style="color: #cbd5e1; font-size: 11px; margin: 4px 0 0;">(최대 2MB)</p>
                                 </div>
                             </div>
                         </div>
@@ -3552,29 +3573,66 @@
                         return '<p class="no-comments">등록된 댓글이 없습니다.</p>';
                     }
                     return comments.map((c, idx) => {
+                        if (c.isDeleted && !isSuperAdmin) return ''; // 삭제된 댓글은 관리자만 보임
+                        
                         const isSuperAdminComment = c.author.startsWith('최종관리자');
                         const isAdminComment = c.author.includes('관리자');
-                        const itemClass = isSuperAdminComment ? 'super-admin' : (isAdminComment ? 'admin' : '');
+                        const isUserComment = c.authorPassword; // 사용자가 작성한 댓글
+                        const itemClass = c.isDeleted ? 'deleted' : (isSuperAdminComment ? 'super-admin' : (isAdminComment ? 'admin' : ''));
                         
                         let authorHtml = '';
                         if (isSuperAdminComment) {
-                            authorHtml = `<span class="rainbow-star">⭐</span><span class="super-badge">${c.author}</span>`;
+                            authorHtml = '<span class="rainbow-star">⭐</span><span class="super-badge">' + c.author + '</span>';
                         } else if (isAdminComment) {
-                            authorHtml = `<span class="rainbow-star">✨</span><span class="admin-badge">${c.author}</span>`;
+                            authorHtml = '<span class="rainbow-star">✨</span><span class="admin-badge">' + c.author + '</span>';
                         } else {
-                            authorHtml = `👤 ${c.author}`;
+                            authorHtml = '👤 ' + c.author;
                         }
                         
-                        return `
-                            <div class="comment-item ${itemClass}" data-idx="${idx}">
-                                <div class="comment-header">
-                                    <span class="comment-author">${authorHtml}</span>
-                                    <span class="comment-date">${formatDateTime(c.createdAt)}</span>
-                                    ${isSuperAdmin ? `<button onclick="deleteComment('${pid}', ${idx})" class="comment-delete-btn">삭제</button>` : ''}
-                                </div>
-                                <div class="comment-content">${(c.content || '').replace(/\n/g, '<br>')}</div>
-                            </div>
-                        `;
+                        // 수정됨 표시
+                        const editedBadge = c.editedAt ? '<span class="comment-edited">(수정됨)</span>' : '';
+                        
+                        // 삭제된 댓글 표시 (관리자만)
+                        if (c.isDeleted && isSuperAdmin) {
+                            return '<div class="comment-item deleted" data-idx="' + idx + '">' +
+                                '<div class="comment-header">' +
+                                    '<span class="comment-author" style="color:#9ca3af;">' + authorHtml + '</span>' +
+                                    '<span class="comment-date">' + formatDateTime(c.createdAt) + '</span>' +
+                                    '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:11px;">삭제됨</span>' +
+                                '</div>' +
+                                '<div class="comment-content" style="color:#9ca3af;text-decoration:line-through;">' + (c.content || '').replace(/\\n/g, '<br>') + '</div>' +
+                                '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">삭제자: ' + (c.deletedBy || '알 수 없음') + ' | ' + formatDateTime(c.deletedAt) + '</div>' +
+                            '</div>';
+                        }
+                        
+                        // 버튼 영역
+                        let buttonsHtml = '';
+                        if (isSuperAdmin) {
+                            // 최종관리자는 모든 댓글 삭제 가능 + 수정 내역 보기
+                            buttonsHtml = '<button onclick="deleteComment(\\''+pid+'\\', '+idx+')" class="comment-delete-btn">삭제</button>';
+                            if (c.editHistory && c.editHistory.length > 0) {
+                                buttonsHtml += '<button onclick="showCommentEditHistory(\\''+pid+'\\', '+idx+')" class="comment-history-btn">수정내역</button>';
+                            }
+                        } else if (isUserComment) {
+                            // 사용자 댓글은 본인 인증 후 수정/삭제
+                            buttonsHtml = '<div class="comment-user-actions" id="commentAuth_'+pid+'_'+idx+'">' +
+                                '<input type="password" maxlength="4" placeholder="비번" style="width:60px;padding:4px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;text-align:center;">' +
+                                '<button onclick="verifyCommentOwner(\\''+pid+'\\', '+idx+', \\''+c.authorPassword+'\\')" style="padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:4px;font-size:11px;cursor:pointer;">확인</button>' +
+                            '</div>' +
+                            '<div class="comment-action-btns" id="commentBtns_'+pid+'_'+idx+'" style="display:none;">' +
+                                '<button onclick="editComment(\\''+pid+'\\', '+idx+')" class="comment-edit-btn">수정</button>' +
+                                '<button onclick="deleteCommentByUser(\\''+pid+'\\', '+idx+')" class="comment-delete-btn">삭제</button>' +
+                            '</div>';
+                        }
+                        
+                        return '<div class="comment-item ' + itemClass + '" data-idx="' + idx + '">' +
+                            '<div class="comment-header">' +
+                                '<span class="comment-author">' + authorHtml + '</span>' +
+                                '<span class="comment-date">' + formatDateTime(c.createdAt) + ' ' + editedBadge + '</span>' +
+                                buttonsHtml +
+                            '</div>' +
+                            '<div class="comment-content" id="commentContent_'+pid+'_'+idx+'">' + (c.content || '').replace(/\\n/g, '<br>') + '</div>' +
+                        '</div>';
                     }).join('');
                 };
                 
@@ -3646,14 +3704,22 @@
                             <section class="comments-section">
                                 <h3 class="comments-title">💬 댓글 <span id="commentCount">${(post.comments || []).length}</span></h3>
                                 
-                                ${isAdmin ? `
                                 <div class="comment-form">
+                                    ${!isAdmin ? `
+                                    <div id="commentAuthSection" style="margin-bottom: 12px; padding: 12px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                            <span style="font-size: 13px; font-weight: 600; color: #92400e;">🔐 작성자 인증</span>
+                                            <input type="password" id="commentUserPassword" maxlength="4" placeholder="••••" style="width: 90px; padding: 8px 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; text-align: center; letter-spacing: 5px;">
+                                            <button type="button" onclick="verifyCommentUser()" style="padding: 8px 14px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">인증</button>
+                                            <span id="commentVerifiedName" style="font-size: 13px; color: #065f46; font-weight: 600; display: none;">✅ <span></span></span>
+                                        </div>
+                                    </div>
+                                    ` : ''}
                                     <textarea id="commentInput" class="comment-input" placeholder="댓글을 입력하세요..." rows="3"></textarea>
                                     <div class="comment-form-actions">
                                         <button onclick="submitComment('${postId}')" class="comment-submit-btn">댓글 등록</button>
                                     </div>
                                 </div>
-                                ` : ''}
                                 
                                 <div id="commentList" class="comment-list">
                                     ${commentsHtml}
@@ -3729,6 +3795,14 @@
                         .comment-date { font-size: 12px; color: #94a3b8; }
                         .comment-delete-btn { margin-left: auto; padding: 4px 10px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
                         .comment-delete-btn:hover { background: #fecaca; }
+                        .comment-edit-btn { padding: 4px 10px; background: #fef3c7; color: #b45309; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-right: 4px; }
+                        .comment-edit-btn:hover { background: #fde68a; }
+                        .comment-history-btn { padding: 4px 10px; background: #e0e7ff; color: #4338ca; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; margin-left: 4px; }
+                        .comment-history-btn:hover { background: #c7d2fe; }
+                        .comment-edited { font-size: 11px; color: #f59e0b; margin-left: 4px; }
+                        .comment-user-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+                        .comment-action-btns { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+                        .comment-item.deleted { opacity: 0.6; }
                         .comment-content { font-size: 14px; color: #334155; line-height: 1.6; }
                         
                         /* 태블릿 */
@@ -3855,6 +3929,12 @@
             
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
+            
+            // 이미지 드래그앤드롭 및 붙여넣기 이벤트 설정
+            setTimeout(() => {
+                setupImageDragDrop();
+                setupImagePaste();
+            }, 100);
         };
         
         // 카테고리 변경시 기본 양식 적용
@@ -3917,10 +3997,18 @@
         window.previewImage = function(input) {
             const file = input.files[0];
             if (!file) return;
+            handleImageFile(file);
+        };
+        
+        // 이미지 파일 처리 공통 함수
+        window.handleImageFile = function(file) {
+            if (!file.type.startsWith('image/')) {
+                showBoardAlert('이미지 파일만 첨부할 수 있습니다.', 'error');
+                return;
+            }
             
             if (file.size > 2 * 1024 * 1024) {
                 showBoardAlert('이미지 크기는 2MB 이하로 해주세요.', 'error');
-                input.value = '';
                 return;
             }
             
@@ -3931,8 +4019,71 @@
                 document.getElementById('imagePlaceholder').style.display = 'none';
                 document.getElementById('imagePreviewArea').style.borderStyle = 'solid';
                 document.getElementById('imagePreviewArea').style.borderColor = '#3b82f6';
+                
+                // DataTransfer를 사용해 input에 파일 설정
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                document.getElementById('postImageInput').files = dt.files;
             };
             reader.readAsDataURL(file);
+        };
+        
+        // 드래그 앤 드롭 이벤트 설정
+        window.setupImageDragDrop = function() {
+            const dropArea = document.getElementById('imagePreviewArea');
+            if (!dropArea) return;
+            
+            // 드래그 오버 시 스타일 변경
+            dropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.style.borderColor = '#3b82f6';
+                this.style.background = '#eff6ff';
+            });
+            
+            // 드래그 나갈 때 스타일 복원
+            dropArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (document.getElementById('imagePreview').style.display === 'none') {
+                    this.style.borderColor = '#e2e8f0';
+                    this.style.background = 'transparent';
+                }
+            });
+            
+            // 드롭 시 파일 처리
+            dropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.style.background = 'transparent';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleImageFile(files[0]);
+                }
+            });
+        };
+        
+        // 붙여넣기 이벤트 설정 (모달 내에서)
+        window.setupImagePaste = function() {
+            const modal = document.getElementById('boardModalOverlay');
+            if (!modal) return;
+            
+            modal.addEventListener('paste', function(e) {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.startsWith('image/')) {
+                        e.preventDefault();
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            handleImageFile(file);
+                        }
+                        break;
+                    }
+                }
+            });
         };
         
         // 이미지 제거
@@ -4236,17 +4387,82 @@
             }
         };
         
-        // 댓글 등록
-        window.submitComment = async function(postId) {
-            if (!isAdmin) {
-                showBoardAlert('관리자만 댓글을 작성할 수 있습니다.', 'error');
+        // 댓글 사용자 인증
+        window.verifyCommentUser = async function() {
+            const password = document.getElementById('commentUserPassword').value.trim();
+            if (!password || password.length !== 4) {
+                showBoardAlert('비밀번호 4자리를 입력해주세요.', 'error');
                 return;
             }
             
+            try {
+                const usersSnap = await getDocs(collection(db, "users"));
+                const matchedUsers = [];
+                usersSnap.forEach(doc => {
+                    const u = doc.data();
+                    if (u.password === password) {
+                        matchedUsers.push({ name: u.name, guild: u.guild, password: password });
+                    }
+                });
+                
+                if (matchedUsers.length === 0) {
+                    showBoardAlert('일치하는 사용자가 없습니다.', 'error');
+                    return;
+                }
+                
+                // 인증 정보 저장
+                window.verifiedCommentUser = matchedUsers[0];
+                document.getElementById('commentVerifiedName').style.display = 'inline';
+                document.getElementById('commentVerifiedName').querySelector('span').textContent = matchedUsers[0].name;
+                document.getElementById('commentUserPassword').disabled = true;
+                
+            } catch(e) {
+                console.error('인증 오류:', e);
+                showBoardAlert('인증 중 오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        // 댓글 등록
+        window.submitComment = async function(postId) {
             const content = document.getElementById('commentInput').value.trim();
             if (!content) {
                 showBoardAlert('댓글 내용을 입력해주세요.', 'error');
                 return;
+            }
+            
+            // 관리자가 아닌 경우 인증 확인
+            let authorName = '';
+            let authorPassword = null;
+            
+            if (isAdmin) {
+                // 관리자 별명 가져오기
+                if (isSuperAdmin) {
+                    try {
+                        const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
+                        if (superAdminDoc.exists() && superAdminDoc.data().nickname) {
+                            authorName = '최종관리자(' + superAdminDoc.data().nickname + ')';
+                        } else {
+                            authorName = '최종관리자';
+                        }
+                    } catch(e) { authorName = '최종관리자'; }
+                } else if (loggedInAdminId) {
+                    try {
+                        const adminDoc = await getDoc(doc(db, "admins", loggedInAdminId));
+                        if (adminDoc.exists() && adminDoc.data().nickname) {
+                            authorName = '관리자(' + adminDoc.data().nickname + ')';
+                        } else {
+                            authorName = '관리자';
+                        }
+                    } catch(e) { authorName = '관리자'; }
+                }
+            } else {
+                // 일반 사용자 인증 확인
+                if (!window.verifiedCommentUser) {
+                    showBoardAlert('먼저 비밀번호 인증을 해주세요.', 'error');
+                    return;
+                }
+                authorName = window.verifiedCommentUser.name;
+                authorPassword = window.verifiedCommentUser.password;
             }
             
             try {
@@ -4258,30 +4474,11 @@
                     return;
                 }
                 
-                // 관리자 별명 가져오기
-                let authorName = '관리자';
-                if (isSuperAdmin) {
-                    try {
-                        const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
-                        if (superAdminDoc.exists() && superAdminDoc.data().nickname) {
-                            authorName = `최종관리자(${superAdminDoc.data().nickname})`;
-                        } else {
-                            authorName = '최종관리자';
-                        }
-                    } catch(e) { authorName = '최종관리자'; }
-                } else if (loggedInAdminId) {
-                    try {
-                        const adminDoc = await getDoc(doc(db, "admins", loggedInAdminId));
-                        if (adminDoc.exists() && adminDoc.data().nickname) {
-                            authorName = `관리자(${adminDoc.data().nickname})`;
-                        }
-                    } catch(e) { /* 별명 없으면 기본값 사용 */ }
-                }
-                
                 const comments = postDoc.data().comments || [];
                 const newComment = {
                     content: content,
                     author: authorName,
+                    authorPassword: authorPassword,
                     createdAt: Date.now()
                 };
                 comments.push(newComment);
@@ -4291,9 +4488,19 @@
                 // 입력창 비우기
                 document.getElementById('commentInput').value = '';
                 
+                // 인증 정보 초기화
+                window.verifiedCommentUser = null;
+                const verifiedName = document.getElementById('commentVerifiedName');
+                if (verifiedName) verifiedName.style.display = 'none';
+                const pwInput = document.getElementById('commentUserPassword');
+                if (pwInput) {
+                    pwInput.value = '';
+                    pwInput.disabled = false;
+                }
+                
                 // 댓글 목록 즉시 갱신
                 document.getElementById('commentList').innerHTML = renderComments(comments, postId);
-                document.getElementById('commentCount').textContent = comments.length;
+                document.getElementById('commentCount').textContent = comments.filter(c => !c.isDeleted).length;
                 
                 showBoardAlert('댓글이 등록되었습니다!', 'success');
                 
@@ -4303,7 +4510,7 @@
             }
         };
         
-        // 댓글 삭제
+        // 댓글 삭제 (관리자) - 소프트 삭제
         window.deleteComment = async function(postId, commentIdx) {
             if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
             
@@ -4317,19 +4524,189 @@
                 }
                 
                 const comments = postDoc.data().comments || [];
-                comments.splice(commentIdx, 1);
+                
+                // 삭제자 이름 가져오기
+                let deletedBy = '관리자';
+                if (isSuperAdmin) {
+                    try {
+                        const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
+                        if (superAdminDoc.exists() && superAdminDoc.data().nickname) {
+                            deletedBy = '최종관리자(' + superAdminDoc.data().nickname + ')';
+                        } else {
+                            deletedBy = '최종관리자';
+                        }
+                    } catch(e) { deletedBy = '최종관리자'; }
+                }
+                
+                // 소프트 삭제 (기록 유지)
+                comments[commentIdx].isDeleted = true;
+                comments[commentIdx].deletedAt = Date.now();
+                comments[commentIdx].deletedBy = deletedBy;
                 
                 await updateDoc(postRef, { comments: comments });
                 
                 // 댓글 목록 즉시 갱신
                 document.getElementById('commentList').innerHTML = renderComments(comments, postId);
-                document.getElementById('commentCount').textContent = comments.length;
+                document.getElementById('commentCount').textContent = comments.filter(c => !c.isDeleted).length;
                 
                 showBoardAlert('댓글이 삭제되었습니다!', 'success');
                 
             } catch(e) {
                 console.error('댓글 삭제 오류:', e);
                 showBoardAlert('댓글 삭제 중 오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        // 댓글 본인 확인
+        window.verifyCommentOwner = function(postId, commentIdx, authorPassword) {
+            const authDiv = document.getElementById('commentAuth_' + postId + '_' + commentIdx);
+            const input = authDiv.querySelector('input');
+            const inputPw = input.value;
+            
+            if (!inputPw) {
+                showAlert('비밀번호를 입력해주세요.', 'error');
+                return;
+            }
+            
+            if (inputPw === authorPassword) {
+                authDiv.style.display = 'none';
+                document.getElementById('commentBtns_' + postId + '_' + commentIdx).style.display = 'flex';
+            } else {
+                showAlert('비밀번호가 일치하지 않습니다.', 'error');
+            }
+        };
+        
+        // 댓글 수정
+        window.editComment = async function(postId, commentIdx) {
+            try {
+                const postRef = doc(db, "posts", postId);
+                const postDoc = await getDoc(postRef);
+                if (!postDoc.exists()) return;
+                
+                const comments = postDoc.data().comments || [];
+                const comment = comments[commentIdx];
+                
+                const contentDiv = document.getElementById('commentContent_' + postId + '_' + commentIdx);
+                const originalContent = comment.content;
+                
+                // 편집 모드로 변경
+                contentDiv.innerHTML = '<textarea id="editCommentInput_' + postId + '_' + commentIdx + '" style="width:100%;padding:10px;border:2px solid #3b82f6;border-radius:8px;font-size:14px;resize:vertical;min-height:60px;">' + originalContent + '</textarea>' +
+                    '<div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">' +
+                        '<button onclick="cancelEditComment(\'' + postId + '\', ' + commentIdx + ', \'' + encodeURIComponent(originalContent) + '\')" style="padding:6px 14px;background:#f1f5f9;border:none;border-radius:6px;cursor:pointer;">취소</button>' +
+                        '<button onclick="saveEditComment(\'' + postId + '\', ' + commentIdx + ')" style="padding:6px 14px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;">저장</button>' +
+                    '</div>';
+                
+            } catch(e) {
+                console.error('댓글 수정 오류:', e);
+            }
+        };
+        
+        // 댓글 수정 취소
+        window.cancelEditComment = function(postId, commentIdx, encodedContent) {
+            const contentDiv = document.getElementById('commentContent_' + postId + '_' + commentIdx);
+            contentDiv.innerHTML = decodeURIComponent(encodedContent).replace(/\n/g, '<br>');
+        };
+        
+        // 댓글 수정 저장
+        window.saveEditComment = async function(postId, commentIdx) {
+            const newContent = document.getElementById('editCommentInput_' + postId + '_' + commentIdx).value.trim();
+            if (!newContent) {
+                showAlert('댓글 내용을 입력해주세요.', 'error');
+                return;
+            }
+            
+            try {
+                const postRef = doc(db, "posts", postId);
+                const postDoc = await getDoc(postRef);
+                if (!postDoc.exists()) return;
+                
+                const comments = postDoc.data().comments || [];
+                const comment = comments[commentIdx];
+                
+                // 수정 내역 저장
+                if (!comment.editHistory) comment.editHistory = [];
+                comment.editHistory.push({
+                    oldContent: comment.content,
+                    editedAt: Date.now()
+                });
+                
+                comment.content = newContent;
+                comment.editedAt = Date.now();
+                
+                await updateDoc(postRef, { comments: comments });
+                
+                // 댓글 목록 갱신
+                document.getElementById('commentList').innerHTML = renderComments(comments, postId);
+                
+                showAlert('댓글이 수정되었습니다.', 'success');
+                
+            } catch(e) {
+                console.error('댓글 저장 오류:', e);
+                showAlert('수정 중 오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        // 사용자가 본인 댓글 삭제
+        window.deleteCommentByUser = async function(postId, commentIdx) {
+            if (!confirm('댓글을 삭제하시겠습니까?')) return;
+            
+            try {
+                const postRef = doc(db, "posts", postId);
+                const postDoc = await getDoc(postRef);
+                if (!postDoc.exists()) return;
+                
+                const comments = postDoc.data().comments || [];
+                
+                // 소프트 삭제
+                comments[commentIdx].isDeleted = true;
+                comments[commentIdx].deletedAt = Date.now();
+                comments[commentIdx].deletedBy = comments[commentIdx].author + ' (본인)';
+                
+                await updateDoc(postRef, { comments: comments });
+                
+                // 댓글 목록 갱신
+                document.getElementById('commentList').innerHTML = renderComments(comments, postId);
+                document.getElementById('commentCount').textContent = comments.filter(c => !c.isDeleted).length;
+                
+                showAlert('댓글이 삭제되었습니다.', 'success');
+                
+            } catch(e) {
+                console.error('댓글 삭제 오류:', e);
+                showAlert('삭제 중 오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        // 관리자용 댓글 수정 내역 보기
+        window.showCommentEditHistory = async function(postId, commentIdx) {
+            try {
+                const postDoc = await getDoc(doc(db, "posts", postId));
+                if (!postDoc.exists()) return;
+                
+                const comments = postDoc.data().comments || [];
+                const comment = comments[commentIdx];
+                const history = comment.editHistory || [];
+                
+                if (history.length === 0) {
+                    showAlert('수정 내역이 없습니다.', 'info');
+                    return;
+                }
+                
+                let historyHtml = '<div style="max-height:300px;overflow-y:auto;">';
+                history.forEach((h, idx) => {
+                    const date = new Date(h.editedAt);
+                    const dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0') + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+                    historyHtml += '<div style="padding:12px;background:#f8fafc;border-radius:8px;margin-bottom:8px;">' +
+                        '<div style="font-size:12px;color:#64748b;margin-bottom:6px;">수정 전 (' + dateStr + ')</div>' +
+                        '<div style="font-size:14px;color:#374151;">' + h.oldContent.replace(/\n/g, '<br>') + '</div>' +
+                    '</div>';
+                });
+                historyHtml += '</div>';
+                
+                openSmallModal('📝 댓글 수정 내역', comment.author, historyHtml);
+                document.getElementById('modalFooter').innerHTML = '<button class="btn btn-cancel" onclick="closeModal()">닫기</button>';
+                
+            } catch(e) {
+                console.error('수정 내역 조회 오류:', e);
             }
         };
         
@@ -5889,6 +6266,20 @@
                 if (userSnap.exists() || pendingSnap.exists()) { 
                     showAlert('이미 존재하거나 승인 대기 중인 닉네임입니다', 'error'); 
                     return; 
+                }
+                
+                // 비밀번호 중복 체크
+                const allUsersSnap = await getDocs(collection(db, "users"));
+                let pwDuplicate = false;
+                allUsersSnap.forEach(docSnap => {
+                    if (docSnap.data().password === pw) {
+                        pwDuplicate = true;
+                    }
+                });
+                
+                if (pwDuplicate) {
+                    showAlert('해당 번호는 타인이 이미 사용중입니다.\n보안을 위해 다른 숫자를 사용해주세요.', 'error');
+                    return;
                 }
 
                 try {
@@ -7983,7 +8374,7 @@
                         : '<span style="color:#ef4444; font-weight:600;">✗ 미설정</span>';
                     
                     const resetBtn = u.password 
-                        ? `<button class="btn-reset-pw" onclick="window.resetUserPw('${u.name}')">초기화</button>` 
+                        ? `<div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn-reset-pw" onclick="window.resetUserPw('${u.name}')">초기화</button><button class="btn-change-pw" onclick="window.changeUserPw('${u.name}')" style="background:#3b82f6;color:white;padding:4px 8px;border:none;border-radius:4px;cursor:pointer;font-size:12px;">변경</button></div>` 
                         : '-';
                     
                     const deleteBtn = `<button class="btn-delete" onclick="window.deleteUser('${u.name}')" style="background:#ef4444; color:white; padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s;">🗑️ 등록 해제</button>`;
@@ -8044,6 +8435,57 @@
             showAlert('비밀번호가 초기화되었습니다', 'success'); 
             closeModal(); 
             setTimeout(() => location.reload(), 1000); 
+        };
+        
+        window.changeUserPw = async function(name) {
+            openSmallModal('비밀번호 변경', `[${name}]님의 새 비밀번호를 입력하세요`, `
+                <div class="form-group">
+                    <input type="password" class="form-input" id="newPwInput" maxlength="4" placeholder="새 비밀번호 (4자리 숫자)" inputmode="numeric">
+                </div>
+            `);
+            setTimeout(() => document.getElementById('newPwInput').focus(), 100);
+            
+            document.getElementById('modalSubmit').onclick = async () => {
+                const newPw = document.getElementById('newPwInput').value;
+                if (!/^\d{4}$/.test(newPw)) {
+                    showAlert('4자리 숫자를 입력하세요', 'error');
+                    return;
+                }
+                
+                // 비밀번호 중복 체크
+                try {
+                    const usersSnap = await getDocs(collection(db, "users"));
+                    let isDuplicate = false;
+                    usersSnap.forEach(docSnap => {
+                        if (docSnap.id !== name && docSnap.data().password === newPw) {
+                            isDuplicate = true;
+                        }
+                    });
+                    
+                    if (isDuplicate) {
+                        showAlert('해당 번호는 타인이 이미 사용중입니다.\n다른 숫자를 사용해주세요.', 'error');
+                        return;
+                    }
+                } catch(e) {
+                    console.error('중복 체크 오류:', e);
+                }
+                
+                await updateDoc(doc(db, "users", name), { password: newPw });
+                
+                // 로그 저장
+                await setDoc(doc(collection(db, "logs")), {
+                    who: name,
+                    type: 'password_change',
+                    old_value: '(관리자가 변경)',
+                    new_value: '비밀번호 변경됨',
+                    createdAt: Date.now(),
+                    admin: isSuperAdmin ? '최종관리자' : loggedInAdminId
+                });
+                
+                showAlert('비밀번호가 변경되었습니다', 'success');
+                closeModal();
+                setTimeout(() => location.reload(), 1000);
+            };
         };
 
                window.deleteUser = async function(name) {
@@ -9274,6 +9716,26 @@
                     showAlert('4자리 숫자를 입력하세요', 'error'); 
                     return; 
                 }
+                
+                // 비밀번호 중복 체크
+                try {
+                    const usersSnap = await getDocs(collection(db, "users"));
+                    let isDuplicate = false;
+                    usersSnap.forEach(docSnap => {
+                        const userData = docSnap.data();
+                        if (docSnap.id !== name && userData.password === pw) {
+                            isDuplicate = true;
+                        }
+                    });
+                    
+                    if (isDuplicate) {
+                        showAlert('해당 번호는 타인이 이미 사용중입니다.\n보안을 위해 다른 숫자를 사용해주세요.', 'error');
+                        return;
+                    }
+                } catch(e) {
+                    console.error('비밀번호 중복 체크 오류:', e);
+                }
+                
                 await updateDoc(doc(db, "users", name), { password: pw }); 
                 closeModal(); 
                 setTimeout(() => cb(u), 500); 
@@ -9300,7 +9762,7 @@
             
             setTimeout(() => document.getElementById('passwordInput').focus(), 100);
             
-            document.getElementById('modalSubmit').onclick = () => { 
+            document.getElementById('modalSubmit').onclick = async () => { 
                 if (document.getElementById('passwordInput').value === u.password || isAdmin) {
                     const rememberChecked = document.getElementById('rememberPassword').checked;
                     
@@ -9315,11 +9777,30 @@
                         }));
                     }
                     
+                    // 비밀번호 중복 체크
+                    let duplicateCount = 0;
+                    try {
+                        const usersSnap = await getDocs(collection(db, "users"));
+                        usersSnap.forEach(docSnap => {
+                            if (docSnap.data().password === u.password) {
+                                duplicateCount++;
+                            }
+                        });
+                    } catch(e) { console.error('중복 체크 오류:', e); }
+                    
                     closeModal(); 
+                    
+                    // 중복된 비밀번호 사용 중이면 경고
+                    if (duplicateCount > 1) {
+                        setTimeout(() => {
+                            showAlert('⚠️ 해당 비밀번호는 타인과 함께 사용중입니다.\n보안에 매우 위협적이므로 관리자에게 변경요청 해주세요.', 'warning');
+                        }, 300);
+                    }
+                    
                     setTimeout(() => {
                         loadData();
                         cb(u);
-                    }, 200); 
+                    }, duplicateCount > 1 ? 500 : 200); 
                 } else {
                     failCount++;
                     const remaining = maxAttempts - failCount;
