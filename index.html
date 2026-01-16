@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.3.0">
-    <meta name="build-date" content="2026-01-17 00:10">
+    <meta name="version" content="2.3.1">
+    <meta name="build-date" content="2026-01-17 00:25">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1096,9 +1096,14 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.3.0';
-        const APP_BUILD_DATE = '2026-01-17 00:10';
+        const APP_VERSION = '2.3.1';
+        const APP_BUILD_DATE = '2026-01-17 00:25';
         const APP_CHANGELOG = [
+            { version: '2.3.1', date: '2026-01-17 00:25', changes: [
+                '🎨 공유 페이지 길드별 색상 적용',
+                '💪 닉네임/증감 굵기 강조',
+                '🐛 게시글 삭제 후 목록 이동 수정'
+            ]},
             { version: '2.3.0', date: '2026-01-17 00:10', changes: [
                 '📊 공유 페이지 테이블 레이아웃 개선',
                 '📏 컬럼 너비 고정으로 정렬 깔끔하게',
@@ -2271,6 +2276,13 @@
                 
                 // 길드별 통계 HTML (차감 정보 포함)
                 let guildStatsHtml = '';
+                const guildColorMap = {
+                    '사신': '#8b5cf6',  // 보라
+                    '축복': '#3b82f6',  // 파랑
+                    '놀자': '#10b981',  // 초록
+                    '루비': '#ef4444',  // 빨강
+                    '헬싱키': '#06b6d4' // 청록
+                };
                 Object.keys(guildStats).sort().forEach(guild => {
                     const stats = guildStats[guild];
                     const deduction = guildDeductions[guild] || 0;
@@ -2282,9 +2294,10 @@
                     const avgDiff = activeCount > 0 ? Math.round(stats.totalDiff / activeCount) : 0;
                     const diffSign = avgDiff >= 0 ? '+' : '';
                     const diffColor = avgDiff >= 0 ? '#10b981' : '#ef4444';
+                    const guildNameColor = guildColorMap[guild] || '#374151';
                     const deductionBadge = deduction > 0 ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:6px;">-${deduction.toLocaleString()}</span>` : '';
                     guildStatsHtml += `<tr>
-                        <td style="padding: 12px; font-weight: 600;">${guild}${deductionBadge}</td>
+                        <td style="padding: 12px; font-weight: 700; color: ${guildNameColor};">${guild}${deductionBadge}</td>
                         <td style="padding: 12px; text-align: center;">${stats.count}명</td>
                         <td style="padding: 12px; text-align: right;">${avgPower}</td>
                         <td style="padding: 12px; text-align: right; color: ${diffColor}; font-weight: 600;">${diffSign}${avgDiff.toLocaleString()}</td>
@@ -2293,10 +2306,22 @@
                 
                 // 유저 목록 HTML
                 let usersHtml = '';
+                
+                // 길드별 색상
+                const guildColors = {
+                    '사신': '#8b5cf6',  // 보라
+                    '축복': '#3b82f6',  // 파랑
+                    '놀자': '#10b981',  // 초록
+                    '루비': '#ef4444',  // 빨강
+                    '헬싱키': '#06b6d4' // 청록
+                };
+                
                 users.forEach((u, idx) => {
                     const diffSign = u.diff >= 0 ? '+' : '';
-                    const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
+                    const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#9ca3af';
+                    const diffWeight = u.diff !== 0 ? '700' : '500';
                     const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                    const guildColor = guildColors[u.guild] || '#374151';
                     let icons = '';
                     if (u.shape_legend > 0) icons += '🛡️';
                     if (u.shape_myth > 0) icons += '👑';
@@ -2304,10 +2329,10 @@
                     if (u.mount_myth > 0) icons += '🦄';
                     usersHtml += `<tr style="border-bottom: 1px solid #f3f4f6;">
                         <td style="padding: 10px 6px; text-align: center; font-size: 14px;">${medal}</td>
-                        <td style="padding: 10px 6px; font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.name}</td>
-                        <td style="padding: 10px 6px; text-align: center; font-size: 14px;">${u.guild}</td>
+                        <td style="padding: 10px 6px; font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b;">${u.name}</td>
+                        <td style="padding: 10px 6px; text-align: center; font-size: 14px; font-weight: 600; color: ${guildColor};">${u.guild}</td>
                         <td style="padding: 10px 6px; text-align: right; font-weight: 600; font-size: 14px; font-family: monospace;">${u.power.toLocaleString()}</td>
-                        <td style="padding: 10px 6px; text-align: right; color: ${diffColor}; font-weight: 500; font-size: 14px; font-family: monospace;">${diffSign}${u.diff.toLocaleString()}</td>
+                        <td style="padding: 10px 6px; text-align: right; color: ${diffColor}; font-weight: ${diffWeight}; font-size: 14px; font-family: monospace;">${diffSign}${u.diff.toLocaleString()}</td>
                         <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.shape_legend || 0}</td>
                         <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.shape_myth || 0}</td>
                         <td style="padding: 10px 4px; text-align: center; font-size: 14px;">${u.mount_legend || 0}</td>
@@ -2530,16 +2555,27 @@
                     // 전투력 순 정렬 (순위 부여용)
                     const sortedByPower = [...users].sort((a, b) => b.power - a.power);
                     
+                    // 길드별 색상
+                    const guildColors = {
+                        '사신': '#8b5cf6',  // 보라
+                        '축복': '#3b82f6',  // 파랑
+                        '놀자': '#10b981',  // 초록
+                        '루비': '#ef4444',  // 빨강
+                        '헬싱키': '#06b6d4' // 청록
+                    };
+                    
                     sortedByPower.forEach((u, idx) => {
                         const diffSign = u.diff >= 0 ? '+' : '';
-                        const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#6b7280';
+                        const diffColor = u.diff > 0 ? '#10b981' : u.diff < 0 ? '#ef4444' : '#9ca3af';
+                        const diffWeight = u.diff !== 0 ? '700' : '500';
                         const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1);
+                        const guildColor = guildColors[u.guild] || '#374151';
                         html += '<tr style="border-bottom: 1px solid #f3f4f6;">' +
                             '<td style="padding: 10px 6px; text-align: center; font-size: 14px;">' + medal + '</td>' +
-                            '<td style="padding: 10px 6px; font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + u.name + '</td>' +
-                            '<td style="padding: 10px 6px; text-align: center; font-size: 14px;">' + u.guild + '</td>' +
+                            '<td style="padding: 10px 6px; font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b;">' + u.name + '</td>' +
+                            '<td style="padding: 10px 6px; text-align: center; font-size: 14px; font-weight: 600; color: ' + guildColor + ';">' + u.guild + '</td>' +
                             '<td style="padding: 10px 6px; text-align: right; font-weight: 600; font-size: 14px; font-family: monospace;">' + u.power.toLocaleString() + '</td>' +
-                            '<td style="padding: 10px 6px; text-align: right; color: ' + diffColor + '; font-weight: 500; font-size: 14px; font-family: monospace;">' + diffSign + u.diff.toLocaleString() + '</td>' +
+                            '<td style="padding: 10px 6px; text-align: right; color: ' + diffColor + '; font-weight: ' + diffWeight + '; font-size: 14px; font-family: monospace;">' + diffSign + u.diff.toLocaleString() + '</td>' +
                             '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.shape_legend || 0) + '</td>' +
                             '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.shape_myth || 0) + '</td>' +
                             '<td style="padding: 10px 4px; text-align: center; font-size: 14px;">' + (u.mount_legend || 0) + '</td>' +
@@ -4353,9 +4389,10 @@
             
             try {
                 await deleteDoc(doc(db, "posts", postId));
-                showBoardAlert('삭제되었습니다!', 'success', () => {
+                showBoardAlert('삭제되었습니다!', 'success');
+                setTimeout(() => {
                     location.href = '?page=board';
-                });
+                }, 500);
                 
             } catch(e) {
                 console.error('게시글 삭제 오류:', e);
