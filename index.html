@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.9.9">
-    <meta name="build-date" content="2026-01-16 18:00">
+    <meta name="version" content="2.0.1">
+    <meta name="build-date" content="2026-01-16 18:35">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -862,6 +862,7 @@
                     <button class="admin-dropdown-item super-admin-only" id="logViewBtn" style="display:none;">📝 로그 확인</button>
                     <button class="admin-dropdown-item super-admin-only" id="statsViewBtn" style="display:none;">📊 접속 통계</button>
                     <button class="admin-dropdown-item super-admin-only" id="adminManageBtn" style="display:none;">👑 관리자 관리</button>
+                    <button class="admin-dropdown-item super-admin-only" id="maintenanceBtn" style="display:none;">🔧 점검 모드</button>
                     <div style="border-top: 1px solid #e5e7eb; margin: 8px 0;"></div>
                     <button class="admin-dropdown-item" id="versionInfoBtn">ℹ️ 버전 정보</button>
                 </div>
@@ -1048,9 +1049,20 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.9.9';
-        const APP_BUILD_DATE = '2026-01-16 18:00';
+        const APP_VERSION = '2.0.1';
+        const APP_BUILD_DATE = '2026-01-16 18:35';
         const APP_CHANGELOG = [
+            { version: '2.0.1', date: '2026-01-16 18:35', changes: [
+                '🔐 점검 페이지에 관리자 로그인 버튼 추가',
+                '👑 최종관리자만 점검 중 로그인 가능'
+            ]},
+            { version: '2.0.0', date: '2026-01-16 18:30', changes: [
+                '🔧 점검 모드 기능 추가',
+                '⏰ 점검 시간 설정 (시작~종료)',
+                '📋 점검 사유 입력',
+                '⏳ 카운트다운 타이머',
+                '👑 최종관리자만 점검 중 접속 가능'
+            ]},
             { version: '1.9.9', date: '2026-01-16 18:00', changes: [
                 '✏️ WYSIWYG 에디터 추가 (글쓰기/수정)',
                 '🎨 폰트, 크기, 굵기, 기울임, 밑줄, 취소선',
@@ -1253,6 +1265,309 @@
             ]}
         ];
 
+        // ==================== 점검 모드 관련 ====================
+        // 점검 모드 체크 함수
+        async function checkMaintenanceMode() {
+            try {
+                // 먼저 최종관리자 세션 확인
+                const isSuperAdminSession = sessionStorage.getItem('isSuperAdmin') === 'true';
+                
+                const maintenanceDoc = await getDoc(doc(db, "config", "maintenance"));
+                if (!maintenanceDoc.exists()) return false;
+                
+                const data = maintenanceDoc.data();
+                if (!data.enabled) return false;
+                
+                const now = Date.now();
+                const startTime = data.startTime || 0;
+                const endTime = data.endTime || 0;
+                
+                // 점검 시간이 아니면 패스
+                if (now < startTime || now > endTime) return false;
+                
+                // 최종관리자는 패스
+                if (isSuperAdminSession) {
+                    console.log('최종관리자 - 점검 모드 우회');
+                    return false;
+                }
+                
+                // 점검 페이지 표시
+                showMaintenancePage(data);
+                return true;
+                
+            } catch(e) {
+                console.error('점검 모드 체크 오류:', e);
+                return false;
+            }
+        }
+        
+        // 점검 안내 페이지 표시
+        function showMaintenancePage(data) {
+            const startTime = new Date(data.startTime);
+            const endTime = new Date(data.endTime);
+            const reason = data.reason || '시스템 점검';
+            
+            const formatDate = (d) => {
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            };
+            
+            document.body.innerHTML = `
+                <div id="maintenancePage" style="min-height: 100vh; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%); display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="text-align: center; max-width: 600px; width: 100%;">
+                        <!-- 상단 아이콘 -->
+                        <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">🔧</div>
+                        
+                        <!-- 메인 타이틀 -->
+                        <h1 style="font-size: 28px; color: white; margin-bottom: 8px; font-weight: 700;">오스카2 전투력 현황판</h1>
+                        <h2 style="font-size: 42px; color: #60a5fa; margin-bottom: 30px; font-weight: 800;">
+                            서비스 점검 <span style="color: white;">중</span>입니다.
+                        </h2>
+                        
+                        <!-- 점검 안내 박스 -->
+                        <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 30px; margin-bottom: 30px; backdrop-filter: blur(10px);">
+                            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
+                                안정적인 서비스를 위해 <strong style="color: white;">서비스 점검</strong>을 실시합니다.
+                            </p>
+                            
+                            <!-- 점검 시간 -->
+                            <div style="background: rgba(59, 130, 246, 0.2); border: 2px solid #3b82f6; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                                <p style="color: #93c5fd; font-size: 13px; margin-bottom: 8px;">⏰ 점검 시간</p>
+                                <p style="color: white; font-size: 18px; font-weight: 700;">
+                                    ${formatDate(startTime)} ~ ${formatDate(endTime)}
+                                </p>
+                            </div>
+                            
+                            <!-- 점검 사유 -->
+                            <div style="background: rgba(251, 191, 36, 0.1); border: 2px solid #fbbf24; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                                <p style="color: #fcd34d; font-size: 13px; margin-bottom: 8px;">📋 점검 내용</p>
+                                <p style="color: white; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">${reason}</p>
+                            </div>
+                            
+                            <!-- 카운트다운 -->
+                            <div style="background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981; border-radius: 12px; padding: 20px;">
+                                <p style="color: #6ee7b7; font-size: 13px; margin-bottom: 12px;">⏳ 점검 종료까지 남은 시간</p>
+                                <div id="countdown" style="font-size: 36px; font-weight: 800; color: white; font-family: monospace; letter-spacing: 2px;">
+                                    --:--:--
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 하단 안내 -->
+                        <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">
+                            점검이 끝나면 자동으로 새로고침됩니다.<br>
+                            불편을 드려 죄송합니다. 🙇‍♂️
+                        </p>
+                        
+                        <!-- 관리자 로그인 버튼 -->
+                        <button onclick="showMaintenanceLogin()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;">
+                            🔐 관리자 로그인
+                        </button>
+                    </div>
+                    
+                    <!-- 관리자 로그인 모달 -->
+                    <div id="maintenanceLoginModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
+                        <div style="background: white; border-radius: 16px; padding: 28px; max-width: 360px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+                            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 20px; text-align: center;">🔐 최종관리자 로그인</h3>
+                            <div style="margin-bottom: 16px;">
+                                <input type="text" id="maintenanceAdminId" placeholder="아이디" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <input type="password" id="maintenanceAdminPw" placeholder="비밀번호" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="closeMaintenanceLogin()" style="flex: 1; padding: 12px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">취소</button>
+                                <button onclick="tryMaintenanceLogin()" style="flex: 1; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">로그인</button>
+                            </div>
+                            <p id="maintenanceLoginError" style="color: #ef4444; font-size: 12px; text-align: center; margin-top: 12px; display: none;"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <style>
+                    @keyframes bounce {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-15px); }
+                    }
+                </style>
+            `;
+            
+            // 카운트다운 시작
+            const endTimeMs = data.endTime;
+            const countdownEl = document.getElementById('countdown');
+            
+            const updateCountdown = () => {
+                const now = Date.now();
+                const remaining = endTimeMs - now;
+                
+                if (remaining <= 0) {
+                    countdownEl.textContent = '점검 완료!';
+                    setTimeout(() => location.reload(), 2000);
+                    return;
+                }
+                
+                const hours = Math.floor(remaining / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                
+                countdownEl.textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+            };
+            
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+            
+            // 점검 페이지 로그인 함수들
+            window.showMaintenanceLogin = function() {
+                document.getElementById('maintenanceLoginModal').style.display = 'flex';
+            };
+            
+            window.closeMaintenanceLogin = function() {
+                document.getElementById('maintenanceLoginModal').style.display = 'none';
+                document.getElementById('maintenanceAdminId').value = '';
+                document.getElementById('maintenanceAdminPw').value = '';
+                document.getElementById('maintenanceLoginError').style.display = 'none';
+            };
+            
+            window.tryMaintenanceLogin = async function() {
+                const id = document.getElementById('maintenanceAdminId').value.trim();
+                const pw = document.getElementById('maintenanceAdminPw').value;
+                const errorEl = document.getElementById('maintenanceLoginError');
+                
+                if (!id || !pw) {
+                    errorEl.textContent = '아이디와 비밀번호를 입력해주세요.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                
+                // 최종관리자 확인
+                const _d = (s) => atob(s);
+                const superAdminId = _d('dGpkYWxzOTMyOA==');
+                const superAdminPw = _d('dG5hbHM5MzI4QEA=');
+                
+                if (id === superAdminId && pw === superAdminPw) {
+                    // 최종관리자 로그인 성공
+                    sessionStorage.setItem('isAdmin', 'true');
+                    sessionStorage.setItem('isSuperAdmin', 'true');
+                    sessionStorage.setItem('adminLastActivity', Date.now().toString());
+                    location.reload();
+                } else {
+                    errorEl.textContent = '최종관리자만 점검 중 로그인할 수 있습니다.';
+                    errorEl.style.display = 'block';
+                }
+            };
+            
+            // Enter 키 로그인
+            document.getElementById('maintenanceAdminPw').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') tryMaintenanceLogin();
+            });
+        }
+        
+        // 점검 모드 설정 모달 열기 (최종관리자용)
+        window.openMaintenanceModal = async function() {
+            if (!isSuperAdmin) {
+                showAlert('최종 관리자만 접근할 수 있습니다', 'error');
+                return;
+            }
+            
+            // 현재 설정 로드
+            let currentData = { enabled: false, startTime: 0, endTime: 0, reason: '' };
+            try {
+                const maintenanceDoc = await getDoc(doc(db, "config", "maintenance"));
+                if (maintenanceDoc.exists()) {
+                    currentData = maintenanceDoc.data();
+                }
+            } catch(e) { console.error(e); }
+            
+            const now = new Date();
+            const defaultStart = currentData.startTime ? new Date(currentData.startTime) : now;
+            const defaultEnd = currentData.endTime ? new Date(currentData.endTime) : new Date(now.getTime() + 2 * 60 * 60 * 1000);
+            
+            const formatDateTimeLocal = (d) => {
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            };
+            
+            const html = `
+                <div style="text-align: left;">
+                    <div style="margin-bottom: 20px; padding: 16px; background: ${currentData.enabled ? '#fef2f2' : '#f0fdf4'}; border-radius: 12px; border: 2px solid ${currentData.enabled ? '#fecaca' : '#bbf7d0'};">
+                        <p style="font-size: 14px; font-weight: 600; color: ${currentData.enabled ? '#dc2626' : '#16a34a'};">
+                            ${currentData.enabled ? '🔴 현재 점검 모드 활성화됨' : '🟢 현재 정상 운영 중'}
+                        </p>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">점검 시작 시간</label>
+                        <input type="datetime-local" id="maintenanceStart" value="${formatDateTimeLocal(defaultStart)}" 
+                            style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">점검 종료 시간</label>
+                        <input type="datetime-local" id="maintenanceEnd" value="${formatDateTimeLocal(defaultEnd)}" 
+                            style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">점검 사유</label>
+                        <textarea id="maintenanceReason" placeholder="점검 사유를 입력하세요..." 
+                            style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; min-height: 100px; resize: vertical;">${currentData.reason || ''}</textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="saveMaintenanceMode(true)" style="flex: 1; padding: 14px; background: #dc2626; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;">
+                            🔴 점검 모드 활성화
+                        </button>
+                        <button onclick="saveMaintenanceMode(false)" style="flex: 1; padding: 14px; background: #16a34a; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;">
+                            🟢 점검 해제
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            openSmallModal('🔧 점검 모드 설정', '', html);
+            document.getElementById('modalContent').style.maxWidth = '480px';
+            document.getElementById('modalFooter').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">닫기</button>
+            `;
+        };
+        
+        // 점검 모드 저장
+        window.saveMaintenanceMode = async function(enabled) {
+            const startInput = document.getElementById('maintenanceStart').value;
+            const endInput = document.getElementById('maintenanceEnd').value;
+            const reason = document.getElementById('maintenanceReason').value.trim();
+            
+            if (enabled && (!startInput || !endInput)) {
+                showAlert('점검 시간을 입력해주세요.', 'error');
+                return;
+            }
+            
+            const startTime = new Date(startInput).getTime();
+            const endTime = new Date(endInput).getTime();
+            
+            if (enabled && startTime >= endTime) {
+                showAlert('종료 시간은 시작 시간보다 커야 합니다.', 'error');
+                return;
+            }
+            
+            try {
+                await setDoc(doc(db, "config", "maintenance"), {
+                    enabled: enabled,
+                    startTime: startTime,
+                    endTime: endTime,
+                    reason: reason,
+                    updatedAt: Date.now(),
+                    updatedBy: loggedInAdminId || '최종관리자'
+                });
+                
+                closeModal();
+                showAlert(enabled ? '점검 모드가 활성화되었습니다.' : '점검 모드가 해제되었습니다.', 'success');
+                
+            } catch(e) {
+                console.error('점검 모드 저장 오류:', e);
+                showAlert('저장 중 오류가 발생했습니다.', 'error');
+            }
+        };
+        // ==================== 점검 모드 관련 끝 ====================
+
        
         let allGuildData = [];
         let guildList = []; 
@@ -1378,6 +1693,12 @@
 
        
         async function init() {
+            // 점검 모드 체크 (최종관리자 제외)
+            const maintenanceCheck = await checkMaintenanceMode();
+            if (maintenanceCheck) {
+                return; // 점검 중이면 여기서 멈춤
+            }
+            
             // 공유 링크 체크
             const urlParams = new URLSearchParams(window.location.search);
             const shareId = urlParams.get('share');
@@ -9134,6 +9455,11 @@
                 console.error('관리자 관리 오류:', e);
                 document.getElementById('modalBody').innerHTML = `<p style="color:#ef4444; text-align:center; padding:40px;">관리자 목록을 불러오는 중 오류가 발생했습니다.<br><br><span style="font-size:12px; color:#6b7280;">Firebase 규칙에 admins 컬렉션 권한을 추가해주세요.</span></p><div style="text-align:right;margin-top:20px"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>`;
             }
+        });
+        
+        // 점검 모드 버튼 이벤트
+        document.getElementById('maintenanceBtn').addEventListener('click', () => {
+            openMaintenanceModal();
         });
         
         // 최종관리자 별명 저장
