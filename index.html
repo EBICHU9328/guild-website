@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.9.7">
-    <meta name="build-date" content="2026-01-16 17:00">
+    <meta name="version" content="1.9.8">
+    <meta name="build-date" content="2026-01-16 17:30">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1048,9 +1048,15 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.9.7';
-        const APP_BUILD_DATE = '2026-01-16 17:00';
+        const APP_VERSION = '1.9.8';
+        const APP_BUILD_DATE = '2026-01-16 17:30';
         const APP_CHANGELOG = [
+            { version: '1.9.8', date: '2026-01-16 17:30', changes: [
+                '📌 공지사항 박스가 번호+분류 칸 전체 차지',
+                '📦 분류 박스 크기 축소',
+                '🎨 제목/내용 색상 지정 기능',
+                '🔧 게시글 상세 오류 메시지 개선'
+            ]},
             { version: '1.9.7', date: '2026-01-16 17:00', changes: [
                 '📊 게시판 테이블 헤더 추가 (번호/분류/제목/작성자/작성일/조회)',
                 '📌 공지사항 분류 표시 개선',
@@ -1748,7 +1754,7 @@
                     /* 테이블 헤더 */
                     .post-header-row { display: flex; align-items: center; padding: 12px 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
                     .post-h-num { width: 50px; text-align: center; flex-shrink: 0; }
-                    .post-h-cat { width: 90px; text-align: center; flex-shrink: 0; }
+                    .post-h-cat { width: 67px; text-align: center; flex-shrink: 0; }
                     .post-h-title { flex: 1; }
                     .post-h-author { width: 80px; text-align: center; flex-shrink: 0; }
                     .post-h-date { width: 80px; text-align: center; flex-shrink: 0; }
@@ -1760,11 +1766,11 @@
                     .post-item:last-child { border-bottom: none; }
                     .post-item.pinned { background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%); }
                     .post-item.pinned:hover { background: linear-gradient(90deg, #fde68a 0%, #fbbf24 100%); transform: translateX(4px); box-shadow: inset 4px 0 0 #f59e0b; }
-                    .post-item.pinned .post-num { visibility: hidden; }
                     
                     .post-num { width: 50px; font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
-                    .post-cat { width: 90px; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; overflow: hidden; }
-                    .post-cat.pinned { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+                    .post-cat { width: 55px; font-size: 10px; font-weight: 700; padding: 3px 4px; border-radius: 4px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; overflow: hidden; margin-right: 12px; }
+                    .post-cat-wide { width: 120px; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 8px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; margin-right: 12px; }
+                    .post-cat-wide.pinned { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
                     
                     .post-info { flex: 1; min-width: 0; }
                     .post-title-row { display: flex; align-items: center; gap: 8px; }
@@ -1830,10 +1836,17 @@
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">제목</label>
-                            <input type="text" id="postTitleInput" class="board-input" placeholder="제목을 입력하세요" maxlength="100">
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" id="postTitleInput" class="board-input" placeholder="제목을 입력하세요" maxlength="100" style="flex: 1;">
+                                <input type="color" id="postTitleColor" value="#1e293b" style="width: 40px; height: 40px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer;" title="제목 색상">
+                            </div>
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">내용</label>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="color" id="postContentColor" value="#334155" style="width: 36px; height: 36px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer;" title="내용 색상">
+                                <span style="font-size: 11px; color: #94a3b8; display: flex; align-items: center;">← 글자 색상 선택</span>
+                            </div>
                             <textarea id="postContentInput" class="board-input board-textarea" placeholder="내용을 입력하세요"></textarea>
                         </div>
                         <div style="margin-bottom: 20px;">
@@ -2018,16 +2031,20 @@
                     // 글 번호 (공지사항은 번호 숨김, 하지만 내부적으로는 있음)
                     const postNumber = postNumbers[post.id];
                     
+                    // 공지사항이면 번호+분류를 하나로 합침
+                    const numCatHtml = post.isPinned 
+                        ? '<span class="post-cat-wide pinned">📌 공지사항</span>'
+                        : `<span class="post-num">${postNumber}</span><span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`;
+                    
+                    // 제목 색상
+                    const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
+                    
                     html += `
                         <div class="post-item${pinnedClass}" onclick="location.href='?page=board&post=${post.id}'" style="animation-delay: ${idx * 0.03}s;">
-                            <span class="post-num">${post.isPinned ? '' : postNumber}</span>
-                            ${post.isPinned 
-                                ? '<span class="post-cat pinned">📌 공지사항</span>' 
-                                : `<span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`
-                            }
+                            ${numCatHtml}
                             <div class="post-info">
                                 <div class="post-title-row">
-                                    <span class="post-title">${post.title}</span>
+                                    <span class="post-title" style="${titleStyle}">${post.title}</span>
                                     ${isNew && !post.isPinned ? '<span class="post-new">NEW</span>' : ''}
                                     ${post.link ? '<span class="post-link-icon">🔗</span>' : ''}
                                     ${post.image ? '<span class="post-link-icon">🖼️</span>' : ''}
@@ -2129,6 +2146,47 @@
                 // 공지사항 배지
                 const pinnedBadge = post.isPinned ? `<span class="pinned-badge">📌 공지사항</span>` : '';
                 
+                // 색상
+                const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
+                const contentStyle = post.contentColor ? `color: ${post.contentColor};` : '';
+                
+                // 댓글 렌더링 함수 (먼저 정의)
+                const renderCommentsHtml = function(comments, pid) {
+                    if (!comments || comments.length === 0) {
+                        return '<p class="no-comments">등록된 댓글이 없습니다.</p>';
+                    }
+                    return comments.map((c, idx) => {
+                        const isSuperAdminComment = c.author.startsWith('최종관리자');
+                        const isAdminComment = c.author.includes('관리자');
+                        const itemClass = isSuperAdminComment ? 'super-admin' : (isAdminComment ? 'admin' : '');
+                        
+                        let authorHtml = '';
+                        if (isSuperAdminComment) {
+                            authorHtml = `<span class="rainbow-star">⭐</span><span class="super-badge">${c.author}</span>`;
+                        } else if (isAdminComment) {
+                            authorHtml = `<span class="rainbow-star">✨</span><span class="admin-badge">${c.author}</span>`;
+                        } else {
+                            authorHtml = `👤 ${c.author}`;
+                        }
+                        
+                        return `
+                            <div class="comment-item ${itemClass}" data-idx="${idx}">
+                                <div class="comment-header">
+                                    <span class="comment-author">${authorHtml}</span>
+                                    <span class="comment-date">${formatDateTime(c.createdAt)}</span>
+                                    ${isSuperAdmin ? `<button onclick="deleteComment('${pid}', ${idx})" class="comment-delete-btn">삭제</button>` : ''}
+                                </div>
+                                <div class="comment-content">${(c.content || '').replace(/\n/g, '<br>')}</div>
+                            </div>
+                        `;
+                    }).join('');
+                };
+                
+                // 전역에도 등록 (submitComment, deleteComment에서 사용)
+                window.renderComments = renderCommentsHtml;
+                
+                const commentsHtml = renderCommentsHtml(post.comments || [], postId);
+                
                 document.title = `${post.title} - 오스카2 게시판`;
                 document.body.innerHTML = `
                     <div class="board-wrap">
@@ -2140,7 +2198,7 @@
                             <article class="post-detail">
                                 <header class="post-header">
                                     ${pinnedBadge}
-                                    <h1 class="post-detail-title">${post.title}</h1>
+                                    <h1 class="post-detail-title" style="${titleStyle}">${post.title}</h1>
                                     <div class="post-detail-meta">
                                         <span>${post.author || '관리자'}</span>
                                         <span>•</span>
@@ -2151,7 +2209,7 @@
                                     </div>
                                 </header>
                                 
-                                <div class="post-content">
+                                <div class="post-content" style="${contentStyle}">
                                     ${imageHtml}
                                     ${contentHtml}
                                     ${linkButtonHtml}
@@ -2179,7 +2237,7 @@
                                 ` : ''}
                                 
                                 <div id="commentList" class="comment-list">
-                                    ${renderComments(post.comments || [], postId)}
+                                    ${commentsHtml}
                                 </div>
                             </section>
                         </div>
@@ -2250,41 +2308,6 @@
                     </style>
                 `;
                 
-                // 댓글 렌더링 함수
-                window.renderComments = function(comments, postId) {
-                    if (!comments || comments.length === 0) {
-                        return '<p class="no-comments">등록된 댓글이 없습니다.</p>';
-                    }
-                    return comments.map((c, idx) => {
-                        const isSuperAdminComment = c.author.startsWith('최종관리자');
-                        const isAdminComment = c.author.includes('관리자');
-                        const itemClass = isSuperAdminComment ? 'super-admin' : (isAdminComment ? 'admin' : '');
-                        
-                        let authorHtml = '';
-                        if (isSuperAdminComment) {
-                            authorHtml = `<span class="rainbow-star">⭐</span><span class="super-badge">${c.author}</span>`;
-                        } else if (isAdminComment) {
-                            authorHtml = `<span class="rainbow-star">✨</span><span class="admin-badge">${c.author}</span>`;
-                        } else {
-                            authorHtml = `👤 ${c.author}`;
-                        }
-                        
-                        return `
-                            <div class="comment-item ${itemClass}" data-idx="${idx}">
-                                <div class="comment-header">
-                                    <span class="comment-author">${authorHtml}</span>
-                                    <span class="comment-date">${formatDateTime(c.createdAt)}</span>
-                                    ${isSuperAdmin ? `<button onclick="deleteComment('${postId}', ${idx})" class="comment-delete-btn">삭제</button>` : ''}
-                                </div>
-                                <div class="comment-content">${(c.content || '').replace(/\n/g, '<br>')}</div>
-                            </div>
-                        `;
-                    }).join('');
-                };
-                
-                // 초기 렌더링
-                document.getElementById('commentList').innerHTML = renderComments(post.comments || [], postId);
-                
             } catch(e) {
                 console.error('게시글 상세 오류:', e);
                 document.body.innerHTML = `
@@ -2292,6 +2315,7 @@
                         <div style="text-align: center; padding: 60px;">
                             <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.5;">⚠️</div>
                             <h1 style="font-size: 20px; color: #1e293b; margin-bottom: 8px; font-weight: 600;">오류가 발생했습니다</h1>
+                            <p style="color: #ef4444; font-size: 12px; margin-bottom: 16px; max-width: 400px; word-break: break-all;">${e.message || e.toString()}</p>
                             <a href="?page=board" style="color: #3b82f6; font-size: 14px;">← 목록으로 돌아가기</a>
                         </div>
                     </div>
@@ -2310,6 +2334,8 @@
             document.getElementById('postLinkTextInput').value = '';
             document.getElementById('postPinnedInput').checked = false;
             document.getElementById('postImageInput').value = '';
+            document.getElementById('postTitleColor').value = '#1e293b';
+            document.getElementById('postContentColor').value = '#334155';
             clearImage();
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
@@ -2606,6 +2632,8 @@
             const linkText = document.getElementById('postLinkTextInput').value.trim();
             const isPinned = document.getElementById('postPinnedInput').checked;
             const imageInput = document.getElementById('postImageInput');
+            const titleColor = document.getElementById('postTitleColor').value;
+            const contentColor = document.getElementById('postContentColor').value;
             
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
@@ -2621,7 +2649,9 @@
                     author: '에비츄',
                     views: 0,
                     isPinned: isPinned,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    titleColor: titleColor !== '#1e293b' ? titleColor : null,
+                    contentColor: contentColor !== '#334155' ? contentColor : null
                 };
                 
                 // 링크가 있으면 추가
