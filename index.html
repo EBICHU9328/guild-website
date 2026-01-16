@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.9.4">
-    <meta name="build-date" content="2026-01-16 15:30">
+    <meta name="version" content="1.9.7">
+    <meta name="build-date" content="2026-01-16 17:00">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1048,9 +1048,25 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.9.4';
-        const APP_BUILD_DATE = '2026-01-16 15:30';
+        const APP_VERSION = '1.9.7';
+        const APP_BUILD_DATE = '2026-01-16 17:00';
         const APP_CHANGELOG = [
+            { version: '1.9.7', date: '2026-01-16 17:00', changes: [
+                '📊 게시판 테이블 헤더 추가 (번호/분류/제목/작성자/작성일/조회)',
+                '📌 공지사항 분류 표시 개선',
+                '🖼️ 게시글 이미지 첨부 기능',
+                '👑 최종관리자 별명 설정 기능'
+            ]},
+            { version: '1.9.6', date: '2026-01-16 16:30', changes: [
+                '💬 댓글 등록/삭제 실시간 반영',
+                '⭐ 관리자 댓글 무지개 별 이펙트',
+                '🎨 최종관리자/관리자 댓글 배경 강조'
+            ]},
+            { version: '1.9.5', date: '2026-01-16 16:00', changes: [
+                '🔧 수정완료 후 팝업 정상 표시',
+                '⏰ 날짜 표시 개선 (XX분 전, XX시간 전)',
+                '✨ 게시글 hover 효과 강화'
+            ]},
             { version: '1.9.4', date: '2026-01-16 15:30', changes: [
                 '🔧 게시글 수정 모달 버그 수정',
                 '🔗 링크 공유 메타태그 추가 (오스카2 연합 게시판)'
@@ -1729,25 +1745,36 @@
                     .loading { display: flex; justify-content: center; align-items: center; height: 300px; }
                     .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
                     
-                    .post-item { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.3s ease-out; }
-                    .post-item:hover { background: #fafbfc; }
+                    /* 테이블 헤더 */
+                    .post-header-row { display: flex; align-items: center; padding: 12px 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+                    .post-h-num { width: 50px; text-align: center; flex-shrink: 0; }
+                    .post-h-cat { width: 90px; text-align: center; flex-shrink: 0; }
+                    .post-h-title { flex: 1; }
+                    .post-h-author { width: 80px; text-align: center; flex-shrink: 0; }
+                    .post-h-date { width: 80px; text-align: center; flex-shrink: 0; }
+                    .post-h-views { width: 50px; text-align: center; flex-shrink: 0; }
+                    
+                    /* 게시글 행 */
+                    .post-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.3s ease-out; }
+                    .post-item:hover { background: #e0f2fe; transform: translateX(4px); box-shadow: inset 4px 0 0 #3b82f6; }
                     .post-item:last-child { border-bottom: none; }
                     .post-item.pinned { background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%); }
-                    .post-item.pinned:hover { background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%); }
+                    .post-item.pinned:hover { background: linear-gradient(90deg, #fde68a 0%, #fbbf24 100%); transform: translateX(4px); box-shadow: inset 4px 0 0 #f59e0b; }
+                    .post-item.pinned .post-num { visibility: hidden; }
                     
-                    .post-num { width: 36px; font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
-                    .post-cat { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-right: 12px; flex-shrink: 0; }
-                    .post-cat.pinned { background: #fbbf24; color: white; }
+                    .post-num { width: 50px; font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
+                    .post-cat { width: 90px; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; overflow: hidden; }
+                    .post-cat.pinned { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
                     
                     .post-info { flex: 1; min-width: 0; }
-                    .post-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-                    .post-title { font-size: 15px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                    .post-new { font-size: 10px; font-weight: 700; color: #3b82f6; background: #dbeafe; padding: 2px 6px; border-radius: 4px; }
-                    .post-link-icon { font-size: 12px; color: #94a3b8; }
-                    .post-meta { font-size: 12px; color: #94a3b8; }
+                    .post-title-row { display: flex; align-items: center; gap: 8px; }
+                    .post-title { font-size: 14px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .post-new { font-size: 10px; font-weight: 700; color: #3b82f6; background: #dbeafe; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+                    .post-link-icon { font-size: 12px; color: #94a3b8; flex-shrink: 0; }
                     
-                    .post-stats { display: flex; gap: 16px; font-size: 12px; color: #94a3b8; flex-shrink: 0; margin-left: 16px; }
-                    .post-stats span { display: flex; align-items: center; gap: 4px; }
+                    .post-author { width: 80px; font-size: 12px; color: #64748b; text-align: center; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .post-date { width: 80px; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
+                    .post-views { width: 50px; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
                     
                     .empty-state { text-align: center; padding: 60px 20px; }
                     .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
@@ -1774,15 +1801,20 @@
                     .board-select { padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: white; width: 100%; transition: border-color 0.15s; }
                     .board-select:focus { outline: none; border-color: #0f172a; }
                     
-                    @media (max-width: 640px) {
+                    @media (max-width: 768px) {
                         .board-container { padding: 16px 12px; }
                         .board-header { flex-direction: column; align-items: flex-start; gap: 16px; }
                         .header-right { width: 100%; }
                         .header-btn { flex: 1; text-align: center; }
-                        .post-item { padding: 14px 16px; }
-                        .post-num { width: 28px; font-size: 12px; }
-                        .post-stats { display: none; }
-                        .post-meta { display: flex; gap: 8px; }
+                        .post-header-row { display: none; }
+                        .post-item { flex-wrap: wrap; padding: 12px 16px; }
+                        .post-num { width: 30px; font-size: 11px; }
+                        .post-cat { width: auto; font-size: 10px; padding: 3px 6px; }
+                        .post-info { width: calc(100% - 130px); order: 1; }
+                        .post-author { display: none; }
+                        .post-date { width: auto; font-size: 11px; order: 2; margin-left: auto; }
+                        .post-views { width: auto; font-size: 11px; order: 3; }
+                        .post-views::before { content: '👁 '; }
                     }
                 </style>
                 
@@ -1805,7 +1837,21 @@
                             <textarea id="postContentInput" class="board-input board-textarea" placeholder="내용을 입력하세요"></textarea>
                         </div>
                         <div style="margin-bottom: 20px;">
-                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">링크 첨부 (선택)</label>
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🖼️ 이미지 첨부 (선택)</label>
+                            <input type="file" id="postImageInput" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                            <div id="imagePreviewArea" style="border: 2px dashed #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s;" onclick="document.getElementById('postImageInput').click()">
+                                <div id="imagePreview" style="display: none; position: relative;">
+                                    <img id="previewImg" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                                    <button type="button" onclick="event.stopPropagation(); clearImage();" style="position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; background: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; font-size: 14px;">✕</button>
+                                </div>
+                                <div id="imagePlaceholder">
+                                    <div style="font-size: 32px; margin-bottom: 8px;">📷</div>
+                                    <p style="color: #94a3b8; font-size: 13px;">클릭하여 이미지 선택 (최대 2MB)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🔗 링크 첨부 (선택)</label>
                             <input type="text" id="postLinkInput" class="board-input" placeholder="https://...">
                             <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼에 표시될 텍스트" style="margin-top: 8px;">
                         </div>
@@ -1936,9 +1982,35 @@
                     postNumbers[post.id] = idx + 1;
                 });
                 
-                let html = '';
+                // 상대적 시간 표시 함수
+                function getRelativeTime(timestamp) {
+                    const now = Date.now();
+                    const diff = now - timestamp;
+                    const minutes = Math.floor(diff / (1000 * 60));
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    
+                    if (minutes < 1) return '방금 전';
+                    if (minutes < 60) return `${minutes}분 전`;
+                    if (hours < 24) return `${hours}시간 전`;
+                    if (days < 7) return `${days}일 전`;
+                    return new Date(timestamp).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+                }
+                
+                // 테이블 헤더
+                let html = `
+                    <div class="post-header-row">
+                        <span class="post-h-num">번호</span>
+                        <span class="post-h-cat">분류</span>
+                        <span class="post-h-title">제목</span>
+                        <span class="post-h-author">작성자</span>
+                        <span class="post-h-date">작성일</span>
+                        <span class="post-h-views">조회</span>
+                    </div>
+                `;
+                
                 posts.forEach((post, idx) => {
-                    const date = new Date(post.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+                    const date = getRelativeTime(post.createdAt);
                     const isNew = (Date.now() - post.createdAt) < 3 * 24 * 60 * 60 * 1000;
                     const catInfo = getCatInfo(post.category);
                     const pinnedClass = post.isPinned ? ' pinned' : '';
@@ -1950,7 +2022,7 @@
                         <div class="post-item${pinnedClass}" onclick="location.href='?page=board&post=${post.id}'" style="animation-delay: ${idx * 0.03}s;">
                             <span class="post-num">${post.isPinned ? '' : postNumber}</span>
                             ${post.isPinned 
-                                ? '<span class="post-cat pinned">📌 공지</span>' 
+                                ? '<span class="post-cat pinned">📌 공지사항</span>' 
                                 : `<span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`
                             }
                             <div class="post-info">
@@ -1958,12 +2030,12 @@
                                     <span class="post-title">${post.title}</span>
                                     ${isNew && !post.isPinned ? '<span class="post-new">NEW</span>' : ''}
                                     ${post.link ? '<span class="post-link-icon">🔗</span>' : ''}
+                                    ${post.image ? '<span class="post-link-icon">🖼️</span>' : ''}
                                 </div>
-                                <div class="post-meta">${date}</div>
                             </div>
-                            <div class="post-stats">
-                                <span>👁 ${post.views || 0}</span>
-                            </div>
+                            <span class="post-author">${post.author || '관리자'}</span>
+                            <span class="post-date">${date}</span>
+                            <span class="post-views">${post.views || 0}</span>
                         </div>
                     `;
                 });
@@ -2038,6 +2110,13 @@
                 // 내용에서 줄바꿈 처리
                 const contentHtml = (post.content || '').replace(/\n/g, '<br>');
                 
+                // 이미지
+                const imageHtml = post.image ? `
+                    <div style="margin-bottom: 24px; text-align: center;">
+                        <img src="${post.image}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    </div>
+                ` : '';
+                
                 // 링크 버튼
                 const linkButtonHtml = post.link ? `
                     <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #f1f5f9; text-align: center;">
@@ -2073,6 +2152,7 @@
                                 </header>
                                 
                                 <div class="post-content">
+                                    ${imageHtml}
                                     ${contentHtml}
                                     ${linkButtonHtml}
                                 </div>
@@ -2099,24 +2179,15 @@
                                 ` : ''}
                                 
                                 <div id="commentList" class="comment-list">
-                                    ${(post.comments || []).length === 0 
-                                        ? '<p class="no-comments">등록된 댓글이 없습니다.</p>'
-                                        : (post.comments || []).map((c, idx) => `
-                                            <div class="comment-item">
-                                                <div class="comment-header">
-                                                    <span class="comment-author">👤 ${c.author}</span>
-                                                    <span class="comment-date">${formatDateTime(c.createdAt)}</span>
-                                                    ${isSuperAdmin ? `<button onclick="deleteComment('${postId}', ${idx})" class="comment-delete-btn">삭제</button>` : ''}
-                                                </div>
-                                                <div class="comment-content">${(c.content || '').replace(/\n/g, '<br>')}</div>
-                                            </div>
-                                        `).join('')
-                                    }
+                                    ${renderComments(post.comments || [], postId)}
                                 </div>
                             </section>
                         </div>
                     </div>
                     <style>
+                        @keyframes rainbow { 0%{color:#ff0000;} 14%{color:#ff8000;} 28%{color:#ffff00;} 42%{color:#00ff00;} 57%{color:#0080ff;} 71%{color:#8000ff;} 85%{color:#ff0080;} 100%{color:#ff0000;} }
+                        @keyframes sparkle { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.7;transform:scale(1.2);} }
+                        
                         .board-wrap { min-height: 100vh; background: #f8fafc; }
                         .board-container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
                         
@@ -2157,10 +2228,15 @@
                         
                         .comment-list { }
                         .no-comments { color: #94a3b8; font-size: 14px; text-align: center; padding: 20px; }
-                        .comment-item { padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
+                        .comment-item { padding: 16px 0; border-bottom: 1px solid #f1f5f9; animation: fadeIn 0.3s ease-out; }
                         .comment-item:last-child { border-bottom: none; }
-                        .comment-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-                        .comment-author { font-size: 13px; font-weight: 600; color: #1e293b; }
+                        .comment-item.admin { background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%); margin: 8px -16px; padding: 16px; border-radius: 12px; border: 2px solid #fde68a; }
+                        .comment-item.super-admin { background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); margin: 8px -16px; padding: 16px; border-radius: 12px; border: 2px solid #f9a8d4; }
+                        .comment-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+                        .comment-author { font-size: 13px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+                        .comment-author .rainbow-star { animation: rainbow 2s linear infinite, sparkle 1s ease-in-out infinite; font-size: 16px; }
+                        .comment-author .admin-badge { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+                        .comment-author .super-badge { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
                         .comment-date { font-size: 12px; color: #94a3b8; }
                         .comment-delete-btn { margin-left: auto; padding: 4px 10px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
                         .comment-delete-btn:hover { background: #fecaca; }
@@ -2173,6 +2249,41 @@
                         }
                     </style>
                 `;
+                
+                // 댓글 렌더링 함수
+                window.renderComments = function(comments, postId) {
+                    if (!comments || comments.length === 0) {
+                        return '<p class="no-comments">등록된 댓글이 없습니다.</p>';
+                    }
+                    return comments.map((c, idx) => {
+                        const isSuperAdminComment = c.author.startsWith('최종관리자');
+                        const isAdminComment = c.author.includes('관리자');
+                        const itemClass = isSuperAdminComment ? 'super-admin' : (isAdminComment ? 'admin' : '');
+                        
+                        let authorHtml = '';
+                        if (isSuperAdminComment) {
+                            authorHtml = `<span class="rainbow-star">⭐</span><span class="super-badge">${c.author}</span>`;
+                        } else if (isAdminComment) {
+                            authorHtml = `<span class="rainbow-star">✨</span><span class="admin-badge">${c.author}</span>`;
+                        } else {
+                            authorHtml = `👤 ${c.author}`;
+                        }
+                        
+                        return `
+                            <div class="comment-item ${itemClass}" data-idx="${idx}">
+                                <div class="comment-header">
+                                    <span class="comment-author">${authorHtml}</span>
+                                    <span class="comment-date">${formatDateTime(c.createdAt)}</span>
+                                    ${isSuperAdmin ? `<button onclick="deleteComment('${postId}', ${idx})" class="comment-delete-btn">삭제</button>` : ''}
+                                </div>
+                                <div class="comment-content">${(c.content || '').replace(/\n/g, '<br>')}</div>
+                            </div>
+                        `;
+                    }).join('');
+                };
+                
+                // 초기 렌더링
+                document.getElementById('commentList').innerHTML = renderComments(post.comments || [], postId);
                 
             } catch(e) {
                 console.error('게시글 상세 오류:', e);
@@ -2198,8 +2309,42 @@
             document.getElementById('postLinkInput').value = '';
             document.getElementById('postLinkTextInput').value = '';
             document.getElementById('postPinnedInput').checked = false;
+            document.getElementById('postImageInput').value = '';
+            clearImage();
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
+        };
+        
+        // 이미지 미리보기
+        window.previewImage = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                showBoardAlert('이미지 크기는 2MB 이하로 해주세요.', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('imagePlaceholder').style.display = 'none';
+                document.getElementById('imagePreviewArea').style.borderStyle = 'solid';
+                document.getElementById('imagePreviewArea').style.borderColor = '#3b82f6';
+            };
+            reader.readAsDataURL(file);
+        };
+        
+        // 이미지 제거
+        window.clearImage = function() {
+            document.getElementById('postImageInput').value = '';
+            document.getElementById('previewImg').src = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imagePlaceholder').style.display = 'block';
+            document.getElementById('imagePreviewArea').style.borderStyle = 'dashed';
+            document.getElementById('imagePreviewArea').style.borderColor = '#e2e8f0';
         };
         
         // 게시글 수정
@@ -2320,6 +2465,10 @@
                 
                 await updateDoc(doc(db, "posts", postId), updateData);
                 
+                // 모달 먼저 닫기
+                const modal = document.getElementById('editModalOverlay');
+                if (modal) modal.remove();
+                
                 showBoardAlert('수정되었습니다!', 'success', () => {
                     location.reload();
                 });
@@ -2371,7 +2520,14 @@
                 // 관리자 별명 가져오기
                 let authorName = '관리자';
                 if (isSuperAdmin) {
-                    authorName = '최종관리자';
+                    try {
+                        const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
+                        if (superAdminDoc.exists() && superAdminDoc.data().nickname) {
+                            authorName = `최종관리자(${superAdminDoc.data().nickname})`;
+                        } else {
+                            authorName = '최종관리자';
+                        }
+                    } catch(e) { authorName = '최종관리자'; }
                 } else if (loggedInAdminId) {
                     try {
                         const adminDoc = await getDoc(doc(db, "admins", loggedInAdminId));
@@ -2382,18 +2538,23 @@
                 }
                 
                 const comments = postDoc.data().comments || [];
-                comments.push({
+                const newComment = {
                     content: content,
                     author: authorName,
                     createdAt: Date.now()
-                });
+                };
+                comments.push(newComment);
                 
                 await updateDoc(postRef, { comments: comments });
                 
+                // 입력창 비우기
                 document.getElementById('commentInput').value = '';
-                showBoardAlert('댓글이 등록되었습니다!', 'success', () => {
-                    location.reload();
-                });
+                
+                // 댓글 목록 즉시 갱신
+                document.getElementById('commentList').innerHTML = renderComments(comments, postId);
+                document.getElementById('commentCount').textContent = comments.length;
+                
+                showBoardAlert('댓글이 등록되었습니다!', 'success');
                 
             } catch(e) {
                 console.error('댓글 등록 오류:', e);
@@ -2419,9 +2580,11 @@
                 
                 await updateDoc(postRef, { comments: comments });
                 
-                showBoardAlert('댓글이 삭제되었습니다!', 'success', () => {
-                    location.reload();
-                });
+                // 댓글 목록 즉시 갱신
+                document.getElementById('commentList').innerHTML = renderComments(comments, postId);
+                document.getElementById('commentCount').textContent = comments.length;
+                
+                showBoardAlert('댓글이 삭제되었습니다!', 'success');
                 
             } catch(e) {
                 console.error('댓글 삭제 오류:', e);
@@ -2442,6 +2605,7 @@
             const link = document.getElementById('postLinkInput').value.trim();
             const linkText = document.getElementById('postLinkTextInput').value.trim();
             const isPinned = document.getElementById('postPinnedInput').checked;
+            const imageInput = document.getElementById('postImageInput');
             
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
@@ -2464,6 +2628,17 @@
                 if (link) {
                     postData.link = link;
                     postData.linkText = linkText || '바로가기';
+                }
+                
+                // 이미지가 있으면 Base64로 저장
+                if (imageInput.files[0]) {
+                    const file = imageInput.files[0];
+                    const base64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+                    postData.image = base64;
                 }
                 
                 await setDoc(doc(db, "posts", postId), postData);
@@ -8776,10 +8951,23 @@
                     });
                     adminListHtml += '</tbody></table></div>';
                 }
+                
+                // 최종관리자 별명 로드
+                let superAdminNickname = '';
+                try {
+                    const superAdminDoc = await getDoc(doc(db, "config", "superAdmin"));
+                    if (superAdminDoc.exists()) {
+                        superAdminNickname = superAdminDoc.data().nickname || '';
+                    }
+                } catch(e) { }
 
             const html = `
                 <div style="margin-bottom:20px; padding:15px; background:#f0fdf4; border-radius:8px; border-left:4px solid #22c55e;">
-                    <p style="font-size:13px; color:#166534;"><strong>👑 최종 관리자:</strong> tjdals9328 (변경 불가)</p>
+                    <p style="font-size:13px; color:#166534; margin-bottom:10px;"><strong>👑 최종 관리자:</strong> tjdals9328</p>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="superAdminNickname" class="form-input" value="${superAdminNickname}" placeholder="별명 입력" style="flex:1; max-width:200px; padding:8px 12px;">
+                        <button onclick="window.saveSuperAdminNickname()" style="padding:8px 16px; background:#22c55e; color:white; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">별명 저장</button>
+                    </div>
                 </div>
                 
                 <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; color:#374151;">📋 일반 관리자 목록</h4>
@@ -8805,6 +8993,18 @@
                 document.getElementById('modalBody').innerHTML = `<p style="color:#ef4444; text-align:center; padding:40px;">관리자 목록을 불러오는 중 오류가 발생했습니다.<br><br><span style="font-size:12px; color:#6b7280;">Firebase 규칙에 admins 컬렉션 권한을 추가해주세요.</span></p><div style="text-align:right;margin-top:20px"><button class="btn btn-primary" onclick="closeModal()">닫기</button></div>`;
             }
         });
+        
+        // 최종관리자 별명 저장
+        window.saveSuperAdminNickname = async function() {
+            const nickname = document.getElementById('superAdminNickname').value.trim();
+            try {
+                await setDoc(doc(db, "config", "superAdmin"), { nickname: nickname }, { merge: true });
+                showAlert('최종관리자 별명이 저장되었습니다!', 'success');
+            } catch(e) {
+                console.error('별명 저장 오류:', e);
+                showAlert('별명 저장 중 오류가 발생했습니다.', 'error');
+            }
+        };
         
         // 관리자 별명 저장
         window.saveNickname = async function(adminId) {
