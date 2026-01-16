@@ -2405,19 +2405,6 @@
         window.execCmd = function(command, value = null) {
             document.execCommand(command, false, value);
         };
-            
-            if (start === end) {
-                showBoardAlert('볼드를 적용할 텍스트를 먼저 선택해주세요.', 'error');
-                return;
-            }
-            
-            const selectedText = textarea.value.substring(start, end);
-            const boldText = `<b>${selectedText}</b>`;
-            
-            textarea.value = textarea.value.substring(0, start) + boldText + textarea.value.substring(end);
-            textarea.focus();
-            textarea.setSelectionRange(start, start + boldText.length);
-        };
         
         // 이미지 미리보기
         window.previewImage = function(input) {
