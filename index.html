@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.2.4">
-    <meta name="build-date" content="2026-01-16 23:00">
+    <meta name="version" content="2.2.5">
+    <meta name="build-date" content="2026-01-16 23:15">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1095,9 +1095,13 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.2.4';
-        const APP_BUILD_DATE = '2026-01-16 23:00';
+        const APP_VERSION = '2.2.5';
+        const APP_BUILD_DATE = '2026-01-16 23:15';
         const APP_CHANGELOG = [
+            { version: '2.2.5', date: '2026-01-16 23:15', changes: [
+                '🔄 게시글 등록/수정 후 해당 게시글로 자동 이동',
+                '🔄 게시글 삭제 후 목록으로 자동 이동'
+            ]},
             { version: '2.2.4', date: '2026-01-16 23:00', changes: [
                 '💎 다이아 카테고리 거래 유형 선택 (판매/구매)',
                 '🏷️ 거래 유형에 따라 제목에 태그 자동 추가'
@@ -3820,13 +3824,17 @@
             
             // 다이아 거래 유형 섹션 초기화
             const firstCatId = writableCategories[0]?.id;
-            document.getElementById('diaTypeSection').style.display = firstCatId === 'dia' ? 'block' : 'none';
+            const diaSection = document.getElementById('diaTypeSection');
+            if (diaSection) {
+                diaSection.style.display = firstCatId === 'dia' ? 'block' : 'none';
+                document.querySelectorAll('#diaTypeSection label').forEach(label => {
+                    label.style.background = '#f8fafc';
+                    label.style.borderColor = '#e2e8f0';
+                    const input = label.querySelector('input');
+                    if (input) input.checked = false;
+                });
+            }
             window.selectedDiaType = null;
-            document.querySelectorAll('#diaTypeSection label').forEach(label => {
-                label.style.background = '#f8fafc';
-                label.style.borderColor = '#e2e8f0';
-                label.querySelector('input').checked = false;
-            });
             
             // 첫번째 카테고리의 기본 양식 적용
             const firstCat = writableCategories[0];
@@ -3860,18 +3868,21 @@
             
             // 다이아 카테고리일 때만 거래 유형 선택 표시
             const diaSection = document.getElementById('diaTypeSection');
-            if (categoryId === 'dia') {
-                diaSection.style.display = 'block';
-                // 선택 초기화
-                document.querySelectorAll('#diaTypeSection label').forEach(label => {
-                    label.style.background = '#f8fafc';
-                    label.style.borderColor = '#e2e8f0';
-                    label.querySelector('input').checked = false;
-                });
-                window.selectedDiaType = null;
-            } else {
-                diaSection.style.display = 'none';
-                window.selectedDiaType = null;
+            if (diaSection) {
+                if (categoryId === 'dia') {
+                    diaSection.style.display = 'block';
+                    // 선택 초기화
+                    document.querySelectorAll('#diaTypeSection label').forEach(label => {
+                        label.style.background = '#f8fafc';
+                        label.style.borderColor = '#e2e8f0';
+                        const input = label.querySelector('input');
+                        if (input) input.checked = false;
+                    });
+                    window.selectedDiaType = null;
+                } else {
+                    diaSection.style.display = 'none';
+                    window.selectedDiaType = null;
+                }
             }
         };
         
@@ -3892,7 +3903,8 @@
                 labelEl.style.borderColor = '#3b82f6';
             }
             
-            labelEl.querySelector('input').checked = true;
+            const input = labelEl.querySelector('input');
+            if (input) input.checked = true;
             window.selectedDiaType = type;
         };
         
@@ -4167,8 +4179,8 @@
                 const modal = document.getElementById('editModalOverlay');
                 if (modal) modal.remove();
                 
-                // 즉시 새로고침 (알림 없이)
-                window.location.reload(true);
+                // 해당 게시글 페이지로 이동
+                location.href = '?page=board&post=' + postId;
                 
             } catch(e) {
                 console.error('게시글 업데이트 오류:', e);
@@ -4437,10 +4449,8 @@
                 
                 closeBoardModal();
                 showBoardAlert('등록되었습니다!', 'success', () => {
-                    // 현재 선택된 카테고리로 목록 새로고침
-                    const activeTab = document.querySelector('.cat-tab.active');
-                    const currentCat = activeTab ? activeTab.dataset.category : 'all';
-                    loadBoardList(currentCat);
+                    // 등록된 게시글로 바로 이동
+                    location.href = '?page=board&post=' + postId;
                 });
                 
             } catch(e) {
