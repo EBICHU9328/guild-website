@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.0.1">
-    <meta name="build-date" content="2026-01-16 18:35">
+    <meta name="version" content="2.0.4">
+    <meta name="build-date" content="2026-01-16 19:20">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -663,6 +663,38 @@
             .guild-select-title .sparkle:nth-child(n+3) { display: none; }
         }
         
+        /* 폴더블/플립 접힌 상태 (320px 이하) */
+        @media (max-width: 320px) {
+            .top-bar { padding: 10px 8px; }
+            .top-actions { gap: 6px; }
+            .btn-user-add { padding: 6px 10px; font-size: 11px; }
+            .search-input { font-size: 13px; padding: 6px 10px; }
+            
+            .newyear-title { padding: 4px 8px; }
+            .newyear-title .title-svg { height: 22px; }
+            
+            .guild-select-container { padding: 16px 8px; }
+            .guild-select-title .newyear-box { padding: 6px 10px; }
+            .guild-select-title .select-title-svg { height: 28px; }
+            .guild-buttons { gap: 8px; }
+            .guild-btn { padding: 12px 10px; }
+            .guild-btn-name { font-size: 13px; }
+            .guild-btn-count { font-size: 11px; }
+            
+            .modal { width: 100%; margin: 2px auto; border-radius: 8px; }
+            .modal-header { padding: 12px 10px 8px; }
+            .modal-header h3 { font-size: 14px; }
+            .modal-body { padding: 10px; }
+            .modal-footer { padding: 8px 10px; }
+            
+            .common-table th, .common-table td { padding: 6px 4px; font-size: 11px; }
+            .player-name { font-size: 11px; }
+            .power-value { font-size: 11px; padding: 2px 4px; }
+            .rank-number { width: 18px; height: 18px; font-size: 9px; }
+            
+            .btn { padding: 8px 12px; font-size: 12px; }
+        }
+        
         
         @media (min-width: 768px) and (max-width: 1024px) {
             .top-bar { padding: 16px 20px; flex-direction: row; }
@@ -1049,9 +1081,25 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.0.1';
-        const APP_BUILD_DATE = '2026-01-16 18:35';
+        const APP_VERSION = '2.0.4';
+        const APP_BUILD_DATE = '2026-01-16 19:20';
         const APP_CHANGELOG = [
+            { version: '2.0.4', date: '2026-01-16 19:20', changes: [
+                '📱 게시판 모바일 반응형 전면 개선',
+                '🔧 모든 기기 크기 최적화 (폴더블/플립/태블릿)',
+                '✨ 카드형 모바일 레이아웃'
+            ]},
+            { version: '2.0.3', date: '2026-01-16 19:00', changes: [
+                '📌 카테고리별 고정 공지 기능',
+                '🎨 공지사항 스타일 깔끔하게 개선',
+                '🔴 전체 고정 / 특정 탭 고정 선택'
+            ]},
+            { version: '2.0.2', date: '2026-01-16 18:45', changes: [
+                '🎨 점검 페이지 디자인 대폭 개선',
+                '✨ 글래스모피즘 효과',
+                '🌟 파티클 애니메이션 배경',
+                '⏱️ 시/분/초 분리 카운트다운'
+            ]},
             { version: '2.0.1', date: '2026-01-16 18:35', changes: [
                 '🔐 점검 페이지에 관리자 로그인 버튼 추가',
                 '👑 최종관리자만 점검 중 로그인 가능'
@@ -1308,99 +1356,364 @@
             const reason = data.reason || '시스템 점검';
             
             const formatDate = (d) => {
-                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             };
             
             document.body.innerHTML = `
-                <div id="maintenancePage" style="min-height: 100vh; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%); display: flex; align-items: center; justify-content: center; padding: 20px;">
-                    <div style="text-align: center; max-width: 600px; width: 100%;">
-                        <!-- 상단 아이콘 -->
-                        <div style="font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite;">🔧</div>
+                <div id="maintenancePage">
+                    <!-- 배경 파티클 -->
+                    <div class="particles">
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                    </div>
+                    
+                    <div class="maintenance-content">
+                        <!-- 로고/아이콘 -->
+                        <div class="logo-wrap">
+                            <div class="logo-glow"></div>
+                            <div class="logo-icon">🔧</div>
+                        </div>
                         
-                        <!-- 메인 타이틀 -->
-                        <h1 style="font-size: 28px; color: white; margin-bottom: 8px; font-weight: 700;">오스카2 전투력 현황판</h1>
-                        <h2 style="font-size: 42px; color: #60a5fa; margin-bottom: 30px; font-weight: 800;">
-                            서비스 점검 <span style="color: white;">중</span>입니다.
+                        <!-- 타이틀 -->
+                        <h1 class="main-title">오스카2 전투력 현황판</h1>
+                        <h2 class="sub-title">
+                            <span class="gradient-text">서비스 점검</span> 중입니다
                         </h2>
                         
-                        <!-- 점검 안내 박스 -->
-                        <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 30px; margin-bottom: 30px; backdrop-filter: blur(10px);">
-                            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
-                                안정적인 서비스를 위해 <strong style="color: white;">서비스 점검</strong>을 실시합니다.
-                            </p>
+                        <!-- 메인 카드 -->
+                        <div class="glass-card">
+                            <p class="card-desc">더 나은 서비스를 위해 잠시 점검 중입니다</p>
                             
                             <!-- 점검 시간 -->
-                            <div style="background: rgba(59, 130, 246, 0.2); border: 2px solid #3b82f6; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                                <p style="color: #93c5fd; font-size: 13px; margin-bottom: 8px;">⏰ 점검 시간</p>
-                                <p style="color: white; font-size: 18px; font-weight: 700;">
-                                    ${formatDate(startTime)} ~ ${formatDate(endTime)}
-                                </p>
+                            <div class="info-box time-box">
+                                <div class="info-icon">🕐</div>
+                                <div class="info-content">
+                                    <span class="info-label">점검 시간</span>
+                                    <span class="info-value">${formatDate(startTime)} ~ ${formatDate(endTime)}</span>
+                                </div>
                             </div>
                             
-                            <!-- 점검 사유 -->
-                            <div style="background: rgba(251, 191, 36, 0.1); border: 2px solid #fbbf24; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                                <p style="color: #fcd34d; font-size: 13px; margin-bottom: 8px;">📋 점검 내용</p>
-                                <p style="color: white; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">${reason}</p>
+                            <!-- 점검 내용 -->
+                            <div class="info-box reason-box">
+                                <div class="info-icon">📋</div>
+                                <div class="info-content">
+                                    <span class="info-label">점검 내용</span>
+                                    <span class="info-value reason-text">${reason}</span>
+                                </div>
                             </div>
                             
                             <!-- 카운트다운 -->
-                            <div style="background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981; border-radius: 12px; padding: 20px;">
-                                <p style="color: #6ee7b7; font-size: 13px; margin-bottom: 12px;">⏳ 점검 종료까지 남은 시간</p>
-                                <div id="countdown" style="font-size: 36px; font-weight: 800; color: white; font-family: monospace; letter-spacing: 2px;">
-                                    --:--:--
+                            <div class="countdown-wrap">
+                                <span class="countdown-label">점검 종료까지</span>
+                                <div class="countdown-timer">
+                                    <div class="time-block">
+                                        <span id="hours" class="time-num">00</span>
+                                        <span class="time-unit">시간</span>
+                                    </div>
+                                    <span class="time-sep">:</span>
+                                    <div class="time-block">
+                                        <span id="minutes" class="time-num">00</span>
+                                        <span class="time-unit">분</span>
+                                    </div>
+                                    <span class="time-sep">:</span>
+                                    <div class="time-block">
+                                        <span id="seconds" class="time-num">00</span>
+                                        <span class="time-unit">초</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- 하단 안내 -->
-                        <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">
-                            점검이 끝나면 자동으로 새로고침됩니다.<br>
-                            불편을 드려 죄송합니다. 🙇‍♂️
-                        </p>
+                        <!-- 하단 -->
+                        <p class="footer-text">점검이 완료되면 자동으로 새로고침됩니다 ✨</p>
                         
-                        <!-- 관리자 로그인 버튼 -->
-                        <button onclick="showMaintenanceLogin()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: #94a3b8; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s;">
-                            🔐 관리자 로그인
+                        <button onclick="showMaintenanceLogin()" class="admin-login-btn">
+                            <span>🔐</span> 관리자 로그인
                         </button>
                     </div>
                     
                     <!-- 관리자 로그인 모달 -->
-                    <div id="maintenanceLoginModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
-                        <div style="background: white; border-radius: 16px; padding: 28px; max-width: 360px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
-                            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 20px; text-align: center;">🔐 최종관리자 로그인</h3>
-                            <div style="margin-bottom: 16px;">
-                                <input type="text" id="maintenanceAdminId" placeholder="아이디" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+                    <div id="maintenanceLoginModal" class="login-modal">
+                        <div class="login-card">
+                            <div class="login-header">
+                                <span class="login-icon">🔐</span>
+                                <h3>관리자 로그인</h3>
                             </div>
-                            <div style="margin-bottom: 20px;">
-                                <input type="password" id="maintenanceAdminPw" placeholder="비밀번호" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
+                            <div class="login-body">
+                                <input type="text" id="maintenanceAdminId" placeholder="아이디" class="login-input">
+                                <input type="password" id="maintenanceAdminPw" placeholder="비밀번호" class="login-input">
+                                <p id="maintenanceLoginError" class="login-error"></p>
                             </div>
-                            <div style="display: flex; gap: 10px;">
-                                <button onclick="closeMaintenanceLogin()" style="flex: 1; padding: 12px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">취소</button>
-                                <button onclick="tryMaintenanceLogin()" style="flex: 1; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">로그인</button>
+                            <div class="login-footer">
+                                <button onclick="closeMaintenanceLogin()" class="btn-cancel">취소</button>
+                                <button onclick="tryMaintenanceLogin()" class="btn-login">로그인</button>
                             </div>
-                            <p id="maintenanceLoginError" style="color: #ef4444; font-size: 12px; text-align: center; margin-top: 12px; display: none;"></p>
                         </div>
                     </div>
                 </div>
                 
                 <style>
-                    @keyframes bounce {
-                        0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-15px); }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    
+                    #maintenancePage {
+                        min-height: 100vh;
+                        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 20px;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    
+                    /* 파티클 배경 */
+                    .particles { position: absolute; width: 100%; height: 100%; overflow: hidden; }
+                    .particle {
+                        position: absolute;
+                        width: 10px;
+                        height: 10px;
+                        background: rgba(255,255,255,0.1);
+                        border-radius: 50%;
+                        animation: float 15s infinite;
+                    }
+                    .particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; animation-duration: 20s; }
+                    .particle:nth-child(2) { left: 80%; top: 50%; animation-delay: 2s; animation-duration: 25s; width: 15px; height: 15px; }
+                    .particle:nth-child(3) { left: 30%; top: 70%; animation-delay: 4s; animation-duration: 18s; }
+                    .particle:nth-child(4) { left: 60%; top: 30%; animation-delay: 1s; animation-duration: 22s; width: 8px; height: 8px; }
+                    .particle:nth-child(5) { left: 90%; top: 80%; animation-delay: 3s; animation-duration: 28s; }
+                    .particle:nth-child(6) { left: 20%; top: 90%; animation-delay: 5s; animation-duration: 16s; width: 12px; height: 12px; }
+                    
+                    @keyframes float {
+                        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+                        50% { transform: translateY(-100px) rotate(180deg); opacity: 0.8; }
+                    }
+                    
+                    .maintenance-content {
+                        text-align: center;
+                        max-width: 520px;
+                        width: 100%;
+                        z-index: 10;
+                    }
+                    
+                    /* 로고 */
+                    .logo-wrap {
+                        position: relative;
+                        display: inline-block;
+                        margin-bottom: 24px;
+                    }
+                    .logo-glow {
+                        position: absolute;
+                        width: 120px;
+                        height: 120px;
+                        background: radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%);
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        animation: pulse 2s ease-in-out infinite;
+                    }
+                    .logo-icon {
+                        font-size: 64px;
+                        position: relative;
+                        animation: bounce 3s ease-in-out infinite;
+                    }
+                    @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.2); } }
+                    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+                    
+                    /* 타이틀 */
+                    .main-title {
+                        font-size: 20px;
+                        color: rgba(255,255,255,0.7);
+                        font-weight: 500;
+                        margin-bottom: 8px;
+                        letter-spacing: 2px;
+                    }
+                    .sub-title {
+                        font-size: 36px;
+                        color: white;
+                        font-weight: 800;
+                        margin-bottom: 32px;
+                    }
+                    .gradient-text {
+                        background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                    
+                    /* 글래스 카드 */
+                    .glass-card {
+                        background: rgba(255,255,255,0.05);
+                        backdrop-filter: blur(20px);
+                        -webkit-backdrop-filter: blur(20px);
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 24px;
+                        padding: 32px;
+                        margin-bottom: 24px;
+                    }
+                    .card-desc {
+                        color: rgba(255,255,255,0.6);
+                        font-size: 14px;
+                        margin-bottom: 24px;
+                    }
+                    
+                    /* 정보 박스 */
+                    .info-box {
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        padding: 16px 20px;
+                        border-radius: 16px;
+                        margin-bottom: 16px;
+                        text-align: left;
+                    }
+                    .time-box { background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(59,130,246,0.1)); border: 1px solid rgba(99,102,241,0.3); }
+                    .reason-box { background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.05)); border: 1px solid rgba(251,191,36,0.3); }
+                    .info-icon { font-size: 28px; }
+                    .info-content { display: flex; flex-direction: column; gap: 4px; }
+                    .info-label { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+                    .info-value { font-size: 15px; color: white; font-weight: 600; }
+                    .reason-text { white-space: pre-wrap; line-height: 1.5; }
+                    
+                    /* 카운트다운 */
+                    .countdown-wrap {
+                        background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1));
+                        border: 1px solid rgba(16,185,129,0.3);
+                        border-radius: 16px;
+                        padding: 24px;
+                    }
+                    .countdown-label {
+                        display: block;
+                        font-size: 12px;
+                        color: rgba(255,255,255,0.5);
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                        margin-bottom: 16px;
+                    }
+                    .countdown-timer {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .time-block { text-align: center; }
+                    .time-num {
+                        display: block;
+                        font-size: 48px;
+                        font-weight: 800;
+                        color: white;
+                        font-family: 'SF Mono', 'Consolas', monospace;
+                        line-height: 1;
+                        text-shadow: 0 0 30px rgba(16,185,129,0.5);
+                    }
+                    .time-unit { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; }
+                    .time-sep { font-size: 36px; color: rgba(255,255,255,0.3); font-weight: 300; margin: 0 4px; }
+                    
+                    /* 푸터 */
+                    .footer-text { color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 20px; }
+                    
+                    /* 관리자 로그인 버튼 */
+                    .admin-login-btn {
+                        padding: 10px 20px;
+                        background: rgba(255,255,255,0.05);
+                        color: rgba(255,255,255,0.5);
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 12px;
+                        font-size: 13px;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .admin-login-btn:hover {
+                        background: rgba(255,255,255,0.1);
+                        color: rgba(255,255,255,0.8);
+                        border-color: rgba(255,255,255,0.2);
+                    }
+                    
+                    /* 로그인 모달 */
+                    .login-modal {
+                        display: none;
+                        position: fixed;
+                        top: 0; left: 0; right: 0; bottom: 0;
+                        background: rgba(0,0,0,0.8);
+                        backdrop-filter: blur(8px);
+                        z-index: 1000;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .login-card {
+                        background: linear-gradient(145deg, #1e1e2e, #2a2a40);
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 20px;
+                        padding: 32px;
+                        max-width: 360px;
+                        width: 90%;
+                        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+                    }
+                    .login-header { text-align: center; margin-bottom: 24px; }
+                    .login-icon { font-size: 40px; display: block; margin-bottom: 12px; }
+                    .login-header h3 { color: white; font-size: 18px; font-weight: 600; }
+                    .login-body { margin-bottom: 20px; }
+                    .login-input {
+                        width: 100%;
+                        padding: 14px 16px;
+                        background: rgba(255,255,255,0.05);
+                        border: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 12px;
+                        color: white;
+                        font-size: 14px;
+                        margin-bottom: 12px;
+                        outline: none;
+                        transition: all 0.2s;
+                    }
+                    .login-input:focus { border-color: #6366f1; background: rgba(99,102,241,0.1); }
+                    .login-input::placeholder { color: rgba(255,255,255,0.3); }
+                    .login-error { color: #f87171; font-size: 12px; text-align: center; display: none; }
+                    .login-footer { display: flex; gap: 12px; }
+                    .login-footer button {
+                        flex: 1;
+                        padding: 14px;
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .btn-cancel { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+                    .btn-cancel:hover { background: rgba(255,255,255,0.15); }
+                    .btn-login { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+                    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99,102,241,0.3); }
+                    
+                    @media (max-width: 480px) {
+                        .sub-title { font-size: 28px; }
+                        .time-num { font-size: 36px; }
+                        .glass-card { padding: 24px 20px; }
                     }
                 </style>
             `;
             
             // 카운트다운 시작
             const endTimeMs = data.endTime;
-            const countdownEl = document.getElementById('countdown');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
             
             const updateCountdown = () => {
                 const now = Date.now();
                 const remaining = endTimeMs - now;
                 
                 if (remaining <= 0) {
-                    countdownEl.textContent = '점검 완료!';
+                    hoursEl.textContent = '00';
+                    minutesEl.textContent = '00';
+                    secondsEl.textContent = '00';
+                    document.querySelector('.countdown-label').textContent = '🎉 점검 완료!';
                     setTimeout(() => location.reload(), 2000);
                     return;
                 }
@@ -1409,7 +1722,9 @@
                 const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
                 
-                countdownEl.textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+                hoursEl.textContent = String(hours).padStart(2,'0');
+                minutesEl.textContent = String(minutes).padStart(2,'0');
+                secondsEl.textContent = String(seconds).padStart(2,'0');
             };
             
             updateCountdown();
@@ -2090,26 +2405,28 @@
                     
                     /* 게시글 행 */
                     .post-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.3s ease-out; }
-                    .post-item:hover { background: #e0f2fe; transform: translateX(4px); box-shadow: inset 4px 0 0 #3b82f6; }
+                    .post-item:hover { background: #f8fafc; transform: translateX(2px); }
                     .post-item:last-child { border-bottom: none; }
-                    .post-item.pinned { background: linear-gradient(90deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; }
-                    .post-item.pinned:hover { background: linear-gradient(90deg, #fef08a 0%, #fde047 100%); transform: translateX(4px); box-shadow: inset 4px 0 0 #ca8a04; }
+                    .post-item.pinned { background: #fafafa; border-bottom: 1px solid #e5e7eb; }
+                    .post-item.pinned:hover { background: #f3f4f6; }
                     
                     .post-num { width: 50px; font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
                     .post-cat { width: 55px; font-size: 10px; font-weight: 700; padding: 3px 4px; border-radius: 4px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; overflow: hidden; margin-right: 12px; }
                     .post-cat-wide { width: 117px; font-size: 11px; font-weight: 700; padding: 6px 8px; border-radius: 6px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; margin-right: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; }
-                    .post-cat-wide.pinned { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #78350f; box-shadow: 0 2px 6px rgba(251,191,36,0.4); }
+                    .post-cat-wide.pinned-notice { background: #fee2e2; color: #dc2626; }
+                    .post-cat-wide.pinned-notice .pin-icon { font-size: 11px; }
                     
                     .post-info { flex: 1; min-width: 0; }
                     .post-title-row { display: flex; align-items: center; gap: 8px; }
                     .post-title { font-size: 14px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                    .post-item.pinned .post-title { font-weight: 700; color: #92400e; }
+                    .post-item.pinned .post-title { font-weight: 700; color: #1f2937; }
                     .post-new { font-size: 10px; font-weight: 700; color: #3b82f6; background: #dbeafe; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
                     .post-link-icon { font-size: 12px; color: #94a3b8; flex-shrink: 0; }
                     
                     .post-author { width: 80px; font-size: 12px; color: #64748b; text-align: center; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
                     .post-date { width: 80px; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
                     .post-views { width: 50px; font-size: 12px; color: #94a3b8; text-align: center; flex-shrink: 0; }
+                    .post-meta-row { display: contents; }
                     
                     .empty-state { text-align: center; padding: 60px 20px; }
                     .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
@@ -2136,20 +2453,97 @@
                     .board-select { padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: white; width: 100%; transition: border-color 0.15s; }
                     .board-select:focus { outline: none; border-color: #0f172a; }
                     
+                    /* 모달 모바일 최적화 */
+                    @media (max-width: 768px) {
+                        .board-modal-overlay { padding: 12px; }
+                        .board-modal { margin: 20px auto; padding: 20px; border-radius: 16px; }
+                    }
+                    @media (max-width: 480px) {
+                        .board-modal-overlay { padding: 8px; }
+                        .board-modal { margin: 12px auto; padding: 16px; border-radius: 14px; }
+                        .board-input, .board-select { padding: 12px 14px; font-size: 14px; }
+                        .board-btn { padding: 12px 16px; font-size: 13px; }
+                    }
+                    @media (max-width: 320px) {
+                        .board-modal-overlay { padding: 4px; }
+                        .board-modal { margin: 8px auto; padding: 14px; }
+                    }
+                    
+                    /* 태블릿 (768px ~ 1024px) */
+                    @media (max-width: 1024px) {
+                        .board-container { padding: 20px 16px; }
+                        .post-author { width: 70px; font-size: 11px; }
+                        .post-date { width: 70px; font-size: 11px; }
+                        .post-views { width: 40px; font-size: 11px; }
+                    }
+                    
+                    /* 모바일 (768px 이하) */
                     @media (max-width: 768px) {
                         .board-container { padding: 16px 12px; }
-                        .board-header { flex-direction: column; align-items: flex-start; gap: 16px; }
-                        .header-right { width: 100%; }
-                        .header-btn { flex: 1; text-align: center; }
+                        .board-header { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+                        .board-header h1 { font-size: 24px; margin-bottom: 4px; }
+                        .header-right { width: 100%; display: flex; gap: 8px; }
+                        .header-btn { flex: 1; text-align: center; padding: 10px 12px; font-size: 13px; }
+                        .cat-tabs { gap: 6px; padding: 12px 0; flex-wrap: wrap; justify-content: flex-start; }
+                        .cat-tab { padding: 8px 14px; font-size: 13px; }
+                        
+                        .board-list { border-radius: 12px; }
                         .post-header-row { display: none; }
-                        .post-item { flex-wrap: wrap; padding: 12px 16px; }
-                        .post-num { width: 30px; font-size: 11px; }
-                        .post-cat { width: auto; font-size: 10px; padding: 3px 6px; }
-                        .post-info { width: calc(100% - 130px); order: 1; }
-                        .post-author { display: none; }
-                        .post-date { width: auto; font-size: 11px; order: 2; margin-left: auto; }
-                        .post-views { width: auto; font-size: 11px; order: 3; }
-                        .post-views::before { content: '👁 '; }
+                        .post-item { 
+                            flex-direction: column !important; 
+                            align-items: flex-start !important; 
+                            padding: 14px 16px; 
+                            gap: 6px;
+                        }
+                        .post-num { display: none !important; }
+                        .post-cat { font-size: 11px; padding: 4px 8px; margin-right: 0; margin-bottom: 0; order: 1; }
+                        .post-cat-wide { width: auto !important; font-size: 11px; padding: 4px 10px; margin-right: 0; margin-bottom: 0; order: 1; }
+                        .post-info { width: 100% !important; order: 2; margin-top: 4px; }
+                        .post-title { font-size: 14px !important; white-space: normal !important; line-height: 1.5; display: block; word-break: break-word; }
+                        .post-title-row { flex-wrap: wrap; gap: 6px; }
+                        .post-meta-row { 
+                            display: flex !important; 
+                            align-items: center; 
+                            gap: 12px; 
+                            width: 100%; 
+                            order: 3; 
+                            margin-top: 8px;
+                            padding-top: 8px;
+                            border-top: 1px solid #f1f5f9;
+                        }
+                        .post-author { width: auto !important; font-size: 12px; color: #64748b; text-align: left; }
+                        .post-author::before { content: '👤 '; font-size: 10px; }
+                        .post-date { width: auto !important; font-size: 12px; color: #94a3b8; text-align: left; }
+                        .post-views { width: auto !important; font-size: 12px; color: #94a3b8; text-align: left; }
+                        .post-views::before { content: '👁 '; font-size: 10px; }
+                    }
+                    
+                    /* 소형 모바일 (480px 이하) */
+                    @media (max-width: 480px) {
+                        .board-container { padding: 12px 10px; }
+                        .board-header h1 { font-size: 22px; }
+                        .header-right { flex-direction: row; flex-wrap: wrap; }
+                        .header-btn { flex: 1; min-width: calc(50% - 4px); padding: 10px 8px; font-size: 12px; }
+                        .cat-tabs { gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+                        .cat-tab { padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
+                        .post-item { padding: 12px 14px; gap: 4px; }
+                        .post-cat, .post-cat-wide { font-size: 10px; padding: 3px 6px; }
+                        .post-title { font-size: 13px !important; }
+                        .post-meta-row { gap: 10px; font-size: 11px; margin-top: 6px; padding-top: 6px; }
+                        .post-author, .post-date, .post-views { font-size: 11px !important; }
+                    }
+                    
+                    /* 폴더블/플립 접힌 상태 (320px 이하) */
+                    @media (max-width: 320px) {
+                        .board-container { padding: 10px 8px; }
+                        .board-header h1 { font-size: 20px; }
+                        .header-btn { padding: 8px 6px; font-size: 11px; }
+                        .cat-tab { padding: 6px 10px; font-size: 11px; }
+                        .post-item { padding: 10px 12px; }
+                        .post-cat, .post-cat-wide { font-size: 9px; padding: 2px 5px; }
+                        .post-title { font-size: 12px !important; }
+                        .post-meta-row { gap: 8px; }
+                        .post-author, .post-date, .post-views { font-size: 10px !important; }
                     }
                 </style>
                 
@@ -2233,11 +2627,17 @@
                             <input type="text" id="postLinkInput" class="board-input" placeholder="https://...">
                             <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼에 표시될 텍스트" style="margin-top: 8px;">
                         </div>
-                        <div style="margin-bottom: 24px; padding: 14px 16px; background: #fefce8; border: 2px solid #fef08a; border-radius: 12px;">
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                <input type="checkbox" id="postPinnedInput" style="width: 20px; height: 20px; accent-color: #eab308;">
-                                <span style="font-size: 14px; font-weight: 600; color: #a16207;">📌 공지사항으로 등록 (상단 고정)</span>
+                        <!-- 고정 옵션 -->
+                        <div style="margin-bottom: 24px; padding: 16px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
+                            <p style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 12px;">📌 상단 고정 설정</p>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 10px;">
+                                <input type="checkbox" id="postPinnedInput" style="width: 18px; height: 18px; accent-color: #ef4444;">
+                                <span style="font-size: 14px; color: #374151;">🔴 전체 고정 (모든 탭에서 상단 표시)</span>
                             </label>
+                            <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 4px;">
+                                <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">또는 특정 카테고리에서만 고정:</p>
+                                <div id="categoryPinOptions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                            </div>
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button onclick="closeBoardModal()" class="board-btn" style="flex: 1; background: #f1f5f9; color: #475569;">취소</button>
@@ -2351,10 +2751,23 @@
                     }
                 });
                 
-                // 공지사항(isPinned) 먼저, 그 다음 최신순
+                // 현재 카테고리에서 고정인지 판단하는 함수
+                const isPinnedInCategory = (post) => {
+                    // 전체 고정이면 항상 true
+                    if (post.isPinned) return true;
+                    // 카테고리별 고정 체크 (전체 탭에서는 카테고리별 고정 적용 안함)
+                    if (category !== 'all' && post.pinnedCategories && post.pinnedCategories.includes(category)) {
+                        return true;
+                    }
+                    return false;
+                };
+                
+                // 고정 게시글 먼저, 그 다음 최신순
                 posts.sort((a, b) => {
-                    if (a.isPinned && !b.isPinned) return -1;
-                    if (!a.isPinned && b.isPinned) return 1;
+                    const aPinned = isPinnedInCategory(a);
+                    const bPinned = isPinnedInCategory(b);
+                    if (aPinned && !bPinned) return -1;
+                    if (!aPinned && bPinned) return 1;
                     return b.createdAt - a.createdAt;
                 });
                 
@@ -2414,14 +2827,15 @@
                     const date = getRelativeTime(post.createdAt);
                     const isNew = (Date.now() - post.createdAt) < 3 * 24 * 60 * 60 * 1000;
                     const catInfo = getCatInfo(post.category);
-                    const pinnedClass = post.isPinned ? ' pinned' : '';
+                    const isPinned = isPinnedInCategory(post);
+                    const pinnedClass = isPinned ? ' pinned' : '';
                     
                     // 글 번호 (공지사항은 번호 숨김, 하지만 내부적으로는 있음)
                     const postNumber = postNumbers[post.id];
                     
-                    // 공지사항이면 번호+분류를 하나로 합침
-                    const numCatHtml = post.isPinned 
-                        ? '<span class="post-cat-wide pinned"><span style="font-size:13px;">📢</span> 공지사항</span>'
+                    // 고정 게시글이면 번호+분류를 하나로 합침
+                    const numCatHtml = isPinned 
+                        ? `<span class="post-cat-wide pinned-notice"><span class="pin-icon">📌</span> ${post.isPinned ? '공지사항' : catInfo.name}</span>`
                         : `<span class="post-num">${postNumber}</span><span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`;
                     
                     // 제목 색상
@@ -2433,14 +2847,16 @@
                             <div class="post-info">
                                 <div class="post-title-row">
                                     <span class="post-title" style="${titleStyle}">${post.title}</span>
-                                    ${isNew && !post.isPinned ? '<span class="post-new">NEW</span>' : ''}
+                                    ${isNew && !isPinned ? '<span class="post-new">NEW</span>' : ''}
                                     ${post.link ? '<span class="post-link-icon">🔗</span>' : ''}
                                     ${post.image ? '<span class="post-link-icon">🖼️</span>' : ''}
                                 </div>
                             </div>
-                            <span class="post-author">${post.author || '관리자'}</span>
-                            <span class="post-date">${date}</span>
-                            <span class="post-views">${post.views || 0}</span>
+                            <div class="post-meta-row">
+                                <span class="post-author">${post.author || '관리자'}</span>
+                                <span class="post-date">${date}</span>
+                                <span class="post-views">${post.views || 0}</span>
+                            </div>
                         </div>
                     `;
                 });
@@ -2645,7 +3061,7 @@
                         .post-detail { background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
                         
                         .post-header { padding: 28px 28px 24px; border-bottom: 2px solid #f8fafc; }
-                        .pinned-badge { display: inline-block; background: #fef3c7; color: #b45309; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
+                        .pinned-badge { display: inline-block; background: #fee2e2; color: #dc2626; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
                         .post-detail-title { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 16px; line-height: 1.4; }
                         .post-detail-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #94a3b8; }
                         .post-detail-meta .edited { color: #f59e0b; }
@@ -2690,10 +3106,45 @@
                         .comment-delete-btn:hover { background: #fecaca; }
                         .comment-content { font-size: 14px; color: #334155; line-height: 1.6; }
                         
-                        @media (max-width: 640px) {
-                            .post-header, .post-content { padding: 20px; }
+                        /* 태블릿 */
+                        @media (max-width: 1024px) {
+                            .board-container { padding: 20px 12px; }
+                        }
+                        
+                        /* 모바일 */
+                        @media (max-width: 768px) {
+                            .board-container { padding: 16px 12px; }
+                            .back-link { font-size: 13px; margin-bottom: 16px; }
+                            .post-header, .post-content { padding: 20px 16px; }
                             .post-detail-title { font-size: 20px; }
-                            .comments-section { padding: 20px; }
+                            .post-detail-meta { gap: 6px; font-size: 12px; }
+                            .post-actions { padding: 12px 16px; flex-wrap: wrap; }
+                            .action-btn { padding: 10px 16px; font-size: 12px; }
+                            .comments-section { padding: 20px 16px; margin-top: 16px; }
+                            .comment-input { font-size: 14px; padding: 12px; }
+                            .comment-header { gap: 8px; }
+                        }
+                        
+                        /* 소형 모바일 */
+                        @media (max-width: 480px) {
+                            .board-container { padding: 12px 8px; }
+                            .post-header, .post-content { padding: 16px 14px; }
+                            .post-detail-title { font-size: 18px; }
+                            .post-detail-meta { flex-direction: column; gap: 4px; }
+                            .post-content { font-size: 14px; min-height: 150px; }
+                            .link-btn { padding: 12px 20px; font-size: 13px; display: block; text-align: center; }
+                            .post-actions { justify-content: stretch; }
+                            .action-btn { flex: 1; text-align: center; }
+                            .comments-section { padding: 16px 12px; }
+                            .comment-submit-btn { width: 100%; }
+                        }
+                        
+                        /* 폴더블/플립 접힌 상태 */
+                        @media (max-width: 320px) {
+                            .board-container { padding: 10px 6px; }
+                            .post-header, .post-content { padding: 14px 12px; }
+                            .post-detail-title { font-size: 16px; }
+                            .comments-section { padding: 14px 10px; }
                         }
                     </style>
                 `;
@@ -2718,6 +3169,17 @@
             document.getElementById('postImageInput').value = '';
             document.getElementById('postTitleColor').value = '#1e293b';
             clearImage();
+            
+            // 카테고리별 고정 옵션 생성
+            const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+            const pinOptionsHtml = categories.map(cat => `
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <input type="checkbox" class="categoryPinCheckbox" data-cat="${cat.id}" style="width: 16px; height: 16px; accent-color: ${cat.color};">
+                    <span style="font-size: 13px; color: #374151;">${cat.icon} ${cat.name}</span>
+                </label>
+            `).join('');
+            document.getElementById('categoryPinOptions').innerHTML = pinOptionsHtml;
+            
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
         };
@@ -2862,11 +3324,23 @@
                             <input type="text" id="editLinkInput" value="${post.link || ''}" placeholder="https://..." style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;">
                             <input type="text" id="editLinkTextInput" value="${post.linkText || ''}" placeholder="버튼에 표시될 텍스트" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box; margin-top: 8px;">
                         </div>
-                        <div style="margin-bottom: 24px; padding: 14px 16px; background: #fefce8; border: 2px solid #fef08a; border-radius: 12px;">
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                <input type="checkbox" id="editPinnedInput" ${post.isPinned ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: #eab308;">
-                                <span style="font-size: 14px; font-weight: 600; color: #a16207;">📌 공지사항으로 등록 (상단 고정)</span>
+                        <div style="margin-bottom: 24px; padding: 16px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px;">
+                            <p style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 12px;">📌 상단 고정 설정</p>
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 10px;">
+                                <input type="checkbox" id="editPinnedInput" ${post.isPinned ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #ef4444;">
+                                <span style="font-size: 14px; color: #374151;">🔴 전체 고정 (모든 탭에서 상단 표시)</span>
                             </label>
+                            <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 4px;">
+                                <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">또는 특정 카테고리에서만 고정:</p>
+                                <div id="editCategoryPinOptions" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${categories.map(cat => `
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 10px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                            <input type="checkbox" class="editCategoryPinCheckbox" data-cat="${cat.id}" ${(post.pinnedCategories || []).includes(cat.id) ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: ${cat.color};">
+                                            <span style="font-size: 13px; color: #374151;">${cat.icon} ${cat.name}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button id="editCancelBtn" style="flex: 1; padding: 12px 24px; background: #f1f5f9; color: #475569; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600;">취소</button>
@@ -2901,6 +3375,12 @@
             const isPinned = document.getElementById('editPinnedInput').checked;
             const titleColor = document.getElementById('editTitleColor').value;
             
+            // 카테고리별 고정 수집
+            const pinnedCategories = [];
+            document.querySelectorAll('.editCategoryPinCheckbox:checked').forEach(cb => {
+                pinnedCategories.push(cb.dataset.cat);
+            });
+            
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
                 return;
@@ -2912,6 +3392,7 @@
                     title: title,
                     content: content,
                     isPinned: isPinned,
+                    pinnedCategories: pinnedCategories,
                     updatedAt: Date.now(),
                     titleColor: titleColor !== '#1e293b' ? titleColor : null
                 };
@@ -3069,6 +3550,12 @@
             const imageInput = document.getElementById('postImageInput');
             const titleColor = document.getElementById('postTitleColor').value;
             
+            // 카테고리별 고정 수집
+            const pinnedCategories = [];
+            document.querySelectorAll('.categoryPinCheckbox:checked').forEach(cb => {
+                pinnedCategories.push(cb.dataset.cat);
+            });
+            
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
                 return;
@@ -3083,6 +3570,7 @@
                     author: '에비츄',
                     views: 0,
                     isPinned: isPinned,
+                    pinnedCategories: pinnedCategories,
                     createdAt: Date.now(),
                     titleColor: titleColor !== '#1e293b' ? titleColor : null
                 };
