@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.0.4">
-    <meta name="build-date" content="2026-01-16 19:20">
+    <meta name="version" content="2.0.5">
+    <meta name="build-date" content="2026-01-16 20:00">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1081,9 +1081,13 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '2.0.4';
-        const APP_BUILD_DATE = '2026-01-16 19:20';
+        const APP_VERSION = '2.0.5';
+        const APP_BUILD_DATE = '2026-01-16 20:00';
         const APP_CHANGELOG = [
+            { version: '2.0.5', date: '2026-01-16 20:00', changes: [
+                '🔧 게시글 수정 시 줄바꿈 미적용 버그 수정',
+                '🖥️ PC에서 수정 모달 너비 확장 (800px)'
+            ]},
             { version: '2.0.4', date: '2026-01-16 19:20', changes: [
                 '📱 게시판 모바일 반응형 전면 개선',
                 '🔧 모든 기기 크기 최적화 (폴더블/플립/태블릿)',
@@ -3256,6 +3260,12 @@
                 const modalHtml = document.createElement('div');
                 modalHtml.id = 'editModalOverlay';
                 modalHtml.style.cssText = 'display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.5); z-index: 1000; padding: 20px; overflow-y: auto; backdrop-filter: blur(4px);';
+                // 줄바꿈 처리: \n을 <br>로 변환 (HTML 태그가 없는 plain text인 경우)
+                let displayContent = post.content;
+                if (displayContent && !displayContent.includes('<') && displayContent.includes('\n')) {
+                    displayContent = displayContent.replace(/\n/g, '<br>');
+                }
+                
                 modalHtml.innerHTML = `
                     <style>
                         .edit-toolbar { display: flex; gap: 4px; padding: 8px; background: #f8fafc; border: 2px solid #e2e8f0; border-bottom: none; border-radius: 10px 10px 0 0; flex-wrap: wrap; align-items: center; }
@@ -3265,8 +3275,12 @@
                         .edit-toolbar-divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px; }
                         .edit-wysiwyg { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; }
                         .edit-wysiwyg:focus { border-color: #3b82f6; }
+                        .edit-modal-container { background: white; border-radius: 20px; max-width: 600px; margin: 40px auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+                        @media (min-width: 768px) {
+                            .edit-modal-container { max-width: 800px; }
+                        }
                     </style>
-                    <div style="background: white; border-radius: 20px; max-width: 600px; margin: 40px auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+                    <div class="edit-modal-container">
                         <h2 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">게시글 수정</h2>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">카테고리</label>
@@ -3317,7 +3331,7 @@
                                 <button type="button" onclick="execCmd('insertOrderedList')" title="번호">1.</button>
                                 <button type="button" onclick="execCmd('removeFormat')" title="서식 제거">🧹</button>
                             </div>
-                            <div id="editContentEditor" class="edit-wysiwyg" contenteditable="true">${post.content}</div>
+                            <div id="editContentEditor" class="edit-wysiwyg" contenteditable="true">${displayContent}</div>
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">링크 (선택)</label>
