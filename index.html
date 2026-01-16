@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.9.8">
-    <meta name="build-date" content="2026-01-16 17:30">
+    <meta name="version" content="1.9.9">
+    <meta name="build-date" content="2026-01-16 18:00">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1048,9 +1048,16 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.9.8';
-        const APP_BUILD_DATE = '2026-01-16 17:30';
+        const APP_VERSION = '1.9.9';
+        const APP_BUILD_DATE = '2026-01-16 18:00';
         const APP_CHANGELOG = [
+            { version: '1.9.9', date: '2026-01-16 18:00', changes: [
+                '✏️ WYSIWYG 에디터 추가 (글쓰기/수정)',
+                '🎨 폰트, 크기, 굵기, 기울임, 밑줄, 취소선',
+                '🌈 글자색, 배경색 선택',
+                '📐 정렬 (왼쪽/가운데/오른쪽)',
+                '📝 글머리 기호, 번호 목록'
+            ]},
             { version: '1.9.8', date: '2026-01-16 17:30', changes: [
                 '📌 공지사항 박스가 번호+분류 칸 전체 차지',
                 '📦 분류 박스 크기 축소',
@@ -1844,11 +1851,47 @@
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">내용</label>
-                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                <input type="color" id="postContentColor" value="#334155" style="width: 36px; height: 36px; border: 2px solid #e2e8f0; border-radius: 6px; cursor: pointer;" title="내용 색상">
-                                <span style="font-size: 11px; color: #94a3b8; display: flex; align-items: center;">← 글자 색상 선택</span>
+                            <!-- WYSIWYG 툴바 -->
+                            <div class="editor-toolbar">
+                                <select onchange="execCmd('fontName', this.value); this.selectedIndex=0;" title="폰트">
+                                    <option value="">폰트</option>
+                                    <option value="Arial">Arial</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Verdana">Verdana</option>
+                                    <option value="Times New Roman">Times New Roman</option>
+                                    <option value="Courier New">Courier New</option>
+                                </select>
+                                <select onchange="execCmd('fontSize', this.value); this.selectedIndex=0;" title="크기">
+                                    <option value="">크기</option>
+                                    <option value="1">아주 작게</option>
+                                    <option value="2">작게</option>
+                                    <option value="3">보통</option>
+                                    <option value="4">크게</option>
+                                    <option value="5">아주 크게</option>
+                                    <option value="6">매우 크게</option>
+                                    <option value="7">최대</option>
+                                </select>
+                                <div class="toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('bold')" title="굵게"><b>B</b></button>
+                                <button type="button" onclick="execCmd('italic')" title="기울임"><i>I</i></button>
+                                <button type="button" onclick="execCmd('underline')" title="밑줄"><u>U</u></button>
+                                <button type="button" onclick="execCmd('strikeThrough')" title="취소선"><s>S</s></button>
+                                <div class="toolbar-divider"></div>
+                                <input type="color" id="postForeColor" value="#ef4444" onchange="execCmd('foreColor', this.value)" title="글자 색상" style="width:28px; height:28px; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer;">
+                                <input type="color" id="postBackColor" value="#ffff00" onchange="execCmd('hiliteColor', this.value)" title="배경 색상" style="width:28px; height:28px; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer;">
+                                <div class="toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('justifyLeft')" title="왼쪽 정렬">⬅</button>
+                                <button type="button" onclick="execCmd('justifyCenter')" title="가운데 정렬">⬛</button>
+                                <button type="button" onclick="execCmd('justifyRight')" title="오른쪽 정렬">➡</button>
+                                <div class="toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('insertUnorderedList')" title="글머리 기호">•</button>
+                                <button type="button" onclick="execCmd('insertOrderedList')" title="번호 목록">1.</button>
+                                <div class="toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('removeFormat')" title="서식 제거">🧹</button>
                             </div>
-                            <textarea id="postContentInput" class="board-input board-textarea" placeholder="내용을 입력하세요"></textarea>
+                            <!-- 에디터 영역 -->
+                            <div id="postContentEditor" class="wysiwyg-editor" contenteditable="true" placeholder="내용을 입력하세요..."></div>
+                            <input type="hidden" id="postContentInput">
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🖼️ 이미지 첨부 (선택)</label>
@@ -1881,6 +1924,22 @@
                         </div>
                     </div>
                 </div>
+                
+                <style>
+                    .editor-toolbar { display: flex; gap: 4px; padding: 8px; background: #f8fafc; border: 2px solid #e2e8f0; border-bottom: none; border-radius: 10px 10px 0 0; flex-wrap: wrap; align-items: center; }
+                    .editor-toolbar button { width: 32px; height: 32px; border: 1px solid #e2e8f0; background: white; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+                    .editor-toolbar button:hover { background: #e0f2fe; border-color: #3b82f6; }
+                    .editor-toolbar select { padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: white; cursor: pointer; }
+                    .toolbar-divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px; }
+                    .wysiwyg-editor { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; }
+                    .wysiwyg-editor:empty:before { content: attr(placeholder); color: #94a3b8; }
+                    .wysiwyg-editor:focus { border-color: #3b82f6; }
+                    @media (max-width: 640px) {
+                        .editor-toolbar { gap: 2px; padding: 6px; }
+                        .editor-toolbar button { width: 28px; height: 28px; font-size: 12px; }
+                        .editor-toolbar select { padding: 4px 6px; font-size: 11px; }
+                    }
+                </style>
                 
                 <!-- 카테고리 관리 모달 -->
                 <div id="categoryModalOverlay" class="board-modal-overlay">
@@ -2125,8 +2184,11 @@
                 const createdDate = formatDateTime(post.createdAt);
                 const updatedDate = post.updatedAt ? formatDateTime(post.updatedAt) : null;
                 
-                // 내용에서 줄바꿈 처리
-                const contentHtml = (post.content || '').replace(/\n/g, '<br>');
+                // 내용에서 줄바꿈 처리 (HTML 태그가 없으면 줄바꿈 처리)
+                let contentHtml = post.content || '';
+                if (!contentHtml.includes('<') && !contentHtml.includes('>')) {
+                    contentHtml = contentHtml.replace(/\n/g, '<br>');
+                }
                 
                 // 이미지
                 const imageHtml = post.image ? `
@@ -2149,7 +2211,6 @@
                 
                 // 색상
                 const titleStyle = post.titleColor ? `color: ${post.titleColor};` : '';
-                const contentStyle = post.contentColor ? `color: ${post.contentColor};` : '';
                 
                 // 댓글 렌더링 함수 (먼저 정의)
                 const renderCommentsHtml = function(comments, pid) {
@@ -2210,7 +2271,7 @@
                                     </div>
                                 </header>
                                 
-                                <div class="post-content" style="${contentStyle}">
+                                <div class="post-content">
                                     ${imageHtml}
                                     ${contentHtml}
                                     ${linkButtonHtml}
@@ -2330,16 +2391,33 @@
             document.getElementById('boardModalTitle').textContent = '글쓰기';
             document.getElementById('postCategoryInput').value = document.getElementById('postCategoryInput').options[0]?.value || 'notice';
             document.getElementById('postTitleInput').value = '';
-            document.getElementById('postContentInput').value = '';
+            document.getElementById('postContentEditor').innerHTML = '';
             document.getElementById('postLinkInput').value = '';
             document.getElementById('postLinkTextInput').value = '';
             document.getElementById('postPinnedInput').checked = false;
             document.getElementById('postImageInput').value = '';
             document.getElementById('postTitleColor').value = '#1e293b';
-            document.getElementById('postContentColor').value = '#334155';
             clearImage();
             document.getElementById('boardSubmitBtn').onclick = () => submitPost();
             document.getElementById('boardModalOverlay').style.display = 'block';
+        };
+        
+        // WYSIWYG 에디터 명령 실행
+        window.execCmd = function(command, value = null) {
+            document.execCommand(command, false, value);
+        };
+            
+            if (start === end) {
+                showBoardAlert('볼드를 적용할 텍스트를 먼저 선택해주세요.', 'error');
+                return;
+            }
+            
+            const selectedText = textarea.value.substring(start, end);
+            const boldText = `<b>${selectedText}</b>`;
+            
+            textarea.value = textarea.value.substring(0, start) + boldText + textarea.value.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start, start + boldText.length);
         };
         
         // 이미지 미리보기
@@ -2410,7 +2488,16 @@
                 modalHtml.id = 'editModalOverlay';
                 modalHtml.style.cssText = 'display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.5); z-index: 1000; padding: 20px; overflow-y: auto; backdrop-filter: blur(4px);';
                 modalHtml.innerHTML = `
-                    <div style="background: white; border-radius: 20px; max-width: 560px; margin: 40px auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
+                    <style>
+                        .edit-toolbar { display: flex; gap: 4px; padding: 8px; background: #f8fafc; border: 2px solid #e2e8f0; border-bottom: none; border-radius: 10px 10px 0 0; flex-wrap: wrap; align-items: center; }
+                        .edit-toolbar button { width: 32px; height: 32px; border: 1px solid #e2e8f0; background: white; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+                        .edit-toolbar button:hover { background: #e0f2fe; border-color: #3b82f6; }
+                        .edit-toolbar select { padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; background: white; cursor: pointer; }
+                        .edit-toolbar-divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px; }
+                        .edit-wysiwyg { min-height: 200px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.8; outline: none; background: white; overflow-y: auto; max-height: 400px; }
+                        .edit-wysiwyg:focus { border-color: #3b82f6; }
+                    </style>
+                    <div style="background: white; border-radius: 20px; max-width: 600px; margin: 40px auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);">
                         <h2 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">게시글 수정</h2>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">카테고리</label>
@@ -2420,11 +2507,48 @@
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">제목</label>
-                            <input type="text" id="editTitleInput" value="${post.title.replace(/"/g, '&quot;')}" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;" maxlength="100">
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" id="editTitleInput" value="${post.title.replace(/"/g, '&quot;')}" style="flex: 1; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box;" maxlength="100">
+                                <input type="color" id="editTitleColor" value="${post.titleColor || '#1e293b'}" style="width: 40px; height: 40px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer;" title="제목 색상">
+                            </div>
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">내용</label>
-                            <textarea id="editContentInput" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box; min-height: 180px; resize: vertical; font-family: inherit; line-height: 1.6;">${post.content}</textarea>
+                            <div class="edit-toolbar">
+                                <select onchange="execCmd('fontName', this.value); this.selectedIndex=0;" title="폰트">
+                                    <option value="">폰트</option>
+                                    <option value="Arial">Arial</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Verdana">Verdana</option>
+                                    <option value="Times New Roman">Times New Roman</option>
+                                </select>
+                                <select onchange="execCmd('fontSize', this.value); this.selectedIndex=0;" title="크기">
+                                    <option value="">크기</option>
+                                    <option value="1">아주 작게</option>
+                                    <option value="2">작게</option>
+                                    <option value="3">보통</option>
+                                    <option value="4">크게</option>
+                                    <option value="5">아주 크게</option>
+                                    <option value="6">매우 크게</option>
+                                </select>
+                                <div class="edit-toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('bold')" title="굵게"><b>B</b></button>
+                                <button type="button" onclick="execCmd('italic')" title="기울임"><i>I</i></button>
+                                <button type="button" onclick="execCmd('underline')" title="밑줄"><u>U</u></button>
+                                <button type="button" onclick="execCmd('strikeThrough')" title="취소선"><s>S</s></button>
+                                <div class="edit-toolbar-divider"></div>
+                                <input type="color" id="editForeColor" value="#ef4444" onchange="execCmd('foreColor', this.value)" title="글자 색상" style="width:28px; height:28px; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer;">
+                                <input type="color" id="editBackColor" value="#ffff00" onchange="execCmd('hiliteColor', this.value)" title="배경 색상" style="width:28px; height:28px; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer;">
+                                <div class="edit-toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('justifyLeft')" title="왼쪽">⬅</button>
+                                <button type="button" onclick="execCmd('justifyCenter')" title="가운데">⬛</button>
+                                <button type="button" onclick="execCmd('justifyRight')" title="오른쪽">➡</button>
+                                <div class="edit-toolbar-divider"></div>
+                                <button type="button" onclick="execCmd('insertUnorderedList')" title="글머리">•</button>
+                                <button type="button" onclick="execCmd('insertOrderedList')" title="번호">1.</button>
+                                <button type="button" onclick="execCmd('removeFormat')" title="서식 제거">🧹</button>
+                            </div>
+                            <div id="editContentEditor" class="edit-wysiwyg" contenteditable="true">${post.content}</div>
                         </div>
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">링크 (선택)</label>
@@ -2463,10 +2587,12 @@
         window.updatePost = async function(postId) {
             const category = document.getElementById('editCategoryInput').value;
             const title = document.getElementById('editTitleInput').value.trim();
-            const content = document.getElementById('editContentInput').value.trim();
+            const contentEditor = document.getElementById('editContentEditor');
+            const content = contentEditor ? contentEditor.innerHTML.trim() : '';
             const link = document.getElementById('editLinkInput').value.trim();
             const linkText = document.getElementById('editLinkTextInput').value.trim();
             const isPinned = document.getElementById('editPinnedInput').checked;
+            const titleColor = document.getElementById('editTitleColor').value;
             
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
@@ -2479,7 +2605,8 @@
                     title: title,
                     content: content,
                     isPinned: isPinned,
-                    updatedAt: Date.now()
+                    updatedAt: Date.now(),
+                    titleColor: titleColor !== '#1e293b' ? titleColor : null
                 };
                 
                 if (link) {
@@ -2496,9 +2623,8 @@
                 const modal = document.getElementById('editModalOverlay');
                 if (modal) modal.remove();
                 
-                showBoardAlert('수정되었습니다!', 'success', () => {
-                    location.reload();
-                });
+                // 즉시 새로고침 (알림 없이)
+                window.location.reload(true);
                 
             } catch(e) {
                 console.error('게시글 업데이트 오류:', e);
@@ -2628,13 +2754,13 @@
         window.submitPost = async function() {
             const category = document.getElementById('postCategoryInput').value;
             const title = document.getElementById('postTitleInput').value.trim();
-            const content = document.getElementById('postContentInput').value.trim();
+            const contentEditor = document.getElementById('postContentEditor');
+            const content = contentEditor ? contentEditor.innerHTML.trim() : '';
             const link = document.getElementById('postLinkInput').value.trim();
             const linkText = document.getElementById('postLinkTextInput').value.trim();
             const isPinned = document.getElementById('postPinnedInput').checked;
             const imageInput = document.getElementById('postImageInput');
             const titleColor = document.getElementById('postTitleColor').value;
-            const contentColor = document.getElementById('postContentColor').value;
             
             if (!title) {
                 showBoardAlert('제목을 입력해주세요.', 'error');
@@ -2651,8 +2777,7 @@
                     views: 0,
                     isPinned: isPinned,
                     createdAt: Date.now(),
-                    titleColor: titleColor !== '#1e293b' ? titleColor : null,
-                    contentColor: contentColor !== '#334155' ? contentColor : null
+                    titleColor: titleColor !== '#1e293b' ? titleColor : null
                 };
                 
                 // 링크가 있으면 추가
