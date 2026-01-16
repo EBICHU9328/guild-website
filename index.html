@@ -1764,17 +1764,18 @@
                     .post-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: all 0.15s; animation: fadeIn 0.3s ease-out; }
                     .post-item:hover { background: #e0f2fe; transform: translateX(4px); box-shadow: inset 4px 0 0 #3b82f6; }
                     .post-item:last-child { border-bottom: none; }
-                    .post-item.pinned { background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%); }
-                    .post-item.pinned:hover { background: linear-gradient(90deg, #fde68a 0%, #fbbf24 100%); transform: translateX(4px); box-shadow: inset 4px 0 0 #f59e0b; }
+                    .post-item.pinned { background: linear-gradient(90deg, #fefce8 0%, #fef9c3 100%); border-left: 4px solid #eab308; }
+                    .post-item.pinned:hover { background: linear-gradient(90deg, #fef08a 0%, #fde047 100%); transform: translateX(4px); box-shadow: inset 4px 0 0 #ca8a04; }
                     
                     .post-num { width: 50px; font-size: 13px; font-weight: 600; color: #94a3b8; text-align: center; flex-shrink: 0; }
                     .post-cat { width: 55px; font-size: 10px; font-weight: 700; padding: 3px 4px; border-radius: 4px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; overflow: hidden; margin-right: 12px; }
-                    .post-cat-wide { width: 120px; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 8px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; margin-right: 12px; }
-                    .post-cat-wide.pinned { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+                    .post-cat-wide { width: 117px; font-size: 11px; font-weight: 700; padding: 6px 8px; border-radius: 6px; text-align: center; flex-shrink: 0; box-sizing: border-box; white-space: nowrap; margin-right: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+                    .post-cat-wide.pinned { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #78350f; box-shadow: 0 2px 6px rgba(251,191,36,0.4); }
                     
                     .post-info { flex: 1; min-width: 0; }
                     .post-title-row { display: flex; align-items: center; gap: 8px; }
                     .post-title { font-size: 14px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .post-item.pinned .post-title { font-weight: 700; color: #92400e; }
                     .post-new { font-size: 10px; font-weight: 700; color: #3b82f6; background: #dbeafe; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
                     .post-link-icon { font-size: 12px; color: #94a3b8; flex-shrink: 0; }
                     
@@ -2033,7 +2034,7 @@
                     
                     // 공지사항이면 번호+분류를 하나로 합침
                     const numCatHtml = post.isPinned 
-                        ? '<span class="post-cat-wide pinned">📌 공지사항</span>'
+                        ? '<span class="post-cat-wide pinned"><span style="font-size:13px;">📢</span> 공지사항</span>'
                         : `<span class="post-num">${postNumber}</span><span class="post-cat" style="background: ${catInfo.color}15; color: ${catInfo.color};">${catInfo.name}</span>`;
                     
                     // 제목 색상
