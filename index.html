@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="1.8.7">
-    <meta name="build-date" content="2026-01-13 12:00">
+    <meta name="version" content="1.8.9">
+    <meta name="build-date" content="2026-01-13 13:00">
     <title>🏆 오스카2 전투력 현황판</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -791,6 +791,9 @@
             </svg>
         </h1>
         <div class="top-actions">
+            <a href="?page=dia" style="text-decoration: none;">
+                <button class="btn-common" style="padding: 8px 14px; background: #8b5cf6; color: white;">📋 공지</button>
+            </a>
             <button id="addUserBtn" class="btn-common btn-user-add">➕ 사용자 등록</button>
             <div style="display: flex; gap: 4px;">
                 <input type="text" id="searchInput" class="search-input" placeholder="닉네임 검색..." autocomplete="off">
@@ -1027,9 +1030,20 @@
         const db = getFirestore(app);
 
         // 앱 버전 정보
-        const APP_VERSION = '1.8.7';
-        const APP_BUILD_DATE = '2026-01-13 12:00';
+        const APP_VERSION = '1.8.9';
+        const APP_BUILD_DATE = '2026-01-13 13:00';
         const APP_CHANGELOG = [
+            { version: '1.8.9', date: '2026-01-13 13:00', changes: [
+                '🔒 전투력 마스킹 설정 기능 (최종관리자 전용)',
+                '📋 게시판 카테고리 분류 (공지/주간백업/이벤트/가이드)',
+                '🔗 게시글 링크 첨부 기능 (바로가기 버튼)',
+                '📦 주간 백업 시 자동 게시글 등록'
+            ]},
+            { version: '1.8.8', date: '2026-01-13 12:30', changes: [
+                '📋 공지사항 게시판 기능 추가 (/dia)',
+                '✏️ 최종관리자 전용 글쓰기/수정/삭제',
+                '👁️ 조회수 기능'
+            ]},
             { version: '1.8.7', date: '2026-01-13 12:00', changes: [
                 '⚔️ 공유 링크 생성 시 길드별 클랜 묘실 차감 기능',
                 '🏷️ 차감 적용된 공유 페이지에 차감 정보 배너 표시',
@@ -1178,6 +1192,7 @@
         let biweeklyBaseTime = 0; // 2주 반복 기준 시간
         let spreadsheetConfig = null;
         let syncExcludeList = []; // 분배 제외 목록
+        let powerMaskingEnabled = false; // 전투력 마스킹 설정
         const _0x = { a: "dGpkYWxzOTMyOA==", b: "dG5hbHM5MzI4QEA=" };
         
        
@@ -1295,6 +1310,13 @@
             const shareId = urlParams.get('share');
             if (shareId) {
                 await showSharedBackup(shareId);
+                return;
+            }
+            
+            // 게시판 페이지 체크
+            const page = urlParams.get('page');
+            if (page === 'dia') {
+                await showBoardPage();
                 return;
             }
            
@@ -1538,8 +1560,491 @@
             }
         }
         
+        // ==================== 게시판 기능 ====================
+        async function showBoardPage() {
+            // 세션 체크
+            if (sessionStorage.getItem('isAdmin') === 'true') { 
+                isAdmin = true;
+                if (sessionStorage.getItem('isSuperAdmin') === 'true') {
+                    isSuperAdmin = true;
+                }
+                loggedInAdminId = sessionStorage.getItem('loggedInAdminId') || null;
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('post');
+            
+            if (postId) {
+                await showPostDetail(postId);
+            } else {
+                await showBoardList();
+            }
+        }
+        
+        // 게시판 목록
+        async function showBoardList() {
+            document.title = '📋 공지사항 - 오스카2';
+            
+            // 게시판 카테고리 정의
+            const categories = [
+                { id: 'all', name: '전체', icon: '📋', color: '#6366f1' },
+                { id: 'notice', name: '공지', icon: '📢', color: '#ef4444' },
+                { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981' },
+                { id: 'event', name: '이벤트', icon: '🎉', color: '#f59e0b' },
+                { id: 'guide', name: '가이드', icon: '📖', color: '#8b5cf6' }
+            ];
+            
+            const categoryTabs = categories.map(cat => 
+                `<button class="category-tab" data-category="${cat.id}" style="--cat-color: ${cat.color};">${cat.icon} ${cat.name}</button>`
+            ).join('');
+            
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
+                    <div style="max-width: 900px; margin: 0 auto;">
+                        <!-- 헤더 -->
+                        <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                                <div>
+                                    <h1 style="font-size: 24px; font-weight: 700; color: #1e40af; margin: 0 0 4px;">📋 공지사항</h1>
+                                    <p style="color: #64748b; font-size: 14px; margin: 0;">오스카2 길드 공지게시판</p>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <a href="${window.location.pathname}" style="text-decoration: none;">
+                                        <button style="padding: 10px 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">🏠 메인으로</button>
+                                    </a>
+                                    ${isSuperAdmin ? `<button onclick="openWritePostModal()" style="padding: 10px 16px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">✏️ 글쓰기</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 카테고리 탭 -->
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;" id="categoryTabs">
+                            ${categoryTabs}
+                        </div>
+                        
+                        <!-- 게시글 목록 -->
+                        <div style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
+                            <div id="boardList" style="min-height: 200px;">
+                                <div style="text-align: center; padding: 40px;">
+                                    <div style="width:40px; height:40px; border:4px solid #f3f4f6; border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
+                                    <p style="margin-top: 16px; color: #6b7280;">로딩 중...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 푸터 -->
+                        <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
+                            Made with ❤️ by 에비츄
+                        </div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                    .category-tab { padding: 8px 16px; border: 2px solid #e2e8f0; background: white; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+                    .category-tab:hover { border-color: var(--cat-color); color: var(--cat-color); }
+                    .category-tab.active { background: var(--cat-color); color: white; border-color: var(--cat-color); }
+                    .post-row { display: flex; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; align-items: center; gap: 12px; }
+                    .post-row:hover { background: #f8fafc; }
+                    .post-row:last-child { border-bottom: none; }
+                    .post-title { font-weight: 500; color: #1e293b; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .post-meta { display: flex; gap: 12px; font-size: 13px; color: #94a3b8; flex-shrink: 0; }
+                    .post-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 8px; }
+                    .post-badge.new { background: #dbeafe; color: #1d4ed8; }
+                    .post-badge.notice { background: #fee2e2; color: #dc2626; }
+                    .post-badge.backup { background: #d1fae5; color: #059669; }
+                    .post-badge.event { background: #fef3c7; color: #d97706; }
+                    .post-badge.guide { background: #ede9fe; color: #7c3aed; }
+                    .board-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto; }
+                    .board-modal { background: white; border-radius: 16px; max-width: 600px; margin: 40px auto; padding: 24px; }
+                    .board-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+                    .board-input:focus { outline: none; border-color: #3b82f6; }
+                    .board-textarea { min-height: 200px; resize: vertical; font-family: inherit; }
+                    .board-btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+                    .board-select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white; }
+                </style>
+                
+                <!-- 글쓰기/수정 모달 -->
+                <div id="boardModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeBoardModal()">
+                    <div class="board-modal">
+                        <h2 id="boardModalTitle" style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">✏️ 글쓰기</h2>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">카테고리</label>
+                            <select id="postCategoryInput" class="board-select" style="width: 100%;">
+                                <option value="notice">📢 공지</option>
+                                <option value="backup">💾 주간백업</option>
+                                <option value="event">🎉 이벤트</option>
+                                <option value="guide">📖 가이드</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">제목</label>
+                            <input type="text" id="postTitleInput" class="board-input" placeholder="제목을 입력하세요" maxlength="100">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">내용</label>
+                            <textarea id="postContentInput" class="board-input board-textarea" placeholder="내용을 입력하세요"></textarea>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">🔗 링크 첨부 (선택)</label>
+                            <input type="text" id="postLinkInput" class="board-input" placeholder="https://... (바로가기 버튼으로 표시됩니다)">
+                            <input type="text" id="postLinkTextInput" class="board-input" placeholder="버튼 텍스트 (예: 전투력 현황 보기)" style="margin-top: 8px;">
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                            <button onclick="closeBoardModal()" class="board-btn" style="background: #f1f5f9; color: #475569;">취소</button>
+                            <button id="boardSubmitBtn" onclick="submitPost()" class="board-btn" style="background: #3b82f6; color: white;">등록</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 카테고리 탭 이벤트
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    loadBoardList(this.dataset.category);
+                });
+            });
+            
+            // 기본 '전체' 활성화
+            document.querySelector('.category-tab[data-category="all"]').classList.add('active');
+            
+            await loadBoardList('all');
+        }
+        
+        // 게시글 목록 로드
+        async function loadBoardList(category = 'all') {
+            try {
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                
+                const boardList = document.getElementById('boardList');
+                
+                // 카테고리 필터링
+                let posts = [];
+                snap.forEach((docSnap) => {
+                    const post = docSnap.data();
+                    post.id = docSnap.id;
+                    if (category === 'all' || post.category === category) {
+                        posts.push(post);
+                    }
+                });
+                
+                if (posts.length === 0) {
+                    boardList.innerHTML = `
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                            <p style="color: #64748b; font-size: 16px;">등록된 게시글이 없습니다.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const categoryNames = {
+                    'notice': { name: '공지', class: 'notice' },
+                    'backup': { name: '주간백업', class: 'backup' },
+                    'event': { name: '이벤트', class: 'event' },
+                    'guide': { name: '가이드', class: 'guide' }
+                };
+                
+                let html = '';
+                posts.forEach((post) => {
+                    const date = new Date(post.createdAt).toLocaleDateString('ko-KR');
+                    const isNew = (Date.now() - post.createdAt) < 3 * 24 * 60 * 60 * 1000;
+                    const catInfo = categoryNames[post.category] || { name: '공지', class: 'notice' };
+                    
+                    html += `
+                        <div class="post-row" onclick="location.href='?page=dia&post=${post.id}'">
+                            <span class="post-badge ${catInfo.class}">${catInfo.name}</span>
+                            <div class="post-title">
+                                ${isNew ? '<span class="post-badge new">NEW</span>' : ''}
+                                ${post.title}
+                                ${post.link ? '🔗' : ''}
+                            </div>
+                            <div class="post-meta">
+                                <span>👁️ ${post.views || 0}</span>
+                                <span>${date}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                boardList.innerHTML = html;
+                
+            } catch(e) {
+                console.error('게시글 로드 오류:', e);
+                document.getElementById('boardList').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        게시글을 불러오는 중 오류가 발생했습니다.
+                    </div>
+                `;
+            }
+        }
+        
+        // 게시글 상세
+        async function showPostDetail(postId) {
+            document.body.innerHTML = `
+                <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
+                    <div style="max-width: 900px; margin: 0 auto;">
+                        <div style="text-align: center; padding: 40px;">
+                            <div style="width:40px; height:40px; border:4px solid #f3f4f6; border-top-color:#3b82f6; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto;"></div>
+                            <p style="margin-top: 16px; color: #6b7280;">로딩 중...</p>
+                        </div>
+                    </div>
+                </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            `;
+            
+            try {
+                const postRef = doc(db, "posts", postId);
+                const postDoc = await getDoc(postRef);
+                
+                if (!postDoc.exists()) {
+                    document.body.innerHTML = `
+                        <div style="min-height: 100vh; background: #f9fafb; display: flex; align-items: center; justify-content: center;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
+                                <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">게시글을 찾을 수 없습니다</h1>
+                                <a href="?page=dia" style="color: #3b82f6;">목록으로 돌아가기</a>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 조회수 증가
+                await updateDoc(postRef, {
+                    views: (postDoc.data().views || 0) + 1
+                });
+                
+                const post = postDoc.data();
+                const createdDate = formatDateTime(post.createdAt);
+                const updatedDate = post.updatedAt ? formatDateTime(post.updatedAt) : null;
+                
+                // 카테고리 이름
+                const categoryNames = {
+                    'notice': '📢 공지',
+                    'backup': '💾 주간백업',
+                    'event': '🎉 이벤트',
+                    'guide': '📖 가이드'
+                };
+                const categoryName = categoryNames[post.category] || '📢 공지';
+                
+                // 내용에서 줄바꿈 처리
+                const contentHtml = (post.content || '').replace(/\n/g, '<br>');
+                
+                // 링크 버튼
+                const linkButtonHtml = post.link ? `
+                    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed #e2e8f0; text-align: center;">
+                        <a href="${post.link}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); transition: transform 0.2s, box-shadow 0.2s;">
+                            🔗 ${post.linkText || '바로가기'}
+                        </a>
+                    </div>
+                ` : '';
+                
+                document.title = `${post.title} - 오스카2 공지`;
+                document.body.innerHTML = `
+                    <div style="min-height: 100vh; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px;">
+                        <div style="max-width: 900px; margin: 0 auto;">
+                            <!-- 헤더 -->
+                            <div style="margin-bottom: 20px;">
+                                <a href="?page=dia" style="display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-size: 14px;">
+                                    ← 목록으로
+                                </a>
+                            </div>
+                            
+                            <!-- 게시글 -->
+                            <div style="background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
+                                <!-- 제목 영역 -->
+                                <div style="padding: 24px; border-bottom: 1px solid #f1f5f9;">
+                                    <div style="margin-bottom: 8px;">
+                                        <span style="font-size: 12px; color: #6b7280;">${categoryName}</span>
+                                    </div>
+                                    <h1 style="font-size: 22px; font-weight: 600; color: #1e293b; margin: 0 0 12px; line-height: 1.4;">${post.title}</h1>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #94a3b8;">
+                                        <span>✍️ ${post.author || '관리자'}</span>
+                                        <span>📅 ${createdDate}</span>
+                                        <span>👁️ ${(post.views || 0) + 1}</span>
+                                        ${updatedDate ? `<span style="color: #f59e0b;">✏️ 수정됨 ${updatedDate}</span>` : ''}
+                                    </div>
+                                </div>
+                                
+                                <!-- 내용 영역 -->
+                                <div style="padding: 24px; min-height: 200px; line-height: 1.8; color: #374151; font-size: 15px;">
+                                    ${contentHtml}
+                                    ${linkButtonHtml}
+                                </div>
+                                
+                                <!-- 버튼 영역 -->
+                                ${isSuperAdmin ? `
+                                <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 8px;">
+                                    <button onclick="editPost('${postId}')" style="padding: 8px 16px; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">✏️ 수정</button>
+                                    <button onclick="deletePost('${postId}')" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">🗑️ 삭제</button>
+                                </div>
+                                ` : ''}
+                            </div>
+                            
+                            <!-- 푸터 -->
+                            <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
+                                Made with ❤️ by 에비츄
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+            } catch(e) {
+                console.error('게시글 상세 오류:', e);
+                document.body.innerHTML = `
+                    <div style="min-height: 100vh; background: #f9fafb; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
+                            <h1 style="font-size: 24px; color: #374151; margin-bottom: 12px;">오류가 발생했습니다</h1>
+                            <a href="?page=dia" style="color: #3b82f6;">목록으로 돌아가기</a>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // 글쓰기 모달 열기
+        window.openWritePostModal = function() {
+            document.getElementById('boardModalTitle').textContent = '✏️ 글쓰기';
+            document.getElementById('postCategoryInput').value = 'notice';
+            document.getElementById('postTitleInput').value = '';
+            document.getElementById('postContentInput').value = '';
+            document.getElementById('postLinkInput').value = '';
+            document.getElementById('postLinkTextInput').value = '';
+            document.getElementById('boardSubmitBtn').onclick = () => submitPost();
+            document.getElementById('boardModalOverlay').style.display = 'block';
+        };
+        
+        // 게시글 수정
+        window.editPost = async function(postId) {
+            try {
+                const postDoc = await getDoc(doc(db, "posts", postId));
+                if (!postDoc.exists()) {
+                    alert('게시글을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                const post = postDoc.data();
+                
+                // 수정 모달 표시
+                document.body.innerHTML += `
+                    <div id="editModalOverlay" style="display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; padding: 20px; overflow-y: auto;">
+                        <div style="background: white; border-radius: 16px; max-width: 600px; margin: 40px auto; padding: 24px;">
+                            <h2 style="font-size: 20px; font-weight: 600; color: #1e293b; margin: 0 0 20px;">✏️ 게시글 수정</h2>
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">제목</label>
+                                <input type="text" id="editTitleInput" value="${post.title}" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box;" maxlength="100">
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px;">내용</label>
+                                <textarea id="editContentInput" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; box-sizing: border-box; min-height: 200px; resize: vertical; font-family: inherit;">${post.content}</textarea>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                                <button onclick="document.getElementById('editModalOverlay').remove()" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">취소</button>
+                                <button onclick="updatePost('${postId}')" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">수정 완료</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+            } catch(e) {
+                console.error('게시글 수정 오류:', e);
+                alert('오류가 발생했습니다.');
+            }
+        };
+        
+        // 게시글 업데이트
+        window.updatePost = async function(postId) {
+            const title = document.getElementById('editTitleInput').value.trim();
+            const content = document.getElementById('editContentInput').value.trim();
+            
+            if (!title) {
+                alert('제목을 입력해주세요.');
+                return;
+            }
+            
+            try {
+                await updateDoc(doc(db, "posts", postId), {
+                    title: title,
+                    content: content,
+                    updatedAt: Date.now()
+                });
+                
+                alert('수정되었습니다.');
+                location.reload();
+                
+            } catch(e) {
+                console.error('게시글 업데이트 오류:', e);
+                alert('수정 중 오류가 발생했습니다.');
+            }
+        };
+        
+        // 게시글 삭제
+        window.deletePost = async function(postId) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            
+            try {
+                await deleteDoc(doc(db, "posts", postId));
+                alert('삭제되었습니다.');
+                location.href = '?page=dia';
+                
+            } catch(e) {
+                console.error('게시글 삭제 오류:', e);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        };
+        
+        // 모달 닫기
+        window.closeBoardModal = function() {
+            document.getElementById('boardModalOverlay').style.display = 'none';
+        };
+        
+        // 게시글 등록
+        window.submitPost = async function() {
+            const category = document.getElementById('postCategoryInput').value;
+            const title = document.getElementById('postTitleInput').value.trim();
+            const content = document.getElementById('postContentInput').value.trim();
+            const link = document.getElementById('postLinkInput').value.trim();
+            const linkText = document.getElementById('postLinkTextInput').value.trim();
+            
+            if (!title) {
+                alert('제목을 입력해주세요.');
+                return;
+            }
+            
+            try {
+                const postId = `post_${Date.now()}`;
+                const postData = {
+                    category: category,
+                    title: title,
+                    content: content,
+                    author: '에비츄',
+                    views: 0,
+                    createdAt: Date.now()
+                };
+                
+                // 링크가 있으면 추가
+                if (link) {
+                    postData.link = link;
+                    postData.linkText = linkText || '바로가기';
+                }
+                
+                await setDoc(doc(db, "posts", postId), postData);
+                
+                alert('등록되었습니다.');
+                closeBoardModal();
+                await loadBoardList('all');
+                
+            } catch(e) {
+                console.error('게시글 등록 오류:', e);
+                alert('등록 중 오류가 발생했습니다.');
+            }
+        };
+        // ==================== 게시판 기능 끝 ====================
        
-        async function checkDuplicateNicknames() {
             if (!isAdmin) return;
             
             try {
@@ -1653,6 +2158,7 @@
                 if (docSnap.exists()) {
                     spreadsheetConfig = docSnap.data();
                     syncExcludeList = spreadsheetConfig.excludeList || [];
+                    powerMaskingEnabled = spreadsheetConfig.powerMaskingEnabled || false;
                 }
             } catch (e) {
                 console.log("Spreadsheet config error", e);
@@ -2298,8 +2804,12 @@
                 if(user.mount_legend > 0) icons += "🐴";
                 if(user.mount_myth > 0) icons += "🦄";
                 
+                const shouldBlur = powerMaskingEnabled && !isAdmin && (loggedInUser !== user.name);
+                const blurClass = shouldBlur ? ' blurred' : '';
+                const powerDisplay = shouldBlur ? '••••••' : user.power.toLocaleString();
+                
                 tr.innerHTML = `<td><div class="player-cell"><span class="rank-number">${index + 1}</span><span class="player-name" title="${user.name}">${user.name}</span><span class="spec-icons">${icons}</span></div></td>
-                    <td><span class="power-value">${user.power.toLocaleString()}</span></td>`;
+                    <td><span class="power-value${blurClass}">${powerDisplay}</span></td>`;
                 
                 tr.style.cursor = 'pointer';
                 tr.addEventListener('click', (e) => {
@@ -2333,6 +2843,10 @@
                 }
             };
 
+            const shouldBlurPower = powerMaskingEnabled && !isAdmin && (loggedInUser !== name);
+            const powerDisplayVal = shouldBlurPower ? '••••••' : u.power.toLocaleString();
+            const powerClass = shouldBlurPower ? 'power-value blurred' : '';
+
                        let updatedInfo = '';
             if (isAdmin && u.updatedAt) {
                 const updatedDate = formatDateTime(u.updatedAt);
@@ -2350,7 +2864,7 @@
                     <div class="info-item"><span class="info-label">길드</span><span class="info-val">${u.guild}</span></div>
                     <div class="info-item">
                         <span class="info-label">전투력</span>
-                        <span class="info-val">${u.power.toLocaleString()}</span>
+                        <span class="info-val ${powerClass}" ${shouldBlurPower ? 'title="로그인 후 확인 가능"' : ''}>${powerDisplayVal}</span>
                     </div>
                 </div>
                 ${updatedInfo}
@@ -4129,6 +4643,7 @@
             const sheetId = currentConfig.sheetId || '1ySgXwqwDGSW3c9gh8LVYPDBmdkh27q9JmVKId8gQ6uI';
             const webAppUrl = currentConfig.webAppUrl || '';
             const autoSync = currentConfig.autoSync !== false;
+            const maskingEnabled = currentConfig.powerMaskingEnabled || false;
             
                        let sheetMappingHtml = '<div class="form-group"><label class="form-label">시트 탭 매핑 (길드명: 시트탭명)</label>';
             guildList.forEach(guild => {
@@ -4166,6 +4681,17 @@
 
             const html = `
                 ${notSuperAdminNotice}
+                
+                <!-- 전투력 마스킹 설정 -->
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:20px;">
+                    <h4 style="font-size:14px; font-weight:600; color:#1e293b; margin:0 0 12px;">🔒 전투력 공개 설정</h4>
+                    <label class="checkbox-label" style="background:none; padding:0; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="powerMasking" ${maskingEnabled ? 'checked' : ''} ${!isSuperAdmin ? 'disabled' : ''}>
+                        <span style="font-size:13px; color:#374151;">일반 사용자에게 타인의 전투력 숨기기</span>
+                    </label>
+                    <p style="font-size:11px; color:#6b7280; margin:8px 0 0 24px;">활성화 시 비로그인 또는 자신이 아닌 다른 사람의 전투력이 ••••••로 표시됩니다</p>
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label">스프레드시트 ID</label>
                     <input type="text" id="sheetId" class="form-input" value="${sheetId}" placeholder="스프레드시트 URL의 /d/ 뒤 ID" ${!isSuperAdmin ? 'readonly style="background:#f3f4f6;"' : ''}>
@@ -4231,6 +4757,7 @@
             const sheetId = document.getElementById('sheetId').value.trim();
             const webAppUrl = document.getElementById('webAppUrl').value.trim();
             const autoSync = document.getElementById('autoSync').checked;
+            const powerMaskingEnabledVal = document.getElementById('powerMasking').checked;
 
             if (!sheetId || !webAppUrl) {
                 showAlert('스프레드시트 ID와 웹앱 URL을 모두 입력하세요', 'error');
@@ -4250,14 +4777,18 @@
                 sheetId,
                 webAppUrl,
                 autoSync,
-                sheetMappings
+                sheetMappings,
+                powerMaskingEnabled: powerMaskingEnabledVal
             };
 
             try {
                 await setDoc(doc(db, "config", "spreadsheet"), config);
                 spreadsheetConfig = config;
-                showAlert('스프레드시트 설정이 저장되었습니다', 'success');
+                powerMaskingEnabled = powerMaskingEnabledVal;
+                showAlert('설정이 저장되었습니다', 'success');
                 closeModal();
+                // 마스킹 설정 변경 시 화면 새로고침
+                loadData();
             } catch (e) {
                 console.error(e);
                 showAlert('설정 저장 중 오류가 발생했습니다', 'error');
@@ -7183,21 +7714,75 @@
                 guildStats[u.guild].totalDiff += u.diff;
             });
             
+            const totalPower = backupUsers.reduce((sum, u) => sum + u.power, 0);
+            const totalDiff = backupUsers.reduce((sum, u) => sum + u.diff, 0);
+            
             const backupId = `backup_${now}`;
             try {
                 await setDoc(doc(db, "backups", backupId), {
                     users: backupUsers,
                     guildStats: guildStats,
                     totalUsers: backupUsers.length,
-                    totalPower: backupUsers.reduce((sum, u) => sum + u.power, 0),
-                    totalDiff: backupUsers.reduce((sum, u) => sum + u.diff, 0),
+                    totalPower: totalPower,
+                    totalDiff: totalDiff,
                     createdAt: now,
                     createdBy: 'auto',
                     type: 'auto'
                 });
                 console.log('자동 백업 완료!');
+                
+                // 게시판에 자동 등록
+                await createBackupPost(backupId, now, backupUsers.length, totalPower, totalDiff);
+                
             } catch(e) {
                 console.error('자동 백업 실패:', e);
+            }
+        }
+        
+        // 백업 게시글 자동 생성
+        async function createBackupPost(backupId, createdAt, totalUsers, totalPower, totalDiff) {
+            try {
+                const date = new Date(createdAt);
+                const dateStr = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+                const weekNum = Math.ceil(date.getDate() / 7);
+                const monthName = `${date.getMonth() + 1}월 ${weekNum}주차`;
+                
+                const diffSign = totalDiff >= 0 ? '+' : '';
+                const diffColor = totalDiff >= 0 ? '상승' : '하락';
+                
+                // 공유 링크 생성
+                const shareId = `share_${Date.now()}`;
+                const backupDoc = await getDoc(doc(db, "backups", backupId));
+                if (backupDoc.exists()) {
+                    await setDoc(doc(db, "sharedBackups", shareId), {
+                        backupId: backupId,
+                        pageTitle: `🏆 오스카2 ${monthName} 전투력 현황`,
+                        headerName: '🏆 오스카2 전투력 현황판',
+                        description: `${dateStr} 주간 백업`,
+                        createdAt: Date.now(),
+                        createdBy: '에비츄',
+                        guildDeductions: {},
+                        backupData: backupDoc.data()
+                    });
+                }
+                
+                const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+                
+                const postId = `post_backup_${createdAt}`;
+                await setDoc(doc(db, "posts", postId), {
+                    category: 'backup',
+                    title: `📊 ${monthName} 주간 전투력 현황`,
+                    content: `${dateStr} 기준 주간 전투력 현황입니다.\n\n📌 총 인원: ${totalUsers}명\n💪 총 전투력: ${totalPower.toLocaleString()}\n📈 주간 증감: ${diffSign}${totalDiff.toLocaleString()} (${diffColor})\n\n아래 버튼을 눌러 상세 현황을 확인하세요!`,
+                    author: '에비츄',
+                    views: 0,
+                    createdAt: createdAt,
+                    link: shareUrl,
+                    linkText: '📊 전투력 현황 보기'
+                });
+                
+                console.log('백업 게시글 자동 생성 완료!');
+            } catch(e) {
+                console.error('백업 게시글 생성 오류:', e);
             }
         }
         
