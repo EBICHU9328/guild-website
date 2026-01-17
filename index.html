@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.3.3">
-    <meta name="build-date" content="2026-01-17 01:00">
+    <meta name="version" content="2.3.4">
+    <meta name="build-date" content="2026-01-17 01:15">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1126,9 +1126,13 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const APP_VERSION = '2.3.3';
-        const APP_BUILD_DATE = '2026-01-17 01:00';
+        const APP_VERSION = '2.3.4';
+        const APP_BUILD_DATE = '2026-01-17 01:15';
         const APP_CHANGELOG = [
+            { version: '2.3.4', date: '2026-01-17 01:15', changes: [
+                '🎁 아이템 게시판 카테고리 추가',
+                '💰 아이템 판매/구매 선택 기능'
+            ]},
             { version: '2.3.3', date: '2026-01-17 01:00', changes: [
                 '🧹 코드 주석 정리',
                 '📝 제목 이모지 삭제'
@@ -2737,6 +2741,7 @@
                     const defaultCats = [
                         { id: 'notice', name: '공지사항', icon: '📢', color: '#ef4444', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
                         { id: 'dia', name: '다이아', icon: '💎', color: '#3b82f6', allowUserWrite: true, isPrivate: false, requireStatus: false, defaultTemplate: '💰 매입 단가\n10,000 다이아 당 : 00,000원 지급\n\n🍊 매입 수량\n최소 : 1,000개부터 소량도 OK\n최대 : 10만 개까지\n\n수량 상관없이 깔끔하게 매입해 드립니다.\n판매 원하시면 아래 버튼을 눌러주세요!\n\n👇 [판매 문의 바로가기]' },
+                        { id: 'item', name: '아이템', icon: '🎁', color: '#f59e0b', allowUserWrite: true, isPrivate: false, requireStatus: false, defaultTemplate: '🎁 아이템 정보\n아이템명:\n수량:\n\n💰 가격\n개당:\n\n📝 상세 설명\n' },
                         { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
                         { id: 'nickname', name: '닉네임 변경', icon: '✏️', color: '#8b5cf6', allowUserWrite: true, isPrivate: true, requireStatus: true, defaultTemplate: '📝 닉네임 변경 신청\n\n현재 닉네임:\n변경할 닉네임:\n\n사유:' }
                     ];
@@ -3031,6 +3036,22 @@
                                     <input type="radio" name="diaType" value="buy" style="display: none;">
                                     <span style="font-size: 20px;">🛒</span>
                                     <span style="font-weight: 600; color: #374151;">다이아 구매</span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- 아이템 판매/구매 선택 (아이템 카테고리만) -->
+                        <div id="itemTypeSection" style="display: none; margin-bottom: 20px;">
+                            <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">🎁 거래 유형</label>
+                            <div style="display: flex; gap: 12px;">
+                                <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.15s;" onclick="selectItemType('sell', this)">
+                                    <input type="radio" name="itemType" value="sell" style="display: none;">
+                                    <span style="font-size: 20px;">💰</span>
+                                    <span style="font-weight: 600; color: #374151;">아이템 판매</span>
+                                </label>
+                                <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.15s;" onclick="selectItemType('buy', this)">
+                                    <input type="radio" name="itemType" value="buy" style="display: none;">
+                                    <span style="font-size: 20px;">🛒</span>
+                                    <span style="font-weight: 600; color: #374151;">아이템 구매</span>
                                 </label>
                             </div>
                         </div>
@@ -3987,6 +4008,18 @@
             }
             window.selectedDiaType = null;
             
+            const itemSection = document.getElementById('itemTypeSection');
+            if (itemSection) {
+                itemSection.style.display = firstCatId === 'item' ? 'block' : 'none';
+                document.querySelectorAll('#itemTypeSection label').forEach(label => {
+                    label.style.background = '#f8fafc';
+                    label.style.borderColor = '#e2e8f0';
+                    const input = label.querySelector('input');
+                    if (input) input.checked = false;
+                });
+            }
+            window.selectedItemType = null;
+            
 
             const firstCat = writableCategories[0];
             if (firstCat && firstCat.defaultTemplate) {
@@ -4023,12 +4056,10 @@
                 document.getElementById('postContentEditor').innerHTML = template.replace(/\n/g, '<br>');
             }
             
-
             const diaSection = document.getElementById('diaTypeSection');
             if (diaSection) {
                 if (categoryId === 'dia') {
                     diaSection.style.display = 'block';
-
                     document.querySelectorAll('#diaTypeSection label').forEach(label => {
                         label.style.background = '#f8fafc';
                         label.style.borderColor = '#e2e8f0';
@@ -4039,6 +4070,23 @@
                 } else {
                     diaSection.style.display = 'none';
                     window.selectedDiaType = null;
+                }
+            }
+            
+            const itemSection = document.getElementById('itemTypeSection');
+            if (itemSection) {
+                if (categoryId === 'item') {
+                    itemSection.style.display = 'block';
+                    document.querySelectorAll('#itemTypeSection label').forEach(label => {
+                        label.style.background = '#f8fafc';
+                        label.style.borderColor = '#e2e8f0';
+                        const input = label.querySelector('input');
+                        if (input) input.checked = false;
+                    });
+                    window.selectedItemType = null;
+                } else {
+                    itemSection.style.display = 'none';
+                    window.selectedItemType = null;
                 }
             }
         };
@@ -4065,6 +4113,24 @@
             window.selectedDiaType = type;
         };
         
+        window.selectItemType = function(type, labelEl) {
+            document.querySelectorAll('#itemTypeSection label').forEach(label => {
+                label.style.background = '#f8fafc';
+                label.style.borderColor = '#e2e8f0';
+            });
+            
+            if (type === 'sell') {
+                labelEl.style.background = '#fef3c7';
+                labelEl.style.borderColor = '#f59e0b';
+            } else {
+                labelEl.style.background = '#dbeafe';
+                labelEl.style.borderColor = '#3b82f6';
+            }
+            
+            const input = labelEl.querySelector('input');
+            if (input) input.checked = true;
+            window.selectedItemType = type;
+        };
 
         window.execCmd = function(command, value = null) {
             document.execCommand(command, false, value);
@@ -4808,12 +4874,17 @@
 
             if (category === 'dia' && window.selectedDiaType) {
                 const diaTag = window.selectedDiaType === 'sell' ? '[다이아 판매]' : '[다이아 구매]';
-
                 if (!title.startsWith('[다이아 판매]') && !title.startsWith('[다이아 구매]')) {
                     title = diaTag + ' ' + title;
                 }
             }
             
+            if (category === 'item' && window.selectedItemType) {
+                const itemTag = window.selectedItemType === 'sell' ? '[아이템 판매]' : '[아이템 구매]';
+                if (!title.startsWith('[아이템 판매]') && !title.startsWith('[아이템 구매]')) {
+                    title = itemTag + ' ' + title;
+                }
+            }
 
             const pinnedCategories = [];
             if (isAdmin) {
