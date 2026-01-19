@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.4.0">
-    <meta name="build-date" content="2026-01-18 04:15">
+    <meta name="version" content="2.4.1">
+    <meta name="build-date" content="2026-01-18 04:25">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -1128,9 +1128,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const APP_VERSION = '2.4.0';
-        const APP_BUILD_DATE = '2026-01-18 04:15';
+        const APP_VERSION = '2.4.1';
+        const APP_BUILD_DATE = '2026-01-18 04:25';
         const APP_CHANGELOG = [
+            { version: '2.4.1', date: '2026-01-18 04:25', changes: [
+                '💾 DB 백업 관리 UI 추가',
+                '📋 백업 목록 조회 및 다운로드',
+                '🗑️ 백업 삭제 기능'
+            ]},
             { version: '2.4.0', date: '2026-01-18 04:15', changes: [
                 '💾 DB 전체 백업 기능 추가',
                 '⏰ 1주일마다 자동 백업',
@@ -7834,7 +7839,7 @@
                 showAlert('DB 백업은 최종관리자만 가능합니다', 'error');
                 return;
             }
-            await performDatabaseBackup();
+            await openDBBackupListModal();
         });
 
         async function openSyncExcludeModal() {
@@ -11393,24 +11398,136 @@
                 const backupId = `db_backup_${backupData.timestamp}`;
                 await setDoc(doc(db, "db_backups", backupId), backupData);
                 
-                const jsonStr = JSON.stringify(backupData, null, 2);
-                const blob = new Blob([jsonStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `db_backup_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showAlert('DB 백업 완료!\nFirebase와 파일로 모두 저장되었습니다.', 'success');
+                showAlert('DB 백업 완료!\nFirebase에 저장되었습니다.', 'success');
                 console.log('DB 백업 완료:', backupId);
+                
+                openDBBackupListModal();
             } catch(e) {
                 console.error('DB 백업 오류:', e);
                 showAlert('DB 백업 중 오류가 발생했습니다.', 'error');
             }
         }
+        
+        async function openDBBackupListModal() {
+            openLargeModal('💾 DB 백업 관리', 'Firebase에 저장된 백업 파일을 관리합니다');
+            setModalBody('<p style="text-align:center; padding:40px;">백업 목록 로딩 중...</p>');
+            
+            try {
+                const backupsSnap = await getDocs(query(collection(db, "db_backups"), orderBy("timestamp", "desc")));
+                
+                if (backupsSnap.empty) {
+                    setModalBody(`
+                        <div style="text-align:center; padding:40px;">
+                            <p style="color:#6b7280; margin-bottom:20px;">저장된 백업이 없습니다</p>
+                            <button class="btn btn-primary" onclick="performDatabaseBackup()">새 백업 생성</button>
+                        </div>
+                    `);
+                    return;
+                }
+                
+                let html = `
+                    <div style="margin-bottom:16px; text-align:right;">
+                        <button class="btn btn-primary" onclick="performDatabaseBackup()">+ 새 백업 생성</button>
+                    </div>
+                    <div style="max-height:500px; overflow-y:auto;">
+                        <table class="common-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>백업 날짜</th>
+                                    <th>Users</th>
+                                    <th>Posts</th>
+                                    <th>Backups</th>
+                                    <th>Config</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                backupsSnap.forEach(doc => {
+                    const backup = doc.data();
+                    const date = new Date(backup.timestamp);
+                    const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+                    const isAuto = backup.type === 'auto_weekly';
+                    
+                    const usersCount = backup.collections?.users?.length || 0;
+                    const postsCount = backup.collections?.posts?.length || 0;
+                    const backupsCount = backup.collections?.backups?.length || 0;
+                    const configCount = backup.collections?.config?.length || 0;
+                    
+                    html += `
+                        <tr>
+                            <td>
+                                ${dateStr}
+                                ${isAuto ? '<span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px;font-size:11px;margin-left:4px;">자동</span>' : ''}
+                            </td>
+                            <td>${usersCount}개</td>
+                            <td>${postsCount}개</td>
+                            <td>${backupsCount}개</td>
+                            <td>${configCount}개</td>
+                            <td>
+                                <button class="btn" onclick="downloadBackup('${doc.id}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;margin-right:4px;">다운로드</button>
+                                <button class="btn" onclick="deleteBackup('${doc.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;">삭제</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                setModalBody(html);
+            } catch(e) {
+                console.error('백업 목록 로드 오류:', e);
+                setModalBody('<p style="text-align:center; padding:40px; color:#ef4444;">백업 목록을 불러오는데 실패했습니다</p>');
+            }
+        }
+        
+        window.downloadBackup = async function(backupId) {
+            try {
+                showAlert('다운로드 준비 중...', 'success');
+                const backupDoc = await getDoc(doc(db, "db_backups", backupId));
+                
+                if (!backupDoc.exists()) {
+                    showAlert('백업을 찾을 수 없습니다', 'error');
+                    return;
+                }
+                
+                const backupData = backupDoc.data();
+                const jsonStr = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const date = new Date(backupData.timestamp);
+                a.download = `db_backup_${date.toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showAlert('다운로드 완료!', 'success');
+            } catch(e) {
+                console.error('백업 다운로드 오류:', e);
+                showAlert('다운로드 중 오류가 발생했습니다', 'error');
+            }
+        };
+        
+        window.deleteBackup = async function(backupId) {
+            if (!confirm('이 백업을 삭제하시겠습니까?\n삭제된 백업은 복구할 수 없습니다.')) return;
+            
+            try {
+                await deleteDoc(doc(db, "db_backups", backupId));
+                showAlert('백업이 삭제되었습니다', 'success');
+                openDBBackupListModal();
+            } catch(e) {
+                console.error('백업 삭제 오류:', e);
+                showAlert('삭제 중 오류가 발생했습니다', 'error');
+            }
+        };
         
         async function checkWeeklyDBBackup() {
             if (!isSuperAdmin) return;
