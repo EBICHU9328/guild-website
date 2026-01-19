@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#fff9f9">
-    <meta name="version" content="2.3.4">
-    <meta name="build-date" content="2026-01-17 01:15">
+    <meta name="version" content="2.4.0">
+    <meta name="build-date" content="2026-01-18 04:15">
     
     <!-- Open Graph / 링크 공유 메타태그 -->
     <meta property="og:type" content="website">
@@ -886,6 +886,8 @@
                     <button class="admin-dropdown-item" id="syncExcludeBtn">🚫 분배 제외 관리</button>
                     <button class="admin-dropdown-item" id="excelBtn">🔗 공유 링크 생성</button>
                     <button class="admin-dropdown-item" id="backupManageBtn">📦 주간 백업</button>
+                    <div class="admin-dropdown-divider"></div>
+                    <button class="admin-dropdown-item" id="dbBackupBtn">💾 DB 백업</button>
                 </div>
             </div>
             
@@ -1126,9 +1128,30 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const APP_VERSION = '2.3.4';
-        const APP_BUILD_DATE = '2026-01-17 01:15';
+        const APP_VERSION = '2.4.0';
+        const APP_BUILD_DATE = '2026-01-18 04:15';
         const APP_CHANGELOG = [
+            { version: '2.4.0', date: '2026-01-18 04:15', changes: [
+                '💾 DB 전체 백업 기능 추가',
+                '⏰ 1주일마다 자동 백업',
+                '🔧 비밀번호 초기화 시 모달 유지'
+            ]},
+            { version: '2.3.8', date: '2026-01-18 04:00', changes: [
+                '⚠️ 비밀번호 중복 경고 강화',
+                '🔒 보안 책임 고지 추가'
+            ]},
+            { version: '2.3.7', date: '2026-01-18 03:50', changes: [
+                '🔧 자동 백업 0명 인식 버그 수정',
+                '📊 백업 시 데이터 자동 로드 추가'
+            ]},
+            { version: '2.3.6', date: '2026-01-18 03:45', changes: [
+                '📏 사용자 선택 모달 높이 제한',
+                '📜 스크롤 기능 추가 (최대 300px)'
+            ]},
+            { version: '2.3.5', date: '2026-01-17 01:30', changes: [
+                '🔄 카테고리 기본값 초기화 버튼',
+                '↕️ 카테고리 탭 순서 변경 기능'
+            ]},
             { version: '2.3.4', date: '2026-01-17 01:15', changes: [
                 '🎁 아이템 게시판 카테고리 추가',
                 '💰 아이템 판매/구매 선택 기능'
@@ -3164,7 +3187,11 @@
                 <!-- 카테고리 관리 모달 -->
                 <div id="categoryModalOverlay" class="board-modal-overlay">
                     <div class="board-modal" style="max-width: 700px;">
-                        <h2 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 24px;">카테고리 관리</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h2 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0;">카테고리 관리</h2>
+                            <button onclick="resetCategoriesToDefault()" style="padding: 8px 14px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;">🔄 기본값 초기화</button>
+                        </div>
+                        <p style="font-size: 12px; color: #6b7280; margin-bottom: 16px;">💡 ↑↓ 버튼으로 탭 순서를 변경할 수 있습니다.</p>
                         <div id="categoryList" style="margin-bottom: 24px; max-height: 400px; overflow-y: auto;"></div>
                         <div style="border-top: 2px solid #f1f5f9; padding-top: 20px;">
                             <p style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">새 카테고리 추가</p>
@@ -5034,17 +5061,31 @@
             overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;';
             
             let optionsHtml = users.map(u => `
-                <button onclick="selectVerifiedUser('${u.name}', '${u.password}')" style="width:100%;padding:14px;margin-bottom:8px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.15s;">
+                <button onclick="selectVerifiedUser('${u.name}', '${u.password}')" style="width:100%;padding:12px;margin-bottom:6px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#e0e7ff';this.style.borderColor='#6366f1';" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e8f0';">
                     ${u.name}
                 </button>
             `).join('');
             
             overlay.innerHTML = `
-                <div style="background:white;border-radius:16px;padding:24px;max-width:320px;width:90%;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+                <div style="background:white;border-radius:16px;padding:24px;max-width:380px;width:90%;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
                     <h3 style="font-size:18px;font-weight:700;margin:0 0 16px;color:#0f172a;">👤 사용자 선택</h3>
-                    <p style="font-size:13px;color:#64748b;margin-bottom:16px;">동일한 비밀번호를 사용하는 사용자가 여러명입니다.<br>본인을 선택해주세요.</p>
-                    ${optionsHtml}
-                    <button onclick="document.getElementById('userSelectOverlay').remove()" style="width:100%;padding:12px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:8px;">취소</button>
+                    <p style="font-size:13px;color:#64748b;margin-bottom:12px;">동일한 비밀번호를 사용하는 사용자가 여러명입니다.<br>본인을 선택해주세요.</p>
+                    
+                    <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:12px;padding:16px;margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <span style="font-size:24px;">⚠️</span>
+                            <strong style="font-size:15px;color:#991b1b;">보안 경고</strong>
+                        </div>
+                        <p style="font-size:13px;color:#7f1d1d;line-height:1.6;margin:0;">
+                            <strong style="display:block;margin-bottom:6px;">즉시 비밀번호를 변경하세요!</strong>
+                            동일한 비밀번호 사용으로 인한 모든 피해는 사용자 본인의 책임입니다. 길드는 이에 대한 책임을 지지 않습니다.
+                        </p>
+                    </div>
+                    
+                    <div style="max-height:300px;overflow-y:auto;margin-bottom:8px;padding-right:4px;">
+                        ${optionsHtml}
+                    </div>
+                    <button onclick="document.getElementById('userSelectOverlay').remove()" style="width:100%;padding:12px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-weight:600;cursor:pointer;">취소</button>
                 </div>
             `;
             
@@ -5081,9 +5122,16 @@
             
             let html = '';
             categories.forEach((cat, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === categories.length - 1;
                 html += `
                     <div id="cat-row-${cat.id}" style="padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <button onclick="moveCategoryUp(${idx})" ${isFirst ? 'disabled' : ''} style="padding: 4px 8px; background: ${isFirst ? '#e2e8f0' : '#dbeafe'}; color: ${isFirst ? '#9ca3af' : '#1d4ed8'}; border: none; border-radius: 4px; cursor: ${isFirst ? 'not-allowed' : 'pointer'}; font-size: 12px;">↑</button>
+                                <button onclick="moveCategoryDown(${idx})" ${isLast ? 'disabled' : ''} style="padding: 4px 8px; background: ${isLast ? '#e2e8f0' : '#dbeafe'}; color: ${isLast ? '#9ca3af' : '#1d4ed8'}; border: none; border-radius: 4px; cursor: ${isLast ? 'not-allowed' : 'pointer'}; font-size: 12px;">↓</button>
+                            </div>
+                            <span style="font-size: 12px; color: #6b7280; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; min-width: 24px; text-align: center;">${idx + 1}</span>
                             <input type="text" id="cat-icon-${cat.id}" value="${cat.icon}" style="width: 50px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 16px; text-align: center;">
                             <input type="text" id="cat-name-${cat.id}" value="${cat.name}" style="flex: 1; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
                             <span style="font-size: 11px; color: #6b7280; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">${cat.id}</span>
@@ -5222,6 +5270,63 @@
             }
         };
         
+        window.moveCategoryUp = async function(idx) {
+            if (idx <= 0) return;
+            try {
+                const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+                const temp = categories[idx];
+                categories[idx] = categories[idx - 1];
+                categories[idx - 1] = temp;
+                
+                await setDoc(doc(db, "config", "boardCategories"), { list: categories });
+                window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
+                await loadCategoryList();
+            } catch(e) {
+                console.error('순서 변경 오류:', e);
+                showBoardAlert('오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        window.moveCategoryDown = async function(idx) {
+            const categories = (window.boardCategories || []).filter(c => c.id !== 'all');
+            if (idx >= categories.length - 1) return;
+            try {
+                const temp = categories[idx];
+                categories[idx] = categories[idx + 1];
+                categories[idx + 1] = temp;
+                
+                await setDoc(doc(db, "config", "boardCategories"), { list: categories });
+                window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...categories];
+                await loadCategoryList();
+            } catch(e) {
+                console.error('순서 변경 오류:', e);
+                showBoardAlert('오류가 발생했습니다.', 'error');
+            }
+        };
+        
+        window.resetCategoriesToDefault = async function() {
+            if (!confirm('카테고리를 기본값으로 초기화하시겠습니까?\n기존 설정이 모두 삭제됩니다.')) return;
+            
+            try {
+                const defaultCats = [
+                    { id: 'notice', name: '공지사항', icon: '📢', color: '#ef4444', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
+                    { id: 'dia', name: '다이아', icon: '💎', color: '#3b82f6', allowUserWrite: true, isPrivate: false, requireStatus: false, defaultTemplate: '💰 매입 단가\n10,000 다이아 당 : 00,000원 지급\n\n🍊 매입 수량\n최소 : 1,000개부터 소량도 OK\n최대 : 10만 개까지\n\n수량 상관없이 깔끔하게 매입해 드립니다.\n판매 원하시면 아래 버튼을 눌러주세요!\n\n👇 [판매 문의 바로가기]' },
+                    { id: 'item', name: '아이템', icon: '🎁', color: '#f59e0b', allowUserWrite: true, isPrivate: false, requireStatus: false, defaultTemplate: '🎁 아이템 정보\n아이템명:\n수량:\n\n💰 가격\n개당:\n\n📝 상세 설명\n' },
+                    { id: 'backup', name: '주간백업', icon: '💾', color: '#10b981', allowUserWrite: false, isPrivate: false, requireStatus: false, defaultTemplate: '' },
+                    { id: 'nickname', name: '닉네임 변경', icon: '✏️', color: '#8b5cf6', allowUserWrite: true, isPrivate: true, requireStatus: true, defaultTemplate: '📝 닉네임 변경 신청\n\n현재 닉네임:\n변경할 닉네임:\n\n사유:' }
+                ];
+                
+                await setDoc(doc(db, "config", "boardCategories"), { list: defaultCats });
+                window.boardCategories = [{ id: 'all', name: '전체', icon: '📋', color: '#6366f1' }, ...defaultCats];
+                
+                await loadCategoryList();
+                showBoardAlert('기본값으로 초기화되었습니다.\n페이지를 새로고침해주세요.', 'success');
+                
+            } catch(e) {
+                console.error('초기화 오류:', e);
+                showBoardAlert('오류가 발생했습니다.', 'error');
+            }
+        };
 
         function showBoardAlert(message, type = 'success', callback = null) {
 
@@ -6426,7 +6531,7 @@
                 });
                 
                 if (pwDuplicate) {
-                    showAlert('해당 번호는 타인이 이미 사용중입니다.\n보안을 위해 다른 숫자를 사용해주세요.', 'error');
+                    showAlert('⚠️ 비밀번호 중복!\n\n해당 번호는 이미 다른 사용자가 사용중입니다.\n동일 비밀번호 사용으로 인한 피해는 본인 책임입니다.\n\n반드시 다른 숫자를 사용하세요!', 'error');
                     return;
                 }
 
@@ -7723,6 +7828,14 @@
             if (!isAdmin) return;
             openSyncExcludeModal();
         });
+        
+        document.getElementById('dbBackupBtn').addEventListener('click', async () => {
+            if (!isSuperAdmin) {
+                showAlert('DB 백업은 최종관리자만 가능합니다', 'error');
+                return;
+            }
+            await performDatabaseBackup();
+        });
 
         async function openSyncExcludeModal() {
             openLargeModal('🚫 분배 제외 관리', '분배금 계산에서 제외할 유저를 선택합니다');
@@ -8576,7 +8689,6 @@
             if(!await showConfirm('비밀번호 초기화', `[${n}]님의 비밀번호를 초기화하시겠습니까?`)) return; 
             await updateDoc(doc(db, "users", n), { password: null }); 
             showAlert('비밀번호가 초기화되었습니다', 'success'); 
-            closeModal(); 
             setTimeout(() => location.reload(), 1000); 
         };
         
@@ -8606,7 +8718,7 @@
                     });
                     
                     if (isDuplicate) {
-                        showAlert('해당 번호는 타인이 이미 사용중입니다.\n다른 숫자를 사용해주세요.', 'error');
+                        showAlert('⚠️ 비밀번호 중복!\n\n해당 번호는 이미 다른 사용자가 사용중입니다.\n동일 비밀번호 사용으로 인한 피해는 본인 책임입니다.\n\n반드시 다른 숫자를 사용하세요!', 'error');
                         return;
                     }
                 } catch(e) {
@@ -9871,7 +9983,7 @@
                     });
                     
                     if (isDuplicate) {
-                        showAlert('해당 번호는 타인이 이미 사용중입니다.\n보안을 위해 다른 숫자를 사용해주세요.', 'error');
+                        showAlert('⚠️ 비밀번호 중복!\n\n해당 번호는 이미 다른 사용자가 사용중입니다.\n동일 비밀번호 사용으로 인한 피해는 본인 책임입니다.\n\n반드시 다른 숫자를 사용하세요!', 'error');
                         return;
                     }
                 } catch(e) {
@@ -9935,7 +10047,7 @@
 
                     if (duplicateCount > 1) {
                         setTimeout(() => {
-                            showAlert('⚠️ 해당 비밀번호는 타인과 함께 사용중입니다.\n보안에 매우 위협적이므로 관리자에게 변경요청 해주세요.', 'warning');
+                            showAlert('⚠️ 긴급 보안 경고\n\n해당 비밀번호는 타인과 함께 사용중입니다!\n즉시 관리자에게 변경 요청하세요.\n\n동일 비밀번호로 인한 모든 피해는\n사용자 본인의 책임입니다.', 'warning');
                         }, 300);
                     }
                     
@@ -11101,6 +11213,37 @@
         async function performAutoBackup() {
             const now = Date.now();
             
+            if (!allGuildData || allGuildData.length === 0) {
+                console.log('백업용 데이터 로드 중...');
+                try {
+                    await fetchGuildList();
+                    const querySnapshot = await getDocs(collection(db, "users"));
+                    const tempGuildDataMap = {};
+                    guildList.forEach(g => tempGuildDataMap[g] = []);
+                    allGuildData = [];
+                    
+                    querySnapshot.forEach((docSnap) => {
+                        const user = docSnap.data();
+                        user.shape_legend = typeof user.shape_legend === 'number' ? user.shape_legend : (user.shape_legend ? 1 : 0);
+                        user.shape_myth = typeof user.shape_myth === 'number' ? user.shape_myth : (user.shape_myth ? 1 : 0);
+                        user.mount_legend = typeof user.mount_legend === 'number' ? user.mount_legend : (user.mount_legend ? 1 : 0);
+                        user.mount_myth = typeof user.mount_myth === 'number' ? user.mount_myth : (user.mount_myth ? 1 : 0);
+                        
+                        if (tempGuildDataMap[user.guild] !== undefined) tempGuildDataMap[user.guild].push(user);
+                    });
+                    
+                    Object.keys(tempGuildDataMap).forEach(guildName => {
+                        tempGuildDataMap[guildName].sort((a, b) => b.power - a.power);
+                        allGuildData.push(...tempGuildDataMap[guildName]);
+                    });
+                    
+                    console.log(`백업용 데이터 로드 완료: ${allGuildData.length}명`);
+                } catch(e) {
+                    console.error('백업용 데이터 로드 실패:', e);
+                    return;
+                }
+            }
+            
             let lastBackupData = {};
             try {
                 const backupsSnap = await getDocs(query(collection(db, "backups"), orderBy("createdAt", "desc"), limit(1)));
@@ -11211,7 +11354,137 @@
             }
         }
         
+        async function performDatabaseBackup() {
+            if (!confirm('전체 DB를 백업하시겠습니까?\n모든 데이터가 포함됩니다.')) return;
+            
+            try {
+                showAlert('DB 백업 중...', 'success');
+                
+                const backupData = {
+                    timestamp: Date.now(),
+                    date: new Date().toISOString(),
+                    collections: {}
+                };
+                
+                const usersSnap = await getDocs(collection(db, "users"));
+                backupData.collections.users = [];
+                usersSnap.forEach(doc => {
+                    backupData.collections.users.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const postsSnap = await getDocs(collection(db, "posts"));
+                backupData.collections.posts = [];
+                postsSnap.forEach(doc => {
+                    backupData.collections.posts.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const backupsSnap = await getDocs(collection(db, "backups"));
+                backupData.collections.backups = [];
+                backupsSnap.forEach(doc => {
+                    backupData.collections.backups.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const configSnap = await getDocs(collection(db, "config"));
+                backupData.collections.config = [];
+                configSnap.forEach(doc => {
+                    backupData.collections.config.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const backupId = `db_backup_${backupData.timestamp}`;
+                await setDoc(doc(db, "db_backups", backupId), backupData);
+                
+                const jsonStr = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `db_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showAlert('DB 백업 완료!\nFirebase와 파일로 모두 저장되었습니다.', 'success');
+                console.log('DB 백업 완료:', backupId);
+            } catch(e) {
+                console.error('DB 백업 오류:', e);
+                showAlert('DB 백업 중 오류가 발생했습니다.', 'error');
+            }
+        }
+        
+        async function checkWeeklyDBBackup() {
+            if (!isSuperAdmin) return;
+            
+            try {
+                const lastBackupDoc = await getDoc(doc(db, "config", "lastDBBackup"));
+                const now = Date.now();
+                const oneWeek = 7 * 24 * 60 * 60 * 1000;
+                
+                let needBackup = false;
+                
+                if (!lastBackupDoc.exists()) {
+                    needBackup = true;
+                } else {
+                    const lastBackupTime = lastBackupDoc.data().timestamp || 0;
+                    if (now - lastBackupTime > oneWeek) {
+                        needBackup = true;
+                    }
+                }
+                
+                if (needBackup) {
+                    console.log('1주일 경과 - 자동 DB 백업 실행...');
+                    await performAutoDatabaseBackup();
+                    await setDoc(doc(db, "config", "lastDBBackup"), { timestamp: now });
+                }
+            } catch(e) {
+                console.error('주간 DB 백업 체크 오류:', e);
+            }
+        }
+        
+        async function performAutoDatabaseBackup() {
+            try {
+                const backupData = {
+                    timestamp: Date.now(),
+                    date: new Date().toISOString(),
+                    type: 'auto_weekly',
+                    collections: {}
+                };
+                
+                const usersSnap = await getDocs(collection(db, "users"));
+                backupData.collections.users = [];
+                usersSnap.forEach(doc => {
+                    backupData.collections.users.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const postsSnap = await getDocs(collection(db, "posts"));
+                backupData.collections.posts = [];
+                postsSnap.forEach(doc => {
+                    backupData.collections.posts.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const backupsSnap = await getDocs(collection(db, "backups"));
+                backupData.collections.backups = [];
+                backupsSnap.forEach(doc => {
+                    backupData.collections.backups.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const configSnap = await getDocs(collection(db, "config"));
+                backupData.collections.config = [];
+                configSnap.forEach(doc => {
+                    backupData.collections.config.push({ id: doc.id, ...doc.data() });
+                });
+                
+                const backupId = `db_backup_${backupData.timestamp}`;
+                await setDoc(doc(db, "db_backups", backupId), backupData);
+                
+                console.log('주간 DB 백업 완료:', backupId);
+            } catch(e) {
+                console.error('자동 DB 백업 오류:', e);
+            }
+        }
+        
         setTimeout(checkAutoBackup, 3000);
+        setTimeout(checkWeeklyDBBackup, 5000);
 
         document.getElementById('statsViewBtn').addEventListener('click', async () => {
             if (!isSuperAdmin) {
